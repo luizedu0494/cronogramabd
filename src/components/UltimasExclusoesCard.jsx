@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { db } from '../firebaseConfig';
+import { supabase } from '../supabaseConfig';
 import { collection, query, where, orderBy, limit, onSnapshot } from 'firebase/firestore';
 import {
     Card, CardContent, Typography, Box, CircularProgress, Alert, Button, Divider, Chip, Tabs, Tab
@@ -20,30 +21,23 @@ const UltimasExclusoesCard = () => {
 
     useEffect(() => {
         setLoading(true);
-        const logsRef = collection(db, 'logs');
-        const q = query(
-            logsRef,
-            where('type', '==', 'exclusao'),
-            orderBy('timestamp', 'desc'),
-            limit(50)
-        );
-
-        const unsubscribe = onSnapshot(q, (snapshot) => {
+        const fetchLogs = async () => {
             try {
-                const todos = snapshot.docs.map(doc => {
-                    const data = doc.data();
-                    let ts = new Date();
-                    if (data.timestamp && typeof data.timestamp.toDate === 'function') {
-                        ts = data.timestamp.toDate();
-                    } else if (data.timestamp instanceof Date) {
-                        ts = data.timestamp;
-                    }
-                    return {
-                        id: doc.id,
-                        ...data,
-                        timestamp: ts
-                    };
-                });
+                const { data, error } = await supabase
+                    .from('logs')
+                    .select('*')
+                    .eq('type', 'exclusao')
+                    .order('created_at', { ascending: false })
+                    .limit(50);
+
+                if (error) throw error;
+
+                const todos = (data || []).map(log => ({
+                    id: log.id,
+                    ...log,
+                    aula: log.payload?.aula || log.payload || {},
+                    timestamp: new Date(log.created_at)
+                }));
 
                 const aulasExcluidas = todos.filter(l => l.aula && !l.aula.isRevisao && l.collection !== 'eventos').slice(0, 5);
                 const revisoesExcluidas = todos.filter(l => l.aula && l.aula.isRevisao === true).slice(0, 5);
@@ -51,19 +45,16 @@ const UltimasExclusoesCard = () => {
                 setLogsAulas(aulasExcluidas);
                 setLogsRevisoes(revisoesExcluidas);
                 setError(null);
-                setLoading(false);
             } catch (err) {
-                console.error("Erro ao processar snapshot de exclusões:", err);
-                setError("Falha ao processar exclusões.");
+                // Se ainda não existirem logs ou der erro, manter estado limpo
+                setLogsAulas([]);
+                setLogsRevisoes([]);
+            } finally {
                 setLoading(false);
             }
-        }, (err) => {
-            console.error("Erro ao escutar logs em tempo real:", err);
-            setError("Falha ao carregar exclusões.");
-            setLoading(false);
-        });
+        };
 
-        return () => unsubscribe();
+        fetchLogs();
     }, []);
 
     const getStatusChip = (status) => {

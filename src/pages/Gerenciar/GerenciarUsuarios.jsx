@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { db } from '../../firebaseConfig';
-import { collection, query, onSnapshot, doc, updateDoc, deleteDoc } from 'firebase/firestore';
+import { supabase } from '../../supabaseConfig';
 import {
     Container, Typography, Box, Paper, CircularProgress, Alert,
     List, ListItem, ListItemText, ListItemSecondaryAction, IconButton, Chip,
@@ -10,13 +10,12 @@ import {
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
-// firebase/functions removido — exclusão via deleteDoc direto (sem Cloud Function)
-import EmptyState from '../../components/EmptyState'; // Certifique-se que o caminho está correto
+import EmptyState from '../../components/EmptyState';
 import PeopleOutlineIcon from '@mui/icons-material/PeopleOutline';
 
 const ROLES = ['coordenador', 'tecnico'];
 
-function GerenciarUsuarios( ) {
+function GerenciarUsuarios() {
     const [usuarios, setUsuarios] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
@@ -26,21 +25,40 @@ function GerenciarUsuarios( ) {
     const [openDeleteDialog, setOpenDeleteDialog] = useState(false);
     const [userToDelete, setUserToDelete] = useState(null);
     const [feedback, setFeedback] = useState({ open: false, message: '', severity: 'success' });
-    
-    // NOVO: Estado para controlar o loading de cada ação individualmente
     const [loadingStates, setLoadingStates] = useState({});
 
-    useEffect(() => {
-        const q = query(collection(db, 'users'));
-        const unsubscribe = onSnapshot(q, (snapshot) => {
-            const usersList = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-            setUsuarios(usersList);
-            setLoading(false);
-        }, (err) => {
+    const fetchUsuarios = async () => {
+        setLoading(true);
+        try {
+            const { data, error } = await supabase.from('users').select('*').order('created_at', { ascending: false });
+            if (error) throw error;
+            setUsuarios((data || []).map(u => ({
+                id: u.uid,
+                ...u,
+                approvalPending: u.approval_pending
+            })));
+        } catch (err) {
+            console.error('Erro ao buscar usuários:', err);
             setError("Não foi possível carregar os usuários.");
+        } finally {
             setLoading(false);
-        });
-        return () => unsubscribe();
+        }
+    };
+
+    useEffect(() => {
+        fetchUsuarios();
+
+        // Subscrição Realtime no Supabase
+        const channel = supabase
+            .channel('users-changes')
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'users' }, () => {
+                fetchUsuarios();
+            })
+            .subscribe();
+
+        return () => {
+            supabase.removeChannel(channel);
+        };
     }, []);
 
     const handleAction = async (action, userId, payload) => {
@@ -48,19 +66,14 @@ function GerenciarUsuarios( ) {
         try {
             let successMessage = '';
             if (action === 'approve') {
-                await updateDoc(doc(db, 'users', userId), { approvalPending: false });
+                await supabase.from('users').update({ approval_pending: false, status: 'aprovado' }).eq('uid', userId);
                 successMessage = 'Usuário aprovado!';
             } else if (action === 'editRole') {
-                await updateDoc(doc(db, 'users', userId), { role: payload.role });
+                await supabase.from('users').update({ role: payload.role }).eq('uid', userId);
                 successMessage = 'Cargo do usuário atualizado!';
             } else if (action === 'delete') {
-                // Exclui apenas o documento do Firestore.
-                // Nota: o registro no Firebase Auth permanece, mas sem documento no Firestore
-                // o usuário não terá acesso ao sistema. Para exclusão completa do Auth,
-                // é necessário o plano Blaze (Cloud Functions). Se o usuário tentar logar
-                // novamente, o fluxo de criação de perfil o colocará em estado pendente.
-                await deleteDoc(doc(db, 'users', userId));
-                successMessage = 'Usuário removido do sistema!';
+                await supabase.from('users').delete().eq('uid', userId);
+                successMessage = 'Usuário removido com sucesso!';
             }
             setFeedback({ open: true, message: successMessage, severity: 'success' });
         } catch (err) {

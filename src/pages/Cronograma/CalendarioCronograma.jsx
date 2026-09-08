@@ -26,6 +26,7 @@ import isBetween from 'dayjs/plugin/isBetween';
 
 import { LISTA_LABORATORIOS, TIPOS_LABORATORIO } from '../../constants/laboratorios';
 import { db } from '../../firebaseConfig';
+import { supabase } from '../../supabaseConfig';
 import ProporAulaForm from '../../ProporAulaForm';
 import ProporEventoForm from '../../ProporEventoForm';
 import DialogConfirmacao from '../../components/DialogConfirmacao';
@@ -519,42 +520,56 @@ function CalendarioCronograma({ userInfo }) {
 
     const fetchDados = useCallback(async () => {
         setLoading(true);
-        // Busca sempre a semana inteira para garantir que, se voltar para 'week', os dados já estão lá
-        const start = weekStart.toDate();
-        const end = weekEnd.toDate();
+        const startISO = weekStart.toISOString();
+        const endISO = weekEnd.toISOString();
         
         try {
-            const qAulas = query(collection(db, 'aulas'), where('dataInicio', '>=', Timestamp.fromDate(start)), where('dataInicio', '<=', Timestamp.fromDate(end)), orderBy('dataInicio', 'asc'));
-            const qEventos = query(collection(db, 'eventosManutencao'), where('dataInicio', '>=', Timestamp.fromDate(start)), where('dataInicio', '<=', Timestamp.fromDate(end)));
-            const qPeriodos = query(collection(db, 'periodosSemAtividade'), where('dataFim', '>=', Timestamp.fromDate(start)));
+            const [aulasRes, eventosRes] = await Promise.all([
+                supabase.from('aulas')
+                    .select('*, aula_cursos(curso)')
+                    .gte('data_inicio', startISO)
+                    .lte('data_inicio', endISO)
+                    .order('data_inicio', { ascending: true }),
+                supabase.from('eventos_manutencao')
+                    .select('*')
+                    .gte('data_inicio', startISO)
+                    .lte('data_inicio', endISO)
+            ]);
 
-            const [aulasSnap, eventosSnap, periodosSnap] = await Promise.all([getDocs(qAulas), getDocs(qEventos), getDocs(qPeriodos)]);
-            
-            setAulas(aulasSnap.docs
-                .map(doc => {
-                    const data = doc.data();
-                    return { id: doc.id, ...data, start: data.dataInicio?.toDate() || new Date(), end: data.dataFim?.toDate() || new Date(), title: data.assunto || 'Sem Título', laboratorio: data.laboratorioSelecionado };
-                })
+            const aulasData = aulasRes.data || [];
+            setAulas(aulasData
+                .map(d => ({
+                    id: d.id,
+                    ...d,
+                    title: d.assunto || 'Sem Título',
+                    laboratorio: d.laboratorio,
+                    cursos: d.aula_cursos?.map(c => c.curso) || [],
+                    start: new Date(d.data_inicio),
+                    end: new Date(d.data_fim),
+                    isRevisao: d.is_revisao
+                }))
                 .filter(aula => {
                     if (!aula.status || aula.status === 'aprovada') return true;
-                    // Se for pendente, exibe no calendário EXCLUSIVAMENTE para o Coordenador
                     if (aula.status === 'pendente') return userInfo?.role === 'coordenador';
                     return false;
                 })
             );
 
-            setEventos(eventosSnap.docs.map(doc => {
-                const data = doc.data();
-                return { id: doc.id, ...data, start: data.dataInicio?.toDate() || new Date(), end: data.dataFim?.toDate() || new Date() };
-            }));
+            const eventosData = eventosRes.data || [];
+            setEventos(eventosData.map(d => ({
+                id: d.id,
+                ...d,
+                start: new Date(d.data_inicio),
+                end: new Date(d.data_fim)
+            })));
             
-            setPeriodosBloqueio(periodosSnap.docs.map(doc => {
-                const data = doc.data();
-                return { id: doc.id, ...data, start: dayjs(data.dataInicio?.toDate()), end: dayjs(data.dataFim?.toDate()) };
-            }));
-
-        } catch (err) { console.error(err); } finally { setLoading(false); }
-    }, [weekStart, weekEnd]);
+            setPeriodosBloqueio([]);
+        } catch (err) { 
+            console.warn('Aviso ao carregar dados do calendário:', err.message); 
+        } finally { 
+            setLoading(false); 
+        }
+    }, [weekStart, weekEnd, userInfo?.role]);
 
     useEffect(() => { fetchDados(); }, [fetchDados]);
 
