@@ -9,12 +9,9 @@
   <a href="#modo-visitante-acesso-publico">Modo Visitante</a> •
   <a href="#perfis-de-acesso">Perfis de Acesso</a> •
   <a href="#funcionalidades">Funcionalidades</a> •
-  <a href="#novidades-recentes">Novidades Recentes</a> •
   <a href="#identidade-visual-e-design">Identidade & Design</a> •
   <a href="#tecnologias">Tecnologias</a> •
-  <a href="#variaveis-de-ambiente">Variáveis de Ambiente</a> •
-  <a href="#instalacao">Instalação</a> •
-  <a href="#licenca">Licença</a>
+  <a href="#status-do-projeto">Status do Projeto</a>
 </p>
 
 <p align="center">
@@ -24,12 +21,15 @@
   <img alt="React" src="https://img.shields.io/badge/React-19-61DAFB?style=flat&logo=react&logoColor=black"/>
   <img alt="MUI" src="https://img.shields.io/badge/MUI-v7-1E7EC8?style=flat&logo=mui&logoColor=white"/>
   <img alt="Vite" src="https://img.shields.io/badge/Vite-7-646CFF?style=flat&logo=vite&logoColor=white"/>
-  <img alt="License" src="https://img.shields.io/badge/Licen%C3%A7a-MIT-green?style=flat"/>
+  <img alt="License" src="https://img.shields.io/badge/Licen%C3%A7a-Propriet%C3%A1ria-red?style=flat"/>
 </p>
 
 <p align="center">
-  <a href="https://cronogramabd.vercel.app"><strong>🌐 Ver sistema online na Vercel →</strong></a>
+  <a href="https://cronogramabd.vercel.app"><strong>🌐 Ver demonstração ao vivo →</strong></a>
 </p>
+
+> 💼 **Projeto proprietário em desenvolvimento comercial.**
+> Este repositório é uma vitrine do produto, com descrição de arquitetura, funcionalidades e decisões técnicas. O código-fonte completo não é público. Para parcerias, licenciamento ou acesso a uma demo guiada, entre em contato.
 
 ---
 
@@ -40,26 +40,25 @@ O **CronoLab** é uma solução completa desenvolvida para resolver um desafio c
 O sistema centraliza a agenda de múltiplos espaços físicos em uma única interface inteligente, atendendo às necessidades de **Coordenadores**, **Técnicos de Laboratório**, **Professores** e **Alunos (Visitantes)**. Ele substitui planilhas manuais e conflitos de horários por um banco de dados relacional Supabase (PostgreSQL) com verificação automática de choques de agenda, análise preditiva de ocupação e atualizações em tempo real.
 
 **Destaques:**
-- 🏫 **Pronto para Instituições de Ensino**: Adequado para universidades, faculdades e centros tecnológicos com múltiplos laboratórios
-- 🎓 **Modo Visitante sem Necessidade de Cadastro**: Acesso direto e instantâneo para Alunos e Professores consultarem os horários
-- ⚡ **Arquitetura 100% Supabase (PostgreSQL)**: Consultas relacionais de alta velocidade e atualizações em tempo real via WebSockets (`postgres_changes`)
-- 🔐 **Autenticação Flexível & Segura**: Login por E-mail + Senha (com suporte a redefinição) ou **Login Social com Google OAuth**
-- 📱 **PWA Responsivo**: Instalável em smartphones e desktops (Android/iOS/Windows) com suporte a Web Push
-- 🌙 **Design de Alto Padrão**: Dark mode nativo com paleta de cores harmoniosa, legibilidade refinada e animações fluidas
-- 📥 **Importação e Exportação Completa**: Reconhecimento automático em arquivos Excel, CSV, JSON e Word (.docx), além de exportação em Excel, PDF e .ics (Google/Outlook Calendar)
-- 🔔 **Notificações em Tempo Real**: Alertas via Telegram e Web Push em mudanças na grade
+- 🏫 **Pronto para Instituições de Ensino**: adequado para universidades, faculdades e centros tecnológicos com múltiplos laboratórios
+- 🎓 **Modo Visitante sem Necessidade de Cadastro**: acesso direto e instantâneo para Alunos e Professores consultarem os horários
+- ⚡ **Arquitetura 100% Supabase (PostgreSQL)**: consultas relacionais de alta velocidade e atualizações em tempo real via WebSockets (`postgres_changes`)
+- 🔐 **Autenticação Flexível & Segura**: Login por E-mail + Senha ou **Login Social com Google OAuth**
+- 📱 **PWA Responsivo**: instalável em smartphones e desktops (Android/iOS/Windows) com suporte a Web Push
+- 🌙 **Design de Alto Padrão**: Dark mode nativo com paleta de cores harmoniosa e animações fluidas
+- 📥 **Importação e Exportação Completa**: reconhecimento automático em Excel, CSV, JSON e Word (.docx), exportação em Excel, PDF e .ics
+- 🔔 **Notificações em Tempo Real**: alertas via Telegram e Web Push em mudanças na grade
 
 ---
 
 ## Modo Visitante (Acesso Público)
 
-Para facilitar a consulta dos horários de aulas e disponibilidade de laboratórios, o sistema conta com o botão **"Visualizar Calendário (Acesso Público)"** diretamente na tela inicial:
+Para facilitar a consulta dos horários de aulas e disponibilidade de laboratórios, o sistema conta com um modo de acesso público direto na tela inicial:
 
-- 🔓 **Sem Cadastro Nem Aprovação**: Alunos e professores entram instantaneamente sem precisar criar conta ou aguardar aprovação de coordenador.
-- 📅 **Direto ao Calendário**: O visitante vai direto para a grade semanal do calendário.
-- 📥 **Exportação de Dados**: Permite exportar a agenda do semestre/mês em Excel (.xlsx), PDF e calendário iCal (.ics).
-- ❓ **Dúvidas do Visitante**: Central de perguntas frequentes simplificada e focada apenas na consulta aos laboratórios.
-- 🛡️ **Segurança Reforçada**: O visitante tem acesso puramente de leitura (somente visualização). Funcionalidades administrativas, alteração de perfil e Assistente de IA são restritas à equipe autorizada.
+- 🔓 **Sem Cadastro Nem Aprovação**: alunos e professores entram instantaneamente
+- 📅 **Direto ao Calendário**: o visitante vai direto para a grade semanal
+- 📥 **Exportação de Dados**: agenda do semestre/mês em Excel (.xlsx), PDF e iCal (.ics)
+- 🛡️ **Segurança Reforçada**: acesso puramente de leitura; funcionalidades administrativas e Assistente de IA são restritas à equipe autorizada
 
 ---
 
@@ -68,62 +67,45 @@ Para facilitar a consulta dos horários de aulas e disponibilidade de laboratór
 O acesso restrito da equipe é controlado por um fluxo de aprovação. Ao se cadastrar via **E-mail + Senha** ou **Google**, a conta fica com o status **Pendente** até que a coordenação aprove o perfil adequado:
 
 ### 👨‍💼 Coordenador
-Visão estratégica e administrativa completa:
-- **Painel de Indicadores (KPIs)**: métricas de ocupação em tempo real, total de aulas, eventos e propostas pendentes
-- **Agendamento Direto**: inclusão imediata de aulas e bloqueios de manutenção
-- **Central de Aprovações**: aprovação, rejeição e designação de técnicos responsáveis por propostas enviadas
-- **Gestão de Usuários**: aprovação de cadastros de técnicos/coordenadores, atribuição de cargos e remoção de acessos
-- **Importação de Cronogramas**: conversão em lote de documentos externos em agendamentos oficiais
-- **Avisos e Comunicados**: publicação de murais informativos categorizados por prioridade (Normal, Importante, Urgente)
+- Painel de Indicadores (KPIs) em tempo real
+- Agendamento direto de aulas e bloqueios de manutenção
+- Central de Aprovações de propostas enviadas
+- Gestão de usuários e cargos
+- Importação de cronogramas em lote
+- Avisos e comunicados por prioridade
 
 ### 🧑‍🔬 Técnico de Laboratório
-Gestão operacional e manutenção dos espaços:
-- **Seleção de Laboratórios Favoritos**: acompanhamento focado dos espaços sob sua responsabilidade
-- **Envio de Propostas**: solicitação de reserva de horário para aulas práticas ou atividades especiais
-- **Minhas Designações & Agenda**: acompanhamento de horários atribuídos pela coordenação
-- **Reserva de Revisões/Monitorias**: agendamento de sessões preparatórias e manutenção preventiva de equipamentos
+- Seleção de laboratórios favoritos
+- Envio de propostas de reserva de horário
+- Painel de designações e agenda pessoal
+- Reserva de revisões/monitorias e manutenção preventiva
 
 ### 🎓 Visitante (Aluno / Professor)
-Perfil focado em consulta pública sem cadastro:
-- Visualização do Cronograma de Aulas e Calendário Acadêmico institucional
-- Exportação de arquivos de horário em Excel, PDF e .ics
-- Guia prático de dúvidas do visitante
+- Visualização do Cronograma de Aulas e Calendário Acadêmico
+- Exportação de horários em Excel, PDF e .ics
+- Guia prático de dúvidas
 
 ---
 
 ## Funcionalidades
 
 ### 📅 Agendamento e Grade Relacional
-- Blocos padronizados de horários acadêmicos (Manhã, Tarde e Noite)
-- Verificação instantânea de conflitos de horário e colisão de turmas via Supabase PostgreSQL
-- Auditoria e histórico completo de alterações e exclusões
+- Blocos padronizados de horários (Manhã, Tarde, Noite)
+- Verificação instantânea de conflitos e colisão de turmas
+- Auditoria e histórico completo de alterações
 
 ### 🔐 Autenticação & Recuperação de Conta
-- Formulário de acesso com validação estrita de e-mail (Regex)
-- Mecanismo integrado de **"Esqueceu sua senha?"** disparando links de redefinição via Supabase Auth
-- Botão "Continuar com o Google" em conformidade com as diretrizes visuais da Google
+- Formulário de acesso com validação estrita
+- Fluxo de "Esqueceu sua senha?" via Supabase Auth
+- Login social com Google (conforme diretrizes visuais)
 
 ### 📥 Importação e Exportação de Dados
-- Leitura e mapeamento automático de dados provenientes de **Excel, CSV, JSON e Word**
-- Exportação multi-formato em **Excel (.xlsx)** com abas detalhadas, **iCalendar (.ics)** para integração com Google/Apple Calendar e relatórios em **PDF**
-
----
-
-## Novidades Recentes
-
-### 🐘 Migração 100% Supabase PostgreSQL + Vercel
-- Migração completa do banco de dados e autenticação para o Supabase (PostgreSQL), garantindo maior velocidade, integridade relacional e atualizações em tempo real.
-- Hospedagem global rápida e sem custos no Vercel.
-
-### 🎨 Experiência Adequada ao Visitante
-- Fluxo público simplificado redirecionando direto ao calendário.
-- Remoção de itens desnecessários (como perfil, histórico e assistente IA para visitantes), garantindo maior clareza e segurança na consulta dos horários.
+- Leitura automática de Excel, CSV, JSON e Word
+- Exportação em Excel (.xlsx), iCalendar (.ics) e PDF
 
 ---
 
 ## Identidade Visual e Design
-
-O **CronoLab** adota um sistema de design moderno e acessível:
 
 | Token | Cor | Aplicação no Sistema |
 | :--- | :--- | :--- |
@@ -139,48 +121,19 @@ O **CronoLab** adota um sistema de design moderno e acessível:
 
 - **Frontend**: React 19, Vite 7, Material UI (MUI v7), Lucide Icons
 - **Backend & Database**: Supabase PostgreSQL, Supabase Realtime, Supabase Auth
-- **Serverless Functions**: Vercel Serverless API (`/api`)
-- **Inteligência Artificial (Equipe)**: LangChain.js & Groq API (`llama-3.3-70b-versatile`)
+- **Serverless Functions**: Vercel Serverless API
+- **Inteligência Artificial**: LangChain.js & Groq API (`llama-3.3-70b-versatile`)
 - **Documentos & Mídia**: ExcelJS, SheetJS (`xlsx`), Tesseract.js (OCR), jsPDF
 
 ---
 
-## Variáveis de Ambiente
+## Status do Projeto
 
-Copie `.env.example` para `.env` e preencha suas credenciais:
-
-```env
-VITE_SUPABASE_URL=https://seu-projeto.supabase.co
-VITE_SUPABASE_ANON_KEY=sua-chave-anonima
-VITE_CLOUDINARY_CLOUD_NAME=seu-cloud-name
-VITE_TELEGRAM_BOT_TOKEN=seu-token-bot
-VITE_GROQ_API_KEY=sua-chave-groq
-```
-
----
-
-## Instalação
-
-```bash
-# 1. Clonar o repositório
-git clone https://github.com/luizedu0494/cronogramabd.git
-cd cronograma-lab-frontend
-
-# 2. Instalar dependências
-npm install
-
-# 3. Configurar ambiente
-cp .env.example .env
-
-# 4. Rodar em desenvolvimento
-npm run dev
-
-# 5. Build de produção
-npm run build
-```
+🚧 Em desenvolvimento ativo, com deploy contínuo em produção.
+Interessado em uma demonstração guiada, parceria ou licenciamento para sua instituição? Entre em contato pelo perfil do GitHub.
 
 ---
 
 ## Licença
 
-Distribuído sob a licença MIT. Veja `LICENSE` para mais informações.
+Este projeto é proprietário. Todos os direitos reservados. Consulte a seção de contato para informações sobre licenciamento comercial.
