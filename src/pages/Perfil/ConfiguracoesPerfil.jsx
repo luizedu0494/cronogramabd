@@ -1,13 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { auth, db } from '../../firebaseConfig';
-import { doc, getDoc, updateDoc } from 'firebase/firestore';
+import { supabase } from '../../supabaseConfig';
+import { userService } from '../../services/userService';
 import {
     Container, Typography, Box, Paper, CircularProgress, Alert, Button, Grid,
     TextField, Dialog, DialogTitle, DialogContent, DialogActions, Snackbar, Avatar
 } from '@mui/material';
 import EditIcon from '@mui/icons-material/Edit';
 import NotificationsIcon from '@mui/icons-material/Notifications';
-import dayjs from 'dayjs';
 import UploadImagem from '../../componentes/comuns/UploadImagem';
 
 function ConfiguracoesPerfil() {
@@ -28,36 +27,40 @@ function ConfiguracoesPerfil() {
     useEffect(() => {
         const fetchProfileAndPushStatus = async () => {
             setLoading(true);
-            const user = auth.currentUser;
-            if (user) {
-                const userDocRef = doc(db, 'users', user.uid);
-                const userDocSnap = await getDoc(userDocRef);
-                if (userDocSnap.exists()) {
-                    const data = userDocSnap.data();
-                    setUserProfile(data);
-                    setEditedName(data.name || user.displayName);
-                    setTelegramChatId(data.telegramChatId || '');
-                    setPhotoURL(data.photoURL || user.photoURL || '');
-                } else {
-                    setError("Perfil não encontrado.");
+            try {
+                const { data: { session } } = await supabase.auth.getSession();
+                let userEmail = session?.user?.email;
+
+                if (!userEmail) {
+                    const localSession = localStorage.getItem('cronolab_user_session');
+                    if (localSession) {
+                        userEmail = JSON.parse(localSession)?.email;
+                    }
                 }
 
-                // Verificar se já tem token cadastrado para este usuário
-                try {
-                    const tokenDocRef = doc(db, 'userTokens', user.uid);
-                    const tokenDocSnap = await getDoc(tokenDocRef);
-                    if (tokenDocSnap.exists() && (tokenDocSnap.data().tokens || []).length > 0) {
-                        setPushAtivo(true);
-                    } else if ('Notification' in window && Notification.permission === 'granted') {
-                        setPushAtivo(true);
+                if (userEmail) {
+                    const data = await userService.getUserProfile(userEmail);
+                    if (data) {
+                        setUserProfile(data);
+                        setEditedName(data.name || '');
+                        setTelegramChatId(data.telegram_chat_id || data.telegramChatId || '');
+                        setPhotoURL(data.photo_url || data.photoURL || '');
+                    } else {
+                        setError("Perfil não encontrado no banco de dados.");
                     }
-                } catch (tErr) {
-                    if ('Notification' in window && Notification.permission === 'granted') {
-                        setPushAtivo(true);
-                    }
+                } else {
+                    setError("Sessão do usuário não identificada.");
                 }
+
+                if ('Notification' in window && Notification.permission === 'granted') {
+                    setPushAtivo(true);
+                }
+            } catch (err) {
+                console.error("Erro ao carregar perfil:", err);
+                setError("Erro ao carregar perfil.");
+            } finally {
+                setLoading(false);
             }
-            setLoading(false);
         };
         fetchProfileAndPushStatus();
     }, []);
@@ -65,15 +68,22 @@ function ConfiguracoesPerfil() {
     const handleSaveProfile = async () => {
         setLoading(true);
         try {
-            const user = auth.currentUser;
-            if (user) {
-                const userDocRef = doc(db, 'users', user.uid);
-                await updateDoc(userDocRef, {
-                    name: editedName,
-                    telegramChatId: telegramChatId,
-                    photoURL: photoURL
-                });
-                setUserProfile(prev => ({ ...prev, name: editedName, telegramChatId, photoURL }));
+            if (userProfile?.email) {
+                const { error } = await supabase
+                    .from('users')
+                    .update({
+                        name: editedName,
+                        telegram_chat_id: telegramChatId,
+                        photo_url: photoURL
+                    })
+                    .eq('email', userProfile.email);
+
+                if (error) throw error;
+
+                const updated = { ...userProfile, name: editedName, telegram_chat_id: telegramChatId, photo_url: photoURL };
+                setUserProfile(updated);
+                localStorage.setItem('cronolab_user_session', JSON.stringify(updated));
+
                 setSnackbarMessage('Perfil atualizado com sucesso!');
                 setSnackbarSeverity('success');
                 setOpenSnackbar(true);
@@ -92,11 +102,16 @@ function ConfiguracoesPerfil() {
     const handleUploadFotoSucesso = async (url) => {
         setPhotoURL(url);
         try {
-            const user = auth.currentUser;
-            if (user) {
-                const userDocRef = doc(db, 'users', user.uid);
-                await updateDoc(userDocRef, { photoURL: url });
-                setUserProfile(prev => ({ ...prev, photoURL: url }));
+            if (userProfile?.email) {
+                await supabase
+                    .from('users')
+                    .update({ photo_url: url })
+                    .eq('email', userProfile.email);
+
+                const updated = { ...userProfile, photo_url: url };
+                setUserProfile(updated);
+                localStorage.setItem('cronolab_user_session', JSON.stringify(updated));
+
                 setSnackbarMessage('Foto de perfil atualizada com sucesso!');
                 setSnackbarSeverity('success');
                 setOpenSnackbar(true);
