@@ -21,6 +21,8 @@ import 'dayjs/locale/pt-br';
 dayjs.locale('pt-br');
 dayjs.extend(relativeTime);
 
+import NotificarGrupo from '../../components/NotificarGrupo';
+
 function GerenciarAvisos() {
   const [avisos, setAvisos] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -240,6 +242,7 @@ function GerenciarAvisos() {
           <Typography variant="h4" component="h1">Gerenciar Avisos</Typography>
           {isCoordenador && ( <Button variant="contained" startIcon={<AddCircleOutlineIcon />} onClick={handleOpenFormDialogParaAdicionar}>Novo Aviso</Button> )}
         </Box>
+        {isCoordenador && <NotificarGrupo />}
         {error && isCoordenador && (<Alert severity="error" sx={{mb: 2}}>{error}</Alert>)}
         {!isCoordenador && !loading && <Alert severity="warning">Acesso negado.</Alert>}
         {isCoordenador && avisos.length === 0 && !loading && ( <Typography variant="body1" color="text.secondary" align="center">Nenhum aviso. Clique em "Novo Aviso".</Typography> )}

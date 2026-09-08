@@ -21,6 +21,9 @@ import {
 
 
 import PromptInstalacaoPWA from './componentes/comuns/PromptInstalacaoPWA';
+import SmartAppBanner from './components/SmartAppBanner';
+import { useNotificacoes } from './hooks/useNotificacoes';
+import CentroNotificacoesDrawer from './components/CentroNotificacoesDrawer';
 
 // --- LAZY LOADING DE PÁGINAS COM TRATAMENTO DE RE-DEPLOY ---
 const lazyWithRetry = (componentImport) =>
@@ -647,11 +650,15 @@ function App() {
         </Menu>
     );
 
+    const [drawerNotificacoesAberto, setDrawerNotificacoesAberto] = useState(false);
+    const { notificacoes, naoLidas, carregando: carregandoNotifs, marcarLida, marcarTodasLidas } = useNotificacoes(userProfileData?.uid);
+
     return (
         <ThemeProvider theme={theme}>
             <CssBaseline />
             <Router>
                 <LocalizationProvider dateAdapter={AdapterDayjs} adapterLocale="pt-br">
+                    <SmartAppBanner />
                     {user && !approvalPending && (
                         <AppBar 
                             position="static"
@@ -689,6 +696,13 @@ function App() {
                                     <IconButton onClick={handleThemeChange} color="inherit" aria-label="Alternar tema">
                                         {darkMode ? <Sun size={20}/> : <Moon size={20}/>}
                                     </IconButton>
+                                    {role !== 'visualizador' && (
+                                        <IconButton onClick={() => setDrawerNotificacoesAberto(true)} color="inherit" aria-label="Notificações">
+                                            <Badge badgeContent={naoLidas} color="error">
+                                                <Bell size={20} />
+                                            </Badge>
+                                        </IconButton>
+                                    )}
                                     {role === 'visualizador' ? (
                                         <Button
                                             variant="outlined"
@@ -723,6 +737,15 @@ function App() {
                         </AppBar>
                     )}
                     {renderMobileMenu} {renderProfileMenu} {role === 'coordenador' && <CoordenadorGerenciarMenu />}
+                    <CentroNotificacoesDrawer
+                        open={drawerNotificacoesAberto}
+                        onClose={() => setDrawerNotificacoesAberto(false)}
+                        notificacoes={notificacoes}
+                        naoLidas={naoLidas}
+                        carregando={carregandoNotifs}
+                        marcarLida={marcarLida}
+                        marcarTodasLidas={marcarTodasLidas}
+                    />
                     <Suspense fallback={<LoadingFallback />}>
                         <Routes>
                              {!user ? (

@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { db } from './firebaseConfig';
-import { collection, query, where, onSnapshot, orderBy, Timestamp } from 'firebase/firestore';
+import { supabase } from './supabaseConfig';
 import { useAuth } from './AuthContext';
 import {
     Container, Typography, Paper, List, ListItem, ListItemText,
@@ -9,6 +8,7 @@ import {
 import { useTheme } from '@mui/material/styles';
 import GroupIcon from '@mui/icons-material/Group';
 import SwapVertIcon from '@mui/icons-material/SwapVert';
+import RefreshIcon from '@mui/icons-material/Refresh';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
@@ -21,78 +21,133 @@ function MinhasDesignacoes() {
     const [aulas, setAulas] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
-    const { currentUser } = useAuth();
+    const { currentUser, userProfile } = useAuth();
     const theme = useTheme();
 
-    // --- NOVOS ESTADOS PARA FILTRO E ORDENAÇÃO ---
     const [selectedDate, setSelectedDate] = useState(dayjs());
-    const [sortOrder, setSortOrder] = useState('asc'); // 'asc' ou 'desc'
+    const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
+
+    const uidTarget = currentUser?.id || currentUser?.uid || userProfile?.uid;
 
     const handleSortToggle = () => {
-        setSortOrder(prev => prev === 'asc' ? 'desc' : 'asc');
+        setSortOrder(prev => (prev === 'asc' ? 'desc' : 'asc'));
     };
 
-    useEffect(() => {
-        if (!currentUser) {
+    const fetchDesignacoes = useCallback(async () => {
+        if (!uidTarget) {
             setLoading(false);
             return;
         }
 
         setLoading(true);
         setError(null);
-        
-        const startOfMonth = selectedDate.startOf('month').toDate();
-        const endOfMonth = selectedDate.endOf('month').toDate();
 
-        // --- CONSULTA ATUALIZADA ---
-        const q = query(
-            collection(db, 'aulas'),
-            where('tecnicos', 'array-contains', currentUser.uid), // NOME DO CAMPO CORRIGIDO
-            where('dataInicio', '>=', Timestamp.fromDate(startOfMonth)),
-            where('dataInicio', '<=', Timestamp.fromDate(endOfMonth)),
-            orderBy('dataInicio', sortOrder) // Ordenação dinâmica
+        const startOfMonth = selectedDate.startOf('month').format('YYYY-MM-DD');
+        const endOfMonth = selectedDate.endOf('month').format('YYYY-MM-DD');
+
+        try {
+            const { data, error: err } = await supabase
+                .from('aulas')
+                .select('*')
+                .contains('tecnicos', [uidTarget])
+                .gte('data_inicio', startOfMonth)
+                .lte('data_inicio', endOfMonth)
+                .order('data_inicio', { ascending: sortOrder === 'asc' });
+
+            if (err) throw err;
+
+            const aulasFormatadas = (data || []).map(item => ({
+                id: item.id,
+                assunto: item.assunto || item.title || 'Aula',
+                laboratorioSelecionado: item.laboratorio || item.laboratorioSelecionado || 'Laboratório',
+                tipoAtividade: item.tipo_atividade || 'aula',
+                dataInicio: item.data_inicio ? dayjs(item.data_inicio) : null,
+                dataFim: item.data_fim ? dayjs(item.data_fim) : null,
+                horarioSlot: item.horario_slot || item.horario,
+                tecnicosInfo: item.tecnicos_info || [],
+            }));
+
+            setAulas(aulasFormatadas);
+        } catch (err) {
+            console.error('Erro ao buscar designações no Supabase:', err);
+            setError('Falha ao carregar suas aulas designadas.');
+        } finally {
+            setLoading(false);
+        }
+    }, [uidTarget, selectedDate, sortOrder]);
+
+    useEffect(() => {
+        fetchDesignacoes();
+
+        if (!uidTarget) return;
+
+        // Supabase Realtime: Atualização instantânea sem necessidade de reload
+        const channel = supabase
+            .channel(`designacoes-${uidTarget}`)
+            .on(
+                'postgres_changes',
+                {
+                    event: '*',
+                    schema: 'public',
+                    table: 'aulas',
+                },
+                () => {
+                    fetchDesignacoes();
+                }
+            )
+            .subscribe();
+
+        return () => {
+            supabase.removeChannel(channel);
+        };
+    }, [uidTarget, fetchDesignacoes]);
+
+    if (loading && aulas.length === 0) {
+        return (
+            <Container maxWidth="md" sx={{ textAlign: 'center', mt: 4 }}>
+                <CircularProgress />
+                <Typography variant="h6" sx={{ mt: 2 }}>
+                    Carregando suas designações...
+                </Typography>
+            </Container>
         );
-
-        const unsubscribe = onSnapshot(q, (snapshot) => {
-            const aulasDesignadas = snapshot.docs.map(doc => {
-                const data = doc.data();
-                return {
-                    id: doc.id,
-                    ...data,
-                    dataInicio: data.dataInicio?.toDate ? dayjs(data.dataInicio.toDate()) : null,
-                    dataFim: data.dataFim?.toDate ? dayjs(data.dataFim.toDate()) : null,
-                };
-            });
-            setAulas(aulasDesignadas);
-            setLoading(false);
-        }, (err) => {
-            console.error("Erro ao buscar aulas designadas:", err);
-            setError("Falha ao carregar suas aulas. Verifique o console para mais detalhes (pode ser necessário criar um índice no Firestore).");
-            setLoading(false);
-        });
-
-        return () => unsubscribe();
-    }, [currentUser, selectedDate, sortOrder]); // Re-executa quando os filtros mudam
-
-    if (loading) {
-        return (<Container maxWidth="md" sx={{ textAlign: 'center', mt: 4 }}><CircularProgress /><Typography variant="h6" sx={{ mt: 2 }}>Carregando...</Typography></Container>);
     }
-    if (error) {
-        return (<Container maxWidth="md" sx={{ mt: 4 }}><Alert severity="error">{error}</Alert></Container>);
-    }
-    if (!currentUser) {
-        return (<Container maxWidth="md" sx={{ mt: 4 }}><Alert severity="warning">Por favor, faça login.</Alert></Container>);
+
+    if (!currentUser && !userProfile) {
+        return (
+            <Container maxWidth="md" sx={{ mt: 4 }}>
+                <Alert severity="warning">Por favor, faça login para acessar suas designações.</Alert>
+            </Container>
+        );
     }
 
     return (
         <LocalizationProvider dateAdapter={AdapterDayjs} adapterLocale="pt-br">
             <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
-                <Paper elevation={3} sx={{ p: { xs: 2, md: 4 } }}>
-                    <Typography variant="h4" component="h1" gutterBottom align="center" sx={{ mb: 1 }}>
-                        Minhas Designações
-                    </Typography>
+                <Paper elevation={3} sx={{ p: { xs: 2, md: 4 }, borderRadius: 3 }}>
+                    <Box display="flex" justifyContent="space-between" alignItems="center" flexWrap="wrap" mb={2}>
+                        <Box>
+                            <Typography variant="h4" fontWeight={700} gutterBottom>
+                                Minhas Designações
+                            </Typography>
+                            <Typography variant="body2" color="text.secondary">
+                                Suas aulas e revisões atribuídas em tempo real.
+                            </Typography>
+                        </Box>
+                        <Button
+                            variant="outlined"
+                            size="small"
+                            startIcon={<RefreshIcon />}
+                            onClick={fetchDesignacoes}
+                            sx={{ mt: { xs: 1, sm: 0 } }}
+                        >
+                            Atualizar
+                        </Button>
+                    </Box>
 
-                    {/* --- NOVOS CONTROLES DE FILTRO --- */}
+                    {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
+
+                    {/* Filtros e Ordenação */}
                     <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', flexWrap: 'wrap', gap: 2, mb: 3 }}>
                         <DatePicker
                             views={['month', 'year']}
@@ -107,33 +162,47 @@ function MinhasDesignacoes() {
                             onClick={handleSortToggle}
                             startIcon={<SwapVertIcon />}
                         >
-                            Ordenar por Data ({sortOrder === 'asc' ? 'Crescente' : 'Decrescente'})
+                            Data ({sortOrder === 'asc' ? 'Crescente' : 'Decrescente'})
                         </Button>
                     </Box>
 
                     {aulas.length === 0 ? (
-                        <Typography variant="body1" align="center" color="text.secondary" sx={{ mt: 3 }}>
+                        <Typography variant="body1" align="center" color="text.secondary" sx={{ py: 4 }}>
                             Você não possui nenhuma designação para o mês selecionado.
                         </Typography>
                     ) : (
                         <List>
                             {aulas.map((aula) => (
-                                <Paper key={aula.id} elevation={2} sx={{ mb: 2, p: 2, borderLeft: `5px solid ${theme.palette.primary.main}` }}>
+                                <Paper key={aula.id} elevation={2} sx={{ mb: 2, p: 2, borderRadius: 2, borderLeft: `5px solid ${theme.palette.primary.main}` }}>
                                     <ListItem alignItems="flex-start" disableGutters>
                                         <ListItemText
                                             primary={
-                                                <Typography variant="h6" component="div" gutterBottom>
+                                                <Typography variant="h6" component="div" gutterBottom fontWeight={700}>
                                                     {aula.assunto}
-                                                    <Chip label={aula.tipoAtividade === 'aula' ? 'Aula' : 'Revisão'} size="small" color={aula.tipoAtividade === 'aula' ? 'primary' : 'secondary'} sx={{ ml: 1 }} />
+                                                    <Chip
+                                                        label={aula.tipoAtividade === 'aula' ? 'Aula' : 'Revisão'}
+                                                        size="small"
+                                                        color={aula.tipoAtividade === 'aula' ? 'primary' : 'secondary'}
+                                                        sx={{ ml: 1, fontWeight: 700 }}
+                                                    />
                                                 </Typography>
                                             }
                                             secondary={
                                                 <React.Fragment>
-                                                    <Typography component="div" variant="body2" color="text.secondary"><Box component="span" sx={{ fontWeight: 'bold' }}>Laboratório:</Box> {aula.laboratorioSelecionado}</Typography>
-                                                    <Typography component="div" variant="body2" color="text.secondary"><Box component="span" sx={{ fontWeight: 'bold' }}>Data:</Box> {aula.dataInicio ? aula.dataInicio.format('dddd, DD [de] MMMM [de] YYYY') : 'N/A'}</Typography>
-                                                    <Typography component="div" variant="body2" color="text.secondary"><Box component="span" sx={{ fontWeight: 'bold' }}>Horário:</Box> {aula.dataInicio ? aula.dataInicio.format('HH:mm') : ''} - {aula.dataFim ? aula.dataFim.format('HH:mm') : ''}</Typography>
-                                                    {aula.tecnicosInfo && aula.tecnicosInfo.filter(t => t.uid !== currentUser.uid).length > 0 && (
-                                                        <Typography component="div" variant="caption" color="text.disabled" sx={{mt: 1, display: 'flex', alignItems: 'center'}}><GroupIcon fontSize="inherit" sx={{ mr: 0.5 }} />Com: {aula.tecnicosInfo.filter(t => t.uid !== currentUser.uid).map(t => t.name || t.email).join(', ')}</Typography>
+                                                    <Typography component="div" variant="body2" color="text.secondary">
+                                                        <Box component="span" sx={{ fontWeight: 'bold' }}>Laboratório:</Box> {aula.laboratorioSelecionado}
+                                                    </Typography>
+                                                    <Typography component="div" variant="body2" color="text.secondary">
+                                                        <Box component="span" sx={{ fontWeight: 'bold' }}>Data:</Box> {aula.dataInicio ? aula.dataInicio.format('dddd, DD [de] MMMM [de] YYYY') : 'N/A'}
+                                                    </Typography>
+                                                    <Typography component="div" variant="body2" color="text.secondary">
+                                                        <Box component="span" sx={{ fontWeight: 'bold' }}>Horário:</Box> {aula.horarioSlot || (aula.dataInicio ? `${aula.dataInicio.format('HH:mm')} - ${aula.dataFim ? aula.dataFim.format('HH:mm') : ''}` : '')}
+                                                    </Typography>
+                                                    {aula.tecnicosInfo && aula.tecnicosInfo.filter(t => t.uid !== uidTarget).length > 0 && (
+                                                        <Typography component="div" variant="caption" color="text.disabled" sx={{ mt: 1, display: 'flex', alignItems: 'center' }}>
+                                                            <GroupIcon fontSize="inherit" sx={{ mr: 0.5 }} />
+                                                            Com: {aula.tecnicosInfo.filter(t => t.uid !== uidTarget).map(t => t.name || t.email).join(', ')}
+                                                        </Typography>
                                                     )}
                                                 </React.Fragment>
                                             }

@@ -271,6 +271,44 @@ function ConfiguracoesPerfil() {
                         </Button>
                     </Grid>
 
+                    {/* PREFERÊNCIAS DE NOTIFICAÇÃO E HORÁRIO SILENCIOSO */}
+                    <Grid item xs={12}>
+                        <Divider sx={{ my: 1 }} />
+                        <Typography variant="h6" sx={{ mt: 2, mb: 1 }}>
+                            ⚙️ Preferências & Horário Silencioso
+                        </Typography>
+                        <Card variant="outlined" sx={{ p: 2.5, bgcolor: 'background.paper', borderRadius: 2 }}>
+                            <Typography variant="body2" color="text.secondary" paragraph>
+                                Escolha quando e como você quer ser notificado sobre designações e avisos da equipe.
+                            </Typography>
+
+                            <Grid container spacing={2}>
+                                <Grid item xs={12} sm={6}>
+                                    <TextField
+                                        label="Início do Horário Silencioso"
+                                        type="time"
+                                        defaultValue="22:00"
+                                        fullWidth
+                                        InputLabelProps={{ shrink: true }}
+                                        inputProps={{ step: 300 }}
+                                        helperText="Ex: Notificações pausadas às 22:00"
+                                    />
+                                </Grid>
+                                <Grid item xs={12} sm={6}>
+                                    <TextField
+                                        label="Fim do Horário Silencioso"
+                                        type="time"
+                                        defaultValue="07:00"
+                                        fullWidth
+                                        InputLabelProps={{ shrink: true }}
+                                        inputProps={{ step: 300 }}
+                                        helperText="Ex: Notificações retomadas às 07:00"
+                                    />
+                                </Grid>
+                            </Grid>
+                        </Card>
+                    </Grid>
+
                     {isEditMode ? (
                         <Grid item xs={12} sx={{ display: 'flex', gap: 2, justifyContent: 'flex-end', mt: 2 }}>
                             <Button variant="outlined" onClick={() => setIsEditMode(false)}>Cancelar</Button>

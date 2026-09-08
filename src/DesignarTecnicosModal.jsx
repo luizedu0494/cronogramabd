@@ -108,11 +108,23 @@ function DesignarTecnicosModal({ open, onClose, aula, setSnackBar }) {
             });
 
             if (idsParaNotificar.length > 0) {
-                await fetch('/api/send-push-notification', {
+                // Notificar via Web Push
+                fetch('/api/send-push-notification', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ uids: idsParaNotificar, title: 'Nova Designação', body: `Você foi designado para a aula: ${aula.title}.`, link: '/minhas-designacoes' }),
-                });
+                    body: JSON.stringify({ uids: idsParaNotificar, title: 'Nova Designação', body: `Você foi designado para a aula: ${aula.title || aula.assunto}.`, link: '/minhas-designacoes' }),
+                }).catch(err => console.error('Erro no push:', err));
+
+                // Registrar notificações In-App no Supabase para os técnicos adicionados
+                const registrosNotificacao = idsParaNotificar.map(uid => ({
+                    destinatario_uid: uid,
+                    tipo: 'designacao_tecnico',
+                    titulo: '🔬 Você foi designado para uma aula',
+                    corpo: `${aula.title || aula.assunto || 'Aula'} em ${aula.laboratorioSelecionado || aula.laboratorio || 'Laboratório'}`,
+                    aula_id: aula.id
+                }));
+                const { supabase } = await import('./supabaseConfig');
+                await supabase.from('notificacoes').insert(registrosNotificacao);
             }
 
             if(setSnackBar) setSnackBar({ open: true, message: 'Técnico(s) designado(s) com sucesso!', severity: 'success' });
