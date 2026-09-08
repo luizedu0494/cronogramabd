@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useMemo, useCallback, lazy, Suspense } from 'react';
 import { BrowserRouter as Router, Routes, Route, Link, Navigate, Outlet } from 'react-router-dom';
 import { auth, db, googleProvider } from './firebaseConfig';
+import { supabase } from './supabaseConfig';
+import { userService } from './services/userService';
 import { signInWithPopup, signOut, onAuthStateChanged } from 'firebase/auth';
 import { collection, query, where, onSnapshot } from 'firebase/firestore';
 import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
