@@ -4,15 +4,15 @@ import { supabase } from '../../supabaseConfig';
 import { useAuth } from '../../AuthContext';
 import {
   Container, Typography, Paper, Box, CircularProgress, Alert,
-  List, ListItem, ListItemText, ListItemSecondaryAction, IconButton,
+  List, ListItem, ListItemText, IconButton,
   TextField, Button, Dialog, DialogActions, DialogContent,
-  DialogContentText, DialogTitle, Tooltip, Divider, Chip, Snackbar // Adicionado Divider e Chip
+  DialogContentText, DialogTitle, Tooltip, Snackbar
 } from '@mui/material';
 import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline';
 import DeleteIcon from '@mui/icons-material/Delete';
 import EditIcon from '@mui/icons-material/Edit';
-import VisibilityIcon from '@mui/icons-material/Visibility'; // Ícone para "Ver Leituras"
-import CloseIcon from '@mui/icons-material/Close'; // Ícone para fechar modal
+import VisibilityIcon from '@mui/icons-material/Visibility';
+import CloseIcon from '@mui/icons-material/Close';
 
 import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
@@ -38,15 +38,44 @@ function GerenciarAvisos() {
   const [openConfirmDeleteDialog, setOpenConfirmDeleteDialog] = useState(false);
   const [avisoParaExcluir, setAvisoParaExcluir] = useState(null);
 
-  // --- NOVOS ESTADOS PARA O MODAL DE LEITURAS ---
+  // Modal de Leituras
   const [openLeiturasDialog, setOpenLeiturasDialog] = useState(false);
   const [avisoSelecionadoParaLeituras, setAvisoSelecionadoParaLeituras] = useState(null);
   const [listaDeLeituras, setListaDeLeituras] = useState([]);
   const [loadingLeituras, setLoadingLeituras] = useState(false);
-  // --- FIM DOS NOVOS ESTADOS ---
 
   const { currentUser, userProfile } = useAuth();
   const isCoordenador = userProfile?.role === 'coordenador';
+
+  const fetchAvisos = async () => {
+    try {
+      setLoading(true);
+      const { data, error: fetchErr } = await supabase
+        .from('avisos')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (fetchErr) throw fetchErr;
+
+      const avisosData = (data || []).map(item => ({
+        id: item.id,
+        titulo: item.titulo,
+        mensagem: item.mensagem,
+        autorNome: item.autor_nome,
+        autorUid: item.autor_uid,
+        dataCriacao: item.created_at ? dayjs(item.created_at) : null,
+        dataUltimaModificacao: item.updated_at ? dayjs(item.updated_at) : null
+      }));
+
+      setAvisos(avisosData);
+      setError('');
+    } catch (err) {
+      console.error("Erro ao buscar avisos:", err);
+      setError("Falha ao carregar os avisos.");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
     if (!isCoordenador) {
@@ -54,32 +83,116 @@ function GerenciarAvisos() {
       setError("Acesso negado. Apenas coordenadores podem gerenciar avisos.");
       return;
     }
-    setLoading(true);
-    const avisosRef = collection(db, 'avisos');
-    const q = query(avisosRef, orderBy('dataCriacao', 'desc'));
-    const unsubscribe = onSnapshot(q, (querySnapshot) => {
-      const avisosData = querySnapshot.docs.map(doc => ({
-        id: doc.id, ...doc.data(),
-        dataCriacao: doc.data().dataCriacao instanceof Timestamp ? dayjs(doc.data().dataCriacao.toDate()) : null,
-      }));
-      setAvisos(avisosData); setLoading(false);
-    }, (err) => {
-      console.error("Erro ao buscar avisos:", err);
-      setError("Falha ao carregar os avisos."); setLoading(false);
-    });
-    return () => unsubscribe();
+    fetchAvisos();
   }, [isCoordenador]);
 
-  const handleOpenFormDialogParaAdicionar = () => { /* ... seu código ... */ setAvisoEmEdicao(null); setTituloForm(''); setMensagemForm(''); setOpenFormDialog(true); };
-  const handleOpenFormDialogParaEditar = (aviso) => { /* ... seu código ... */ setAvisoEmEdicao(aviso); setTituloForm(aviso.titulo); setMensagemForm(aviso.mensagem); setOpenFormDialog(true); };
-  const handleCloseFormDialog = () => { /* ... seu código ... */ setOpenFormDialog(false); setAvisoEmEdicao(null); setTituloForm(''); setMensagemForm(''); };
-  const handleSalvarAviso = async () => { /* ... sua função handleSalvarAviso existente ... */ if (!tituloForm.trim() || !mensagemForm.trim()) { setSnackbarMessage("Título e mensagem são obrigatórios."); setSnackbarSeverity("error"); setOpenSnackbar(true); return; } setIsSubmitting(true); const dadosAviso = { titulo: tituloForm.trim(), mensagem: mensagemForm.trim(), }; try { if (avisoEmEdicao) { const avisoRef = doc(db, 'avisos', avisoEmEdicao.id); await updateDoc(avisoRef, { ...dadosAviso, dataUltimaModificacao: serverTimestamp(), }); setSnackbarMessage("Aviso atualizado!"); } else { await addDoc(collection(db, 'avisos'), { ...dadosAviso, dataCriacao: serverTimestamp(), autorNome: userProfile?.name || currentUser?.displayName || "Coordenador", autorUid: currentUser?.uid || "N/A", }); setSnackbarMessage("Aviso adicionado!"); } setSnackbarSeverity("success"); handleCloseFormDialog(); } catch (err) { console.error("Erro ao salvar aviso:", err); setSnackbarMessage(`Erro ao salvar: ${err.message}`); setSnackbarSeverity("error"); } finally { setIsSubmitting(false); setOpenSnackbar(true); }};
-  const handleAbrirConfirmacaoExcluir = (aviso) => { /* ... */ setAvisoParaExcluir(aviso); setOpenConfirmDeleteDialog(true); };
-  const handleFecharConfirmacaoExcluir = () => { /* ... */ setAvisoParaExcluir(null); setOpenConfirmDeleteDialog(false); };
-  const handleConfirmarExcluirAviso = async () => { /* ... */ if (!avisoParaExcluir) return; try { await deleteDoc(doc(db, 'avisos', avisoParaExcluir.id)); setSnackbarMessage("Aviso excluído!"); setSnackbarSeverity("success"); } catch (err) { console.error("Erro ao excluir:", err); setSnackbarMessage("Erro ao excluir."); setSnackbarSeverity("error"); } finally { handleFecharConfirmacaoExcluir(); setOpenSnackbar(true); } };
-  const handleCloseSnackbar = (event, reason) => { /* ... */ if (reason === 'clickaway') return; setOpenSnackbar(false); };
+  const handleOpenFormDialogParaAdicionar = () => {
+    setAvisoEmEdicao(null);
+    setTituloForm('');
+    setMensagemForm('');
+    setOpenFormDialog(true);
+  };
 
-  // --- NOVAS FUNÇÕES PARA O MODAL DE LEITURAS ---
+  const handleOpenFormDialogParaEditar = (aviso) => {
+    setAvisoEmEdicao(aviso);
+    setTituloForm(aviso.titulo);
+    setMensagemForm(aviso.mensagem);
+    setOpenFormDialog(true);
+  };
+
+  const handleCloseFormDialog = () => {
+    setOpenFormDialog(false);
+    setAvisoEmEdicao(null);
+    setTituloForm('');
+    setMensagemForm('');
+  };
+
+  const handleSalvarAviso = async () => {
+    if (!tituloForm.trim() || !mensagemForm.trim()) {
+      setSnackbarMessage("Título e mensagem são obrigatórios.");
+      setSnackbarSeverity("error");
+      setOpenSnackbar(true);
+      return;
+    }
+    setIsSubmitting(true);
+    try {
+      if (avisoEmEdicao) {
+        const { error: err } = await supabase
+          .from('avisos')
+          .update({
+            titulo: tituloForm.trim(),
+            mensagem: mensagemForm.trim(),
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', avisoEmEdicao.id);
+
+        if (err) throw err;
+        setSnackbarMessage("Aviso atualizado!");
+      } else {
+        const { error: err } = await supabase
+          .from('avisos')
+          .insert([{
+            titulo: tituloForm.trim(),
+            mensagem: mensagemForm.trim(),
+            autor_nome: userProfile?.name || currentUser?.displayName || "Coordenador",
+            autor_uid: currentUser?.id || currentUser?.uid || "N/A",
+            created_at: new Date().toISOString()
+          }]);
+
+        if (err) throw err;
+        setSnackbarMessage("Aviso adicionado!");
+      }
+      setSnackbarSeverity("success");
+      handleCloseFormDialog();
+      fetchAvisos();
+    } catch (err) {
+      console.error("Erro ao salvar aviso:", err);
+      setSnackbarMessage(`Erro ao salvar: ${err.message}`);
+      setSnackbarSeverity("error");
+    } finally {
+      setIsSubmitting(false);
+      setOpenSnackbar(true);
+    }
+  };
+
+  const handleAbrirConfirmacaoExcluir = (aviso) => {
+    setAvisoParaExcluir(aviso);
+    setOpenConfirmDeleteDialog(true);
+  };
+
+  const handleFecharConfirmacaoExcluir = () => {
+    setAvisoParaExcluir(null);
+    setOpenConfirmDeleteDialog(false);
+  };
+
+  const handleConfirmarExcluirAviso = async () => {
+    if (!avisoParaExcluir) return;
+    try {
+      const { error: err } = await supabase
+        .from('avisos')
+        .delete()
+        .eq('id', avisoParaExcluir.id);
+
+      if (err) throw err;
+
+      setSnackbarMessage("Aviso excluído!");
+      setSnackbarSeverity("success");
+      fetchAvisos();
+    } catch (err) {
+      console.error("Erro ao excluir:", err);
+      setSnackbarMessage("Erro ao excluir.");
+      setSnackbarSeverity("error");
+    } finally {
+      handleFecharConfirmacaoExcluir();
+      setOpenSnackbar(true);
+    }
+  };
+
+  const handleCloseSnackbar = (event, reason) => {
+    if (reason === 'clickaway') return;
+    setOpenSnackbar(false);
+  };
+
   const handleAbrirModalLeituras = async (aviso) => {
     setAvisoSelecionadoParaLeituras(aviso);
     setOpenLeiturasDialog(true);
@@ -87,24 +200,25 @@ function GerenciarAvisos() {
     setListaDeLeituras([]);
 
     try {
-      const leiturasRef = collection(db, 'avisos', aviso.id, 'leituras');
-      const qLeituras = query(leiturasRef, orderBy('dataLeitura', 'desc'));
-      const leiturasSnapshot = await getDocs(qLeituras);
-      
-      const leiturasData = leiturasSnapshot.docs.map(docSnap => {
-        const data = docSnap.data();
-        return {
-          id: docSnap.id, // UID do usuário que leu
-          userName: data.userName || docSnap.id, // Usa userName salvo, ou UID como fallback
-          dataLeitura: data.dataLeitura instanceof Timestamp ? dayjs(data.dataLeitura.toDate()) : null
-        };
-      });
+      const { data, error: err } = await supabase
+        .from('avisos_leituras')
+        .select('*')
+        .eq('aviso_id', aviso.id)
+        .order('created_at', { ascending: false });
+
+      if (err) throw err;
+
+      const leiturasData = (data || []).map(item => ({
+        id: item.id,
+        userName: item.user_name || item.user_id,
+        dataLeitura: item.created_at ? dayjs(item.created_at) : null
+      }));
       setListaDeLeituras(leiturasData);
     } catch (error) {
       console.error("Erro ao buscar leituras do aviso:", error);
       setSnackbarMessage("Erro ao carregar quem leu o aviso.");
       setSnackbarSeverity("error");
-      setOpenSnackbar(true); // Para mostrar o erro ao usuário
+      setOpenSnackbar(true);
     } finally {
       setLoadingLeituras(false);
     }
@@ -115,7 +229,6 @@ function GerenciarAvisos() {
     setAvisoSelecionadoParaLeituras(null);
     setListaDeLeituras([]);
   };
-  // --- FIM DAS NOVAS FUNÇÕES ---
 
   if (loading && avisos.length === 0) return (<Container sx={{ textAlign: 'center', mt: 4 }}><CircularProgress /></Container>);
   if (error && !isCoordenador) return (<Container sx={{ mt: 4 }}><Alert severity="error">{error}</Alert></Container>);
@@ -136,7 +249,7 @@ function GerenciarAvisos() {
               <Paper key={aviso.id} elevation={1} sx={{ mb: 2, p: 2 }}>
                 <ListItem alignItems="flex-start" disableGutters
                   secondaryAction={
-                    <Box sx={{display: 'flex', alignItems: 'center'}}> {/* Ajustado para row por padrão */}
+                    <Box sx={{display: 'flex', alignItems: 'center'}}>
                       <Tooltip title="Ver quem leu">
                         <IconButton edge="end" aria-label="view readers" sx={{mr:0.5}} onClick={() => handleAbrirModalLeituras(aviso)}>
                           <VisibilityIcon />
@@ -163,8 +276,8 @@ function GerenciarAvisos() {
                         <Typography variant="caption" color="text.secondary">
                           {aviso.dataCriacao ? `Criado em ${aviso.dataCriacao.format('DD/MM/YY HH:mm')} (${aviso.dataCriacao.fromNow()})` : 'Data desconhecida'}
                           {aviso.autorNome && ` por ${aviso.autorNome}`}
-                          {aviso.dataUltimaModificacao && aviso.dataUltimaModificacao instanceof Timestamp && (
-                            <em> (Editado {dayjs(aviso.dataUltimaModificacao.toDate()).fromNow()})</em>
+                          {aviso.dataUltimaModificacao && (
+                            <em> (Editado {aviso.dataUltimaModificacao.fromNow()})</em>
                           )}
                         </Typography>
                       </>
@@ -178,17 +291,34 @@ function GerenciarAvisos() {
         )}
       </Paper>
 
-      {/* Dialog para Adicionar/Editar Aviso (existente) */}
+      {/* Dialog para Adicionar/Editar Aviso */}
       <Dialog open={openFormDialog} onClose={handleCloseFormDialog} fullWidth maxWidth="sm">
         <DialogTitle>{avisoEmEdicao ? "Editar Aviso" : "Adicionar Novo Aviso"}</DialogTitle>
-        <DialogContent><TextField autoFocus margin="dense" id="titulo" label="Título" type="text" fullWidth variant="outlined" value={tituloForm} onChange={(e) => setTituloForm(e.target.value)} sx={{ mb: 2 }}/><TextField margin="dense" id="mensagem" label="Mensagem" type="text" fullWidth multiline rows={4} variant="outlined" value={mensagemForm} onChange={(e) => setMensagemForm(e.target.value)}/></DialogContent>
-        <DialogActions><Button onClick={handleCloseFormDialog}>Cancelar</Button><Button onClick={handleSalvarAviso} variant="contained" disabled={isSubmitting}>{isSubmitting ? <CircularProgress size={24} /> : (avisoEmEdicao ? "Salvar" : "Adicionar")}</Button></DialogActions>
+        <DialogContent>
+          <TextField autoFocus margin="dense" id="titulo" label="Título" type="text" fullWidth variant="outlined" value={tituloForm} onChange={(e) => setTituloForm(e.target.value)} sx={{ mb: 2 }}/>
+          <TextField margin="dense" id="mensagem" label="Mensagem" type="text" fullWidth multiline rows={4} variant="outlined" value={mensagemForm} onChange={(e) => setMensagemForm(e.target.value)}/>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleCloseFormDialog}>Cancelar</Button>
+          <Button onClick={handleSalvarAviso} variant="contained" disabled={isSubmitting}>
+            {isSubmitting ? <CircularProgress size={24} /> : (avisoEmEdicao ? "Salvar" : "Adicionar")}
+          </Button>
+        </DialogActions>
       </Dialog>
 
-      {/* Dialog para Confirmar Exclusão (existente) */}
-      <Dialog open={openConfirmDeleteDialog} onClose={handleFecharConfirmacaoExcluir}><DialogTitle>Confirmar Exclusão</DialogTitle><DialogContent><DialogContentText>Excluir aviso: "{avisoParaExcluir?.titulo}"?</DialogContentText></DialogContent><DialogActions><Button onClick={handleFecharConfirmacaoExcluir}>Cancelar</Button><Button onClick={handleConfirmarExcluirAviso} color="error">Excluir</Button></DialogActions></Dialog>
+      {/* Dialog para Confirmar Exclusão */}
+      <Dialog open={openConfirmDeleteDialog} onClose={handleFecharConfirmacaoExcluir}>
+        <DialogTitle>Confirmar Exclusão</DialogTitle>
+        <DialogContent>
+          <DialogContentText>Excluir aviso: "{avisoParaExcluir?.titulo}"?</DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleFecharConfirmacaoExcluir}>Cancelar</Button>
+          <Button onClick={handleConfirmarExcluirAviso} color="error">Excluir</Button>
+        </DialogActions>
+      </Dialog>
 
-      {/* --- NOVO DIÁLOGO PARA EXIBIR LEITURAS --- */}
+      {/* DIÁLOGO PARA EXIBIR LEITURAS */}
       <Dialog open={openLeiturasDialog} onClose={handleFecharModalLeituras} fullWidth maxWidth="sm">
         <DialogTitle>
           Visualizações do Aviso: "{avisoSelecionadoParaLeituras?.titulo}"
@@ -218,11 +348,12 @@ function GerenciarAvisos() {
           <Button onClick={handleFecharModalLeituras}>Fechar</Button>
         </DialogActions>
       </Dialog>
-      {/* --- FIM DO NOVO DIÁLOGO --- */}
 
-      <Snackbar open={openSnackbar} autoHideDuration={6000} onClose={handleCloseSnackbar} anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}><Alert onClose={handleCloseSnackbar} severity={snackbarSeverity} sx={{ width: '100%' }}>{snackbarMessage}</Alert></Snackbar>
+      <Snackbar open={openSnackbar} autoHideDuration={6000} onClose={handleCloseSnackbar} anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}>
+        <Alert onClose={handleCloseSnackbar} severity={snackbarSeverity} sx={{ width: '100%' }}>{snackbarMessage}</Alert>
+      </Snackbar>
     </Container>
   );
 }
 
-export default GerenciarAvisos;
+export default GerenciarAvisos;
