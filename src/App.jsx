@@ -625,10 +625,10 @@ function App() {
                                         {darkMode ? <Sun size={20}/> : <Moon size={20}/>}
                                     </IconButton>
                                     <IconButton onClick={handleProfileMenuOpen} color="inherit" aria-label="Menu de perfil">
-                                        {userProfileData?.photoURL ? (
-                                            <Avatar src={userProfileData.photoURL} sx={{ width: 24, height: 24 }} />
+                                        {(userProfileData?.photo_url || userProfileData?.photoURL) ? (
+                                            <Avatar src={userProfileData.photo_url || userProfileData.photoURL} sx={{ width: 28, height: 28 }} />
                                         ) : (
-                                            <AccountCircle sx={{ fontSize: 24 }} />
+                                            <AccountCircle sx={{ fontSize: 28 }} />
                                         )}
                                     </IconButton>
                                     <IconButton edge="end" onClick={handleMobileMenuOpen} color="inherit" aria-label="Menu principal">
