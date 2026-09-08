@@ -1,22 +1,17 @@
-# CronoLab — Cronograma de Laboratórios
+# CronoLab — Sistema de Gestão de Cronogramas de Laboratórios
 
-> Sistema de gestão de cronogramas e agendamentos para os laboratórios do **Centro Universitário CESMAC**, Maceió — AL.
+> Plataforma inteligente e moderna para gestão descentralizada de agendamentos, cronogramas e uso de laboratórios acadêmicos em **Universidades e Instituições de Ensino Superior (IES)**.
 
 ![Banner](./imgbanner.png)
-
-<p align="center">
-  <img src="./src/assets/images/cesmac-logo.png" alt="CESMAC" height="48"/>
-</p>
 
 <p align="center">
   <a href="#sobre">Sobre</a> •
   <a href="#perfis-de-acesso">Perfis de Acesso</a> •
   <a href="#funcionalidades">Funcionalidades</a> •
   <a href="#novidades-recentes">Novidades Recentes</a> •
-  <a href="#identidade-visual-cesmac">Identidade Visual</a> •
+  <a href="#identidade-visual-e-design">Identidade & Design</a> •
   <a href="#arquitetura-e-ia">Arquitetura & IA</a> •
   <a href="#tecnologias">Tecnologias</a> •
-  <a href="#estrutura-do-projeto">Estrutura do Projeto</a> •
   <a href="#variaveis-de-ambiente">Variáveis de Ambiente</a> •
   <a href="#instalacao">Instalação</a> •
   <a href="#licenca">Licença</a>
@@ -40,157 +35,116 @@
 
 ## Sobre
 
-O **CronoLab** é um sistema web desenvolvido para resolver um problema real do dia a dia dos laboratórios do CESMAC: a gestão manual e descentralizada de agendamentos.
+O **CronoLab** é uma solução completa desenvolvida para resolver um desafio crítico no ambiente acadêmico: a **gestão descentralizada de laboratórios de aulas e pesquisas**.
 
-O sistema centraliza o cronograma de todos os laboratórios em uma única plataforma, com perfis distintos para coordenadores, técnicos e alunos. Substitui planilhas e processos manuais por um painel inteligente com verificação automática de conflitos, análise de ocupação e notificações em tempo real.
+O sistema centraliza a agenda de múltiplos espaços físicos em uma única interface inteligente, atendendo às necessidades de **Coordenadores**, **Técnicos de Laboratório** e **Alunos**. Ele substitui planilhas manuais e conflitos de horários por um motor relacional de verificação automática de choques de agenda, análise preditiva de ocupação e atualizações em tempo real.
 
 **Destaques:**
-- 🏫 Desenvolvido para uso real no CESMAC — não é um projeto de demonstração
-- ⚡ **Nova Arquitetura Supabase (PostgreSQL)** — alta velocidade relacional com assinaturas `postgres_changes` em tempo real
-- 🔐 **Autenticação Flexível & Segura**: Login com E-mail + Senha (com redefinição por e-mail) ou **Login com Google OAuth**
-- 📱 Responsivo, instalável como PWA (Android/iOS/Desktop) e com notificações push
-- 🌙 Dark mode com identidade visual da instituição
-- 🤖 Assistente de IA híbrido (motor local + Groq/Llama-3.3-70b na Vercel Functions) para consultas em linguagem natural sobre o cronograma
-- 📥 Importação inteligente de cronogramas externos (Excel, CSV, JSON e Word) com reconhecimento automático de colunas
-- 🔔 Notificações via Telegram e Web Push para alterações no cronograma
-- 🛡️ Infraestrutura segura hospedada na Vercel com banco PostgreSQL no Supabase (Zero Custo)
+- 🏫 **Pronto para Instituições de Ensino**: Adequado para universidades, faculdades e centros tecnológicos com múltiplos laboratórios
+- ⚡ **Arquitetura Supabase (PostgreSQL)**: Consultas relacionais de alta velocidade e atualizações em tempo real via WebSockets (`postgres_changes`)
+- 🔐 **Autenticação Flexível & Segura**: Login por E-mail + Senha (com suporte a redefinição) ou **Login Social com Google OAuth**
+- 📱 **PWA Responsivo**: Instalável em smartphones e desktops (Android/iOS/Windows) com notificações push
+- 🌙 **Design de Alto Padrão**: Dark mode nativo com paleta de cores harmoniosa, legibilidade refinada e animações fluidas
+- 🤖 **Assistente de IA Integrado**: Consultas em linguagem natural sobre aulas, horários vagos e disponibilidade de espaços
+- 📥 **Importação Inteligente de Cronogramas**: Reconhecimento automático de colunas em arquivos Excel, CSV, JSON e Word (.docx)
+- 🔔 **Notificações em Tempo Real**: Envio de alertas via Telegram e Web Push em mudanças na grade
 
 ---
 
 ## Perfis de Acesso
 
-O acesso é realizado através de **E-mail + Senha** ou **Login com Google**. No primeiro login, o cadastro fica com status **Pendente** até que um coordenador aprove o usuário e defina seu cargo. Existem três perfis:
+O acesso ao sistema é controlado por um fluxo de aprovação. Ao se cadastrar via **E-mail + Senha** ou **Google**, o usuário recebe o status **Pendente** até que a coordenação aprove a conta e defina o perfil adequado:
 
 ### 👨‍💼 Coordenador
-Visão estratégica e administrative completa do sistema:
-- Painel com KPIs (aulas hoje, revisões hoje, total de aulas/revisões do semestre, propostas pendentes, eventos de manutenção)
-- Agendar Aula / Agendar Evento diretamente (sem passar pelo fluxo de proposta)
-- **Aprovações**: aprovar, rejeitar e designar técnicos para propostas enviadas
-- **Usuários**: aprovar novos cadastros, alterar cargos e remover usuários
-- **Importar Cronograma Externo**: subir planilhas/documentos de outras fontes e converter em aulas
-- **Eventos**: cadastrar períodos acadêmicos (provas, feriados, recessos) e eventos de manutenção/bloqueio de laboratório
-- **Gerenciar Avisos**: publicar comunicados (normal, importante, urgente)
-- **Análise de Aulas e Eventos**: gráficos de ocupação por laboratório, curso, turno, evolução mensal e taxa de aprovação
-- **Verificar Integridade dos Dados**: detecta aulas com dados faltando, conflitos de horário e tipos de atividade inválidos
-- Ativa/desativa a visualização do Calendário Acadêmico para os alunos
+Visão estratégica e administrativa completa:
+- **Painel de Indicadores (KPIs)**: métricas de ocupação em tempo real, total de aulas, eventos e propostas pendentes
+- **Agendamento Direto**: inclusão imediata de aulas e bloqueios de manutenção
+- **Central de Aprovações**: aprovação, rejeição e designação de técnicos responsáveis por propostas enviadas
+- **Gestão de Usuários**: aprovação de acessos, atribuição de funções e gerenciamento de permissões
+- **Importação de Cronogramas**: conversão em lote de documentos externos em agendamentos oficiais
+- **Avisos e Comunicados**: publicação de murais informativos categorizados por prioridade (Normal, Importante, Urgente)
 
-### 🧑‍🔬 Técnico
-Visão operacional do dia a dia do laboratório:
-- Onboarding inicial para selecionar os laboratórios monitorados (seleção salva por dispositivo)
-- Painel com cronograma oficial filtrado pelos laboratórios favoritos e agenda privada do dia
-- **Propor Aula / Propor Atividade**: envia propostas de aula para aprovação do coordenador
-- **Minhas Propostas**: acompanha status (pendente, aprovada, rejeitada)
-- **Minhas Designações**: lista as aulas em que foi designado como responsável
-- **Revisões**: agenda privada (Agenda do Técnico) para revisões de conteúdo, pré-provas, monitorias e preparações de material
-- Acesso ao Assistente de IA, Download do Cronograma, Avisos e Ajuda/FAQ
+### 🧑‍🔬 Técnico de Laboratório
+Gestão operacional e manutenção dos espaços:
+- **Seleção de Laboratórios Favoritos**: acompanhamento focado dos espaços sob sua responsabilidade
+- **Envio de Propostas**: solicitação de reserva de horário para aulas práticas ou atividades especiais
+- **Minhas Designações & Agenda**: acompanhamento de horários atribuídos pela coordenação
+- **Reserva de Revisões/Monitorias**: agendamento de sessões preparatórias e manutenção preventiva de equipamentos
 
 ### 🎓 Aluno
-Perfil de leitura, liberado pelo coordenador:
-- Visualização do Calendário Acadêmico (quando habilitado pela coordenação)
-- Consulta ao cronograma público de aulas dos laboratórios
+Perfil de consulta pública:
+- Visualização do Cronograma de Aulas e Calendário Acadêmico institucional liberado pela coordenação
 
 ---
 
 ## Funcionalidades
 
-### 📅 Cronograma e Agendamento Relacional
-- Calendário com blocos de horário fixos (07:00–09:10, 09:30–12:00, 13:00–15:10, 15:30–18:00, 18:30–20:10, 20:30–22:00) para padronizar agendamentos
-- Verificação automática de conflitos de horário via queries relacionais no PostgreSQL
-- Histórico de Aulas com auditoria de inclusões/exclusões em tempo real
-- Grade de disponibilidade por laboratório
+### 📅 Agendamento e Grade Relacional
+- Blocos padronizados de horários acadêmicos (Manhã, Tarde e Noite)
+- Verificação instantânea de conflitos de horário e colisão de turmas via PostgreSQL
+- Auditoria e histórico completo de alterações e exclusões
 
-### 🔐 Autenticação & Segurança de Conta
-- Login com **E-mail e Senha** com validação de expressão regular (Regex)
-- Opção **"Esqueceu e-mail ou senha?"** enviando link de redefinição direta por e-mail pelo Supabase Auth
-- **Botão "Continuar com o Google"** com branding oficial Google SVG
-- Cadastro de novos usuários com pendência de aprovação automática
+### 🔐 Autenticação & Recuperação de Conta
+- Formulário de acesso com validação estrita de e-mail (Regex)
+- Mecanismo integrado de **"Esqueceu sua senha?"** disparando links de redefinição por e-mail
+- Botão "Continuar com o Google" em conformidade com as diretrizes visuais da Google
 
-### ✅ Fluxo de Propostas e Aprovações
-- Técnicos propõem aulas/eventos; coordenadores aprovam, rejeitam ou designam responsáveis
-- Designação de múltiplos técnicos por aula (`DesignarTecnicosModal`)
-- Contador de propostas pendentes em tempo real no menu do coordenador
-
-### 📥 Importação Inteligente de Cronogramas
-- Upload de cronogramas externos em **Excel, CSV, JSON e Word (.docx)**
-- Reconhecimento automático de colunas, datas, cursos, disciplinas, docentes e turnos
+### 📥 Importação e Exportação de Dados
+- Leitura e mapeamento automático de dados provenientes de **Excel, CSV, JSON e Word**
+- Exportação multi-formato em **Excel (.xlsx)** com abas detalhadas, **iCalendar (.ics)** para integração com Google/Apple Calendar e relatórios em **PDF**
 
 ### 🤖 Assistente de IA
-- Orquestração híbrida: motor de regras locais + Vercel Serverless Function `/api/groq.js` (`llama-3.3-70b-versatile`)
-- Consultas estruturadas sobre aulas do dia, professores, disponibilidade e análises de ocupação
-
-### 🔔 Avisos e Notificações
-- Mural de Avisos com três níveis (normal, importante, urgente) e controle de leitura
-- Notificações via **Bot do Telegram** e Web Push (FCM) para atualizações de agendamentos
+- Suporte a consultas em linguagem natural (ex: *"Quais laboratórios de informática estão livres terça à tarde?"*) via Vercel Serverless Functions (`llama-3.3-70b`)
 
 ---
 
 ## Novidades Recentes
 
-> Resumo da migração de banco de dados e melhorias de segurança.
+### 🐘 Migração Supabase PostgreSQL + Vercel
+- Transição completa para banco relacional de alto desempenho hospedado no Supabase com suporte WebSocket nativo.
+- Hospedagem global rápida e sem custos no Vercel.
 
-### 🐘 Migração completa para Supabase (PostgreSQL) + Vercel Hosting
-- **Arquitetura Relacional**: Migração total de dados e schema de NoSQL para PostgreSQL relacional com tabelas (`users`, `aulas`, `aula_cursos`, `aula_tecnicos`, `eventos_manutencao`, `avisos`, `logs`).
-- **Realtime nativo**: Transição de `onSnapshot` para inscrições WebSocket `postgres_changes` via Supabase Client.
-- **Deploy Continuo na Vercel**: Hospedagem global sem custo, integrada com Vercel Functions para rotas de IA e autenticação.
-
-### 🔐 Autenticação com Senha & Recuperação de Conta
-- **Suporte a Senha e Cadastro**: Inclusão de campos para senha criptografada e opção de cadastro direto na tela de login.
-- **Recuperação de Senha por E-mail**: Integração com Supabase Auth Reset para enviar instruções seguras de redefinição.
-- **Validação Estrita de E-mail**: Expressão regular Regex impedindo entradas inválidas no formulário.
-- **Identidade Google Atualizada**: Botão de login social estilizado com o vetor colorido oficial da Google.
+### 🔐 Segurança de Acesso Atualizada
+- Sistema de login híbrido suportando Senha Criptografada + Google OAuth.
+- Correção de foco contínuo e estabilidade de digitação no login.
 
 ---
 
-## Identidade Visual CESMAC
+## Identidade Visual e Design
 
-O sistema usa as cores institucionais do CESMAC extraídas diretamente do logo oficial:
+O **CronoLab** adota um sistema de design moderno e acessível:
 
-| Token | Cor | Uso |
+| Token | Cor | Aplicação no Sistema |
 | :--- | :--- | :--- |
-| **Azul principal** | `#1E7EC8` | Botões, links, KPIs, navbar |
-| **Azul claro** | `#4AADE8` | Destaques, chips, dark mode |
-| **Dourado** | `#F5C518` / `#D4940A` | Revisões, alertas, avisos |
-| **Verde Sucesso** | `#00C853` / `#3ECF8E` | Destaques de ação, Supabase |
-| **Fundo dark** | `#0B0F18` | Background no modo escuro |
-
-A fonte utilizada é **Sora** — legível no mobile e com personalidade acadêmica.
+| **Azul Principal** | `#1E7EC8` | Botões primários, cabeçalhos e elementos ativos |
+| **Azul Destaque** | `#4AADE8` | Detalhes no modo escuro, ícones e estados hover |
+| **Dourado Acadêmico**| `#F5C518` | Alertas de revisões, eventos e avisos importantes |
+| **Verde Sucesso** | `#00C853` / `#3ECF8E` | Indicadores de disponibilidade, status aprovado |
+| **Fundo Dark Mode** | `#0B0F18` | Interface elegante e confortável para uso noturno |
 
 ---
 
-## Arquitetura e IA
+## Arquitetura & Tecnologias
 
-O CronoLab combina uma **arquitetura de alto desempenho** sem custos de servidor:
-
-- **Banco de Dados**: Supabase PostgreSQL com Realtime WebSockets (`src/supabaseConfig.js`).
-- **Serverless API**: Vercel Serverless Functions (`/api/groq.js`, `/api/auth-validate.js`).
-- **LangChain.js + Groq API**: Orquestração declarativa (`llama-3.3-70b-versatile`) com streaming em tempo real.
-- **Hospedagem**: Vercel Platform (`https://cronogramabd.vercel.app`).
-
----
-
-## Tecnologias
-
-- **Frontend**: React 19, TypeScript 5, Vite 7, Material UI (MUI v7), DayJS, Lucide React
-- **Banco de Dados & Auth**: Supabase PostgreSQL, Supabase Realtime, Supabase Auth
-- **IA & RAG**: LangChain.js, Groq API (`llama-3.3-70b-versatile`)
-- **Documentos & OCR**: Tesseract.js, jsPDF, ExcelJS, SheetJS (`xlsx`), PapaParse, Mammoth
-- **Hospedagem / Serverless**: Vercel Platform & Vercel Functions (`/api`)
-- **Notificações**: Bot do Telegram, FCM Web Push
+- **Frontend**: React 19, TypeScript 5, Vite 7, Material UI (MUI v7), Lucide Icons
+- **Backend & Database**: Supabase PostgreSQL, Supabase Realtime, Supabase Auth
+- **Serverless Functions**: Vercel Serverless API (`/api`)
+- **Inteligência Artificial**: LangChain.js & Groq API (`llama-3.3-70b-versatile`)
+- **Documentos & Mídia**: ExcelJS, SheetJS (`xlsx`), Tesseract.js (OCR), jsPDF
 
 ---
 
 ## Variáveis de Ambiente
 
-Copie `.env.example` para `.env` e preencha as chaves:
+Copie `.env.example` para `.env` e preencha suas credenciais:
 
-| Variável | Descrição |
-| :--- | :--- |
-| `VITE_SUPABASE_URL` | URL do projeto Supabase (`https://...supabase.co`) |
-| `VITE_SUPABASE_ANON_KEY` | Chave Anônima do Supabase |
-| `VITE_CLOUDINARY_CLOUD_NAME` | Nome da conta Cloudinary |
-| `VITE_CLOUDINARY_UPLOAD_PRESET` | Preset de upload Cloudinary |
-| `VITE_TELEGRAM_BOT_TOKEN` | Token do bot do Telegram |
-| `VITE_GROQ_API_KEY` | Chave da API Groq (Assistente de IA) |
+```env
+VITE_SUPABASE_URL=https://seu-projeto.supabase.co
+VITE_SUPABASE_ANON_KEY=sua-chave-anonima
+VITE_CLOUDINARY_CLOUD_NAME=seu-cloud-name
+VITE_TELEGRAM_BOT_TOKEN=seu-token-bot
+VITE_GROQ_API_KEY=sua-chave-groq
+```
 
 ---
 
@@ -204,13 +158,13 @@ cd cronograma-lab-frontend
 # 2. Instalar dependências
 npm install
 
-# 3. Configurar variáveis de ambiente
+# 3. Configurar ambiente
 cp .env.example .env
 
-# 4. Rodar servidor de desenvolvimento
+# 4. Rodar em desenvolvimento
 npm run dev
 
-# 5. Build para produção
+# 5. Build de produção
 npm run build
 ```
 
