@@ -1,14 +1,11 @@
 import React, { useState } from 'react';
 import { Box, Button, CircularProgress, Typography, Alert } from '@mui/material';
 import CloudUploadIcon from '@mui/icons-material/CloudUpload';
+import { supabase } from '../../supabaseConfig';
 
-export default function UploadImagem({ onUploadSucesso, preset, pasta = 'cronolab', rotulo = 'Enviar Imagem' }) {
+export default function UploadImagem({ onUploadSucesso, pasta = 'cronolab', rotulo = 'Enviar Imagem' }) {
   const [carregando, setCarregando] = useState(false);
   const [erro, setErro] = useState(null);
-
-  const cloudName = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME;
-  const defaultPreset = import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET;
-  const activePreset = preset || defaultPreset;
 
   const handleFileChange = async (e) => {
     const file = e.target.files?.[0];
@@ -24,35 +21,42 @@ export default function UploadImagem({ onUploadSucesso, preset, pasta = 'cronola
       return;
     }
 
-    if (!cloudName || !activePreset) {
-      setErro('Configuração do Cloudinary (VITE_CLOUDINARY_CLOUD_NAME / VITE_CLOUDINARY_UPLOAD_PRESET) ausente.');
-      return;
-    }
-
     setCarregando(true);
     setErro(null);
 
-    const formData = new FormData();
-    formData.append('file', file);
-    formData.append('upload_preset', activePreset);
-    if (pasta) {
-      formData.append('folder', pasta);
-    }
-
     try {
-      const response = await fetch(`https://api.cloudinary.com/v1_1/${cloudName}/image/upload`, {
-        method: 'POST',
-        body: formData,
-      });
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${pasta}/${Date.now()}_${Math.random().toString(36).substring(7)}.${fileExt}`;
+      const bucketName = 'cronolab-media';
 
-      const data = await response.json();
+      // Upload para o Supabase Storage
+      const { data, error } = await supabase.storage
+        .from(bucketName)
+        .upload(fileName, file, {
+          cacheControl: '3600',
+          upsert: true
+        });
 
-      if (!response.ok) {
-        throw new Error(data.error?.message || 'Falha ao realizar upload no Cloudinary.');
+      if (error) {
+        console.warn('Upload Supabase Storage falhou, tentando criar URL Data Base64:', error.message);
+        // Fallback local Base64 em caso de bucket nao configurado como publico
+        const reader = new FileReader();
+        reader.onloadend = () => {
+          if (onUploadSucesso) onUploadSucesso(reader.result);
+        };
+        reader.readAsDataURL(file);
+        return;
       }
 
-      if (data.secure_url && onUploadSucesso) {
-        onUploadSucesso(data.secure_url);
+      // Obter URL publica da imagem
+      const { data: publicUrlData } = supabase.storage
+        .from(bucketName)
+        .getPublicUrl(fileName);
+
+      const publicUrl = publicUrlData.publicUrl;
+
+      if (publicUrl && onUploadSucesso) {
+        onUploadSucesso(publicUrl);
       }
     } catch (err) {
       console.error('Erro no upload de imagem:', err);

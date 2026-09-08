@@ -1,11 +1,5 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { db } from './firebaseConfig';
-import EmptyState from './components/EmptyState';
-import DialogConfirmacao from './components/DialogConfirmacao';
-import {
-  collection, query, where, getDocs, doc, deleteDoc, Timestamp, orderBy,
-  updateDoc, writeBatch, limit, startAfter, addDoc, serverTimestamp
-} from 'firebase/firestore';
+import { supabase } from './supabaseConfig';
 import {
   Button, Container, Paper, Typography, Box, CircularProgress, Alert, Snackbar,
   FormControl, InputLabel, Select, MenuItem, TextField, Grid, OutlinedInput,

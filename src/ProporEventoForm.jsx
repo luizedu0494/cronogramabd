@@ -10,10 +10,7 @@ import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import { LocalizationProvider } from '@mui/x-date-pickers';
 import { DatePicker } from '@mui/x-date-pickers';
 import { useNavigate, useParams } from 'react-router-dom';
-import { db } from './firebaseConfig';
-import {
-    collection, addDoc, serverTimestamp, doc, getDoc, updateDoc, Timestamp, query, where, getDocs, writeBatch
-} from 'firebase/firestore';
+import { supabase } from './supabaseConfig';
 import dayjs from 'dayjs';
 import 'dayjs/locale/pt-br';
 // IMPORTANTE: Plugin para verificar intervalos

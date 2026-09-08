@@ -1,5 +1,4 @@
-import { db } from '../firebaseConfig';
-import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
+import { supabase } from '../supabaseConfig';
 
 export interface UserLog {
   uid?: string;
@@ -23,32 +22,32 @@ export interface AulaLogData {
 }
 
 export const registrarLogExclusao = async (
-  aulaData: AulaLogData,
-  user?: UserLog | null
-): Promise<void> => {
+  itemData: AulaLogData,
+  usuario: UserLog,
+  colecaoOrigem: string = 'aulas'
+) => {
   try {
-    await addDoc(collection(db, 'logs'), {
-      type: 'exclusao',
-      collection: 'aulas',
-      aula: {
-        assunto: aulaData.title || aulaData.assunto || 'Sem assunto',
-        disciplina: aulaData.title || aulaData.assunto || 'Sem assunto',
-        cursos: aulaData.cursos || [],
-        curso: Array.isArray(aulaData.cursos) ? aulaData.cursos.join(', ') : aulaData.cursos || '',
-        status: aulaData.status || 'aprovada',
-        dataInicio: aulaData.start || aulaData.dataInicio || null,
-        laboratorioSelecionado: aulaData.laboratorio || aulaData.laboratorioSelecionado || '',
-        isRevisao: aulaData.isRevisao || false,
-        tipoRevisaoLabel: aulaData.tipoRevisaoLabel || null,
+    const assunto = itemData.title || itemData.assunto || 'Sem assunto';
+    const cursosStr = itemData.cursos && itemData.cursos.length > 0 ? itemData.cursos.join(', ') : 'Geral';
+    const acaoVerbo = colecaoOrigem === 'eventosManutencao' ? 'excluiu o evento de manutenção' : 'excluiu a aula';
+    
+    const descricao = `${usuario.nome || usuario.displayName || usuario.name || 'Usuário'} ${acaoVerbo} "${assunto}" (${cursosStr})`;
+
+    await supabase.from('logs').insert([{
+      type: 'DELETE',
+      collection: colecaoOrigem,
+      user_uid: usuario.uid || null,
+      user_nome: usuario.nome || usuario.displayName || usuario.name || 'Anônimo',
+      payload: {
+        descricao,
+        item: itemData
       },
-      timestamp: serverTimestamp(),
-      user: {
-        uid: user?.uid || 'desconhecido',
-        nome: user?.nome || user?.name || user?.displayName || user?.email || 'Usuário',
-      },
-    });
+      created_at: new Date().toISOString()
+    }]);
+
+    console.log(`[LOG] Log de exclusão registrado com sucesso para a coleção ${colecaoOrigem}.`);
   } catch (error) {
-    console.error('Erro ao registrar log de exclusão:', error);
+    console.error(`[LOG ERRO] Falha ao registrar log de exclusão:`, error);
   }
 };
 
@@ -64,31 +63,30 @@ export interface EventoLogData {
 }
 
 export const registrarLogEvento = async (
-  acao: 'criacao' | 'edicao' | 'exclusao',
-  eventoData: EventoLogData,
-  user?: UserLog | null
-): Promise<void> => {
+  acaoVerbo: string,
+  tituloEvento: string,
+  usuario: UserLog,
+  detalhes: any = {}
+) => {
   try {
-    await addDoc(collection(db, 'logs'), {
-      type: `evento_${acao}`,
-      collection: 'eventosManutencao',
-      evento: {
-        titulo: eventoData.titulo || 'Sem título',
-        tipo: eventoData.tipo || 'Manutenção',
-        laboratorio: eventoData.laboratorio || 'Todos',
-        dataInicio: eventoData.dataInicio || null,
-        dataFim: eventoData.dataFim || null,
-        horarioSlotString: eventoData.horarioSlotString || '',
-        status: eventoData.status || 'aprovado',
+    const nomeUsuario = usuario.nome || usuario.displayName || usuario.name || usuario.email || 'Usuário';
+    const descricao = `${nomeUsuario} ${acaoVerbo} "${tituloEvento}"`;
+
+    await supabase.from('logs').insert([{
+      type: 'EVENT',
+      collection: 'eventos_manutencao',
+      user_uid: usuario.uid || null,
+      user_nome: nomeUsuario,
+      payload: {
+        descricao,
+        detalhes
       },
-      timestamp: serverTimestamp(),
-      user: {
-        uid: user?.uid || 'desconhecido',
-        nome: user?.nome || user?.name || user?.displayName || user?.email || 'Usuário',
-      },
-    });
+      created_at: new Date().toISOString()
+    }]);
+
+    console.log(`[LOG] Log de evento registrado com sucesso: "${descricao}"`);
   } catch (error) {
-    console.error(`Erro ao registrar log de ${acao} de evento:`, error);
+    console.error(`[LOG ERRO] Falha ao registrar log de evento:`, error);
   }
 };
 

@@ -1,11 +1,6 @@
 // src/GerenciarAvisos.js
 import React, { useState, useEffect } from 'react';
-import { db } from '../../firebaseConfig';
-import {
-  collection, query, orderBy, onSnapshot, addDoc,
-  deleteDoc, doc, serverTimestamp, Timestamp, updateDoc,
-  getDocs // Adicionado getDocs para buscar leituras
-} from 'firebase/firestore';
+import { supabase } from '../../supabaseConfig';
 import { useAuth } from '../../AuthContext';
 import {
   Container, Typography, Paper, Box, CircularProgress, Alert,

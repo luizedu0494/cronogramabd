@@ -11,10 +11,8 @@ import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import { LocalizationProvider } from '@mui/x-date-pickers';
 import { DatePicker } from '@mui/x-date-pickers';
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
-import { db } from './firebaseConfig';
-import {
-    collection, addDoc, serverTimestamp, doc, getDoc, updateDoc, Timestamp, query, where, getDocs, writeBatch
-} from 'firebase/firestore';
+import { supabase } from './supabaseConfig';
+import { aulaService } from './services/aulaService';
 import dayjs from 'dayjs';
 import 'dayjs/locale/pt-br';
 import { LISTA_LABORATORIOS, TIPOS_LABORATORIO } from './constants/laboratorios';

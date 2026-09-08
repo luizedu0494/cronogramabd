@@ -1,10 +1,6 @@
 // src/PainelAvisos.jsx
 import React, { useState, useEffect, useCallback } from 'react';
-import { db } from './firebaseConfig';
-import {
-  collection, query, orderBy, onSnapshot, Timestamp,
-  doc, setDoc, getDocs, serverTimestamp
-} from 'firebase/firestore';
+import { supabase } from './supabaseConfig';
 import { useAuth } from './AuthContext';
 import {
   Container, Typography, Box, CircularProgress, Alert,
