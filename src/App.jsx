@@ -737,15 +737,17 @@ function App() {
                         </AppBar>
                     )}
                     {renderMobileMenu} {renderProfileMenu} {role === 'coordenador' && <CoordenadorGerenciarMenu />}
-                    <CentroNotificacoesDrawer
-                        open={drawerNotificacoesAberto}
-                        onClose={() => setDrawerNotificacoesAberto(false)}
-                        notificacoes={notificacoes}
-                        naoLidas={naoLidas}
-                        carregando={carregandoNotifs}
-                        marcarLida={marcarLida}
-                        marcarTodasLidas={marcarTodasLidas}
-                    />
+                    {user && !approvalPending && (
+                        <CentroNotificacoesDrawer
+                            open={drawerNotificacoesAberto}
+                            onClose={() => setDrawerNotificacoesAberto(false)}
+                            notificacoes={notificacoes}
+                            naoLidas={naoLidas}
+                            carregando={carregandoNotifs}
+                            marcarLida={marcarLida}
+                            marcarTodasLidas={marcarTodasLidas}
+                        />
+                    )}
                     <Suspense fallback={<LoadingFallback />}>
                         <Routes>
                              {!user ? (
