@@ -230,61 +230,61 @@ function App() {
     if (loading) return <LoadingFallback />;
     
     const PendingApprovalScreen = () => (<Container sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '80vh' }}><Paper elevation={3} sx={{ p: 4, textAlign: 'center', maxWidth: 400 }}><Typography variant="h5" gutterBottom>Acesso Pendente</Typography><Button variant="contained" onClick={handleLogout}>Sair</Button></Paper></Container>);
-    const LoginScreen = () => (
-        <Container sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '80vh', py: 4 }}>
-            <Paper elevation={4} sx={{ p: { xs: 3, sm: 4 }, textAlign: 'center', maxWidth: 440, width: '100%', borderRadius: 3 }}>
-                <img src={cesmacLogo} alt="Logo CESMAC" style={{ height: '55px', marginBottom: '16px' }} />
-                <Typography variant="h5" fontWeight={700} gutterBottom>Cronograma Lab</Typography>
-                <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-                    Plataforma de Gestão de Laboratórios CESMAC
+const LoginScreen = ({ emailInput, setEmailInput, handleDirectLogin, handleGoogleLogin, isLoggingIn }) => (
+    <Container sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '80vh', py: 4 }}>
+        <Paper elevation={4} sx={{ p: { xs: 3, sm: 4 }, textAlign: 'center', maxWidth: 440, width: '100%', borderRadius: 3 }}>
+            <img src={cesmacLogo} alt="Logo CESMAC" style={{ height: '55px', marginBottom: '16px' }} />
+            <Typography variant="h5" fontWeight={700} gutterBottom>Cronograma Lab</Typography>
+            <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
+                Plataforma de Gestão de Laboratórios CESMAC
+            </Typography>
+
+            <Box component="form" onSubmit={handleDirectLogin} sx={{ display: 'flex', flexDirection: 'column', gap: 1.5, mb: 2 }}>
+                <Typography variant="subtitle2" align="left" fontWeight={600}>
+                    Acessar com E-mail Cadastrado:
                 </Typography>
-
-                <Box component="form" onSubmit={handleDirectLogin} sx={{ display: 'flex', flexDirection: 'column', gap: 1.5, mb: 2 }}>
-                    <Typography variant="subtitle2" align="left" fontWeight={600}>
-                        Acessar com E-mail Cadastrado:
-                    </Typography>
-                    <input
-                        type="email"
-                        placeholder="Digite seu e-mail (ex: coordenador@cesmac.edu.br)"
-                        value={emailInput}
-                        onChange={(e) => setEmailInput(e.target.value)}
-                        required
-                        style={{
-                            padding: '12px 14px',
-                            borderRadius: '8px',
-                            border: '1px solid #CBD5E1',
-                            fontSize: '0.95rem',
-                            outline: 'none',
-                            width: '100%'
-                        }}
-                    />
-                    <Button 
-                        type="submit" 
-                        variant="contained" 
-                        fullWidth
-                        size="large"
-                        disabled={!emailInput || isLoggingIn}
-                        sx={{ background: 'linear-gradient(135deg, #1E7EC8 0%, #00C853 100%)', fontWeight: 700 }}
-                    >
-                        Entrar no Sistema
-                    </Button>
-                </Box>
-
-                <Divider sx={{ my: 2 }}>ou opção secundária</Divider>
-
+                <input
+                    type="email"
+                    placeholder="Digite seu e-mail (ex: coordenador@cesmac.edu.br)"
+                    value={emailInput}
+                    onChange={(e) => setEmailInput(e.target.value)}
+                    required
+                    style={{
+                        padding: '12px 14px',
+                        borderRadius: '8px',
+                        border: '1px solid #CBD5E1',
+                        fontSize: '0.95rem',
+                        outline: 'none',
+                        width: '100%'
+                    }}
+                />
                 <Button 
-                    variant="outlined" 
+                    type="submit" 
+                    variant="contained" 
                     fullWidth
-                    size="medium"
-                    onClick={handleGoogleLogin} 
-                    disabled={isLoggingIn}
-                    sx={{ color: 'text.secondary', borderColor: '#CBD5E1' }}
+                    size="large"
+                    disabled={!emailInput || isLoggingIn}
+                    sx={{ background: 'linear-gradient(135deg, #1E7EC8 0%, #00C853 100%)', fontWeight: 700 }}
                 >
-                    Login com Google OAuth
+                    {isLoggingIn ? 'Entrando...' : 'Entrar no Sistema'}
                 </Button>
-            </Paper>
-        </Container>
-    );
+            </Box>
+
+            <Divider sx={{ my: 2 }}>ou opção secundária</Divider>
+
+            <Button 
+                variant="outlined" 
+                fullWidth
+                size="medium"
+                onClick={handleGoogleLogin} 
+                disabled={isLoggingIn}
+                sx={{ color: 'text.secondary', borderColor: '#CBD5E1' }}
+            >
+                Login com Google OAuth
+            </Button>
+        </Paper>
+    </Container>
+);
 
     const CoordenadorGerenciarMenu = () => (
         <Menu 
@@ -457,7 +457,7 @@ function App() {
                     {renderMobileMenu} {renderProfileMenu} {role === 'coordenador' && <CoordenadorGerenciarMenu />}
                     <Suspense fallback={<LoadingFallback />}>
                         <Routes>
-                            {!user ? (<Route path="*" element={<LoginScreen />} />) : approvalPending ? (<Route path="*" element={<PendingApprovalScreen />} />) : (
+                            {!user ? (<Route path="*" element={<LoginScreen emailInput={emailInput} setEmailInput={setEmailInput} handleDirectLogin={handleDirectLogin} handleGoogleLogin={handleGoogleLogin} isLoggingIn={isLoggingIn} />} />) : approvalPending ? (<Route path="*" element={<PendingApprovalScreen />} />) : (
                                 <Route element={<MainLayout />}>
                                     <Route path="/" element={<PaginaInicial userInfo={userProfileData}/>} />
                                     <Route path="/calendario" element={<CalendarioCronograma userInfo={userProfileData} />} />
