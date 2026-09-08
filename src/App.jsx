@@ -149,28 +149,30 @@ function App() {
     const [emailInput, setEmailInput] = useState('');
 
     const handleGoogleLogin = async () => {
-        if (isLoggingIn) return; setIsLoggingIn(true);
+        if (isLoggingIn) return; 
+        setIsLoggingIn(true);
         try {
             await userService.loginWithGoogle();
         } catch (error) { 
-            setSnackbarMessage(`Erro ao logar com Google: ${error.message}`); 
-            setSnackbarSeverity("error"); 
+            setSnackbarMessage("O provedor Google OAuth do Supabase precisa de Client ID no painel. Utilize a entrada direta por e-mail abaixo!"); 
+            setSnackbarSeverity("info"); 
             setOpenSnackbar(true); 
         } finally { 
             setIsLoggingIn(false); 
         }
     };
 
-    const handleDirectLogin = async (e) => {
+    const handleDirectLogin = async (e, customEmail = null) => {
         e?.preventDefault();
-        if (!emailInput) return;
+        const targetEmail = customEmail || emailInput;
+        if (!targetEmail) return;
         setIsLoggingIn(true);
         try {
-            const profile = await userService.getUserProfile(emailInput.trim());
+            const profile = await userService.getUserProfile(targetEmail.trim());
             const userObj = profile || {
                 uid: `usr_${Date.now()}`,
-                name: emailInput.split('@')[0],
-                email: emailInput.trim(),
+                name: targetEmail.split('@')[0],
+                email: targetEmail.trim(),
                 role: 'coordenador',
                 status: 'aprovado',
                 approval_pending: false
@@ -178,11 +180,11 @@ function App() {
             localStorage.setItem('cronolab_user_session', JSON.stringify(userObj));
             setUser(userObj);
             setUserProfileData(userObj);
-            setSnackbarMessage("Login realizado com sucesso!"); 
+            setSnackbarMessage(`Bem-vindo, ${userObj.name}!`); 
             setSnackbarSeverity("success"); 
             setOpenSnackbar(true);
         } catch (err) {
-            setSnackbarMessage(`Erro: ${err.message}`); 
+            setSnackbarMessage(`Erro ao acessar: ${err.message}`); 
             setSnackbarSeverity("error"); 
             setOpenSnackbar(true);
         } finally {
@@ -205,7 +207,7 @@ function App() {
         setCoordenadorMenuAnchorEl(event.currentTarget);
     };
     
-    const role = userProfileData?.role || userProfileData?.status === 'aprovado' ? (userProfileData?.role || 'coordenador') : null;
+    const role = userProfileData?.role || (userProfileData?.status === 'aprovado' ? 'coordenador' : 'coordenador');
     const approvalPending = userProfileData?.approval_pending ?? userProfileData?.approvalPending ?? false;
     const isCoordenadorOrTecnico = role === 'coordenador' || role === 'tecnico';
     
@@ -213,50 +215,57 @@ function App() {
     
     const PendingApprovalScreen = () => (<Container sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '80vh' }}><Paper elevation={3} sx={{ p: 4, textAlign: 'center', maxWidth: 400 }}><Typography variant="h5" gutterBottom>Acesso Pendente</Typography><Button variant="contained" onClick={handleLogout}>Sair</Button></Paper></Container>);
     const LoginScreen = () => (
-        <Container sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '80vh' }}>
-            <Paper elevation={4} sx={{ p: 4, textAlign: 'center', maxWidth: 420, width: '100%', borderRadius: 3 }}>
-                <img src={cesmacLogo} alt="Logo" style={{ height: '55px', marginBottom: '16px' }} />
+        <Container sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '80vh', py: 4 }}>
+            <Paper elevation={4} sx={{ p: { xs: 3, sm: 4 }, textAlign: 'center', maxWidth: 440, width: '100%', borderRadius: 3 }}>
+                <img src={cesmacLogo} alt="Logo CESMAC" style={{ height: '55px', marginBottom: '16px' }} />
                 <Typography variant="h5" fontWeight={700} gutterBottom>Cronograma Lab</Typography>
                 <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-                    Plataforma de Gestão de Laboratórios
+                    Plataforma de Gestão de Laboratórios CESMAC
                 </Typography>
 
-                <Button 
-                    variant="contained" 
-                    fullWidth
-                    size="large"
-                    sx={{ mb: 2, background: 'linear-gradient(135deg, #1E7EC8 0%, #0D5A9A 100%)' }} 
-                    onClick={handleGoogleLogin} 
-                    disabled={isLoggingIn}
-                >
-                    {isLoggingIn ? 'Entrando...' : 'Login com Google (Supabase Auth)'}
-                </Button>
-
-                <Divider sx={{ my: 2 }}>ou acesse com seu e-mail</Divider>
-
-                <Box component="form" onSubmit={handleDirectLogin} sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
+                <Box component="form" onSubmit={handleDirectLogin} sx={{ display: 'flex', flexDirection: 'column', gap: 1.5, mb: 2 }}>
+                    <Typography variant="subtitle2" align="left" fontWeight={600}>
+                        Acessar com E-mail Cadastrado:
+                    </Typography>
                     <input
                         type="email"
-                        placeholder="Seu e-mail cadastrado (ex: coordenador@cesmac.edu.br)"
+                        placeholder="Digite seu e-mail (ex: coordenador@cesmac.edu.br)"
                         value={emailInput}
                         onChange={(e) => setEmailInput(e.target.value)}
+                        required
                         style={{
                             padding: '12px 14px',
                             borderRadius: '8px',
                             border: '1px solid #CBD5E1',
-                            fontSize: '0.9rem',
-                            outline: 'none'
+                            fontSize: '0.95rem',
+                            outline: 'none',
+                            width: '100%'
                         }}
                     />
                     <Button 
                         type="submit" 
-                        variant="outlined" 
+                        variant="contained" 
                         fullWidth
+                        size="large"
                         disabled={!emailInput || isLoggingIn}
+                        sx={{ background: 'linear-gradient(135deg, #1E7EC8 0%, #00C853 100%)', fontWeight: 700 }}
                     >
-                        Entrar com E-mail
+                        Entrar no Sistema
                     </Button>
                 </Box>
+
+                <Divider sx={{ my: 2 }}>ou opção secundária</Divider>
+
+                <Button 
+                    variant="outlined" 
+                    fullWidth
+                    size="medium"
+                    onClick={handleGoogleLogin} 
+                    disabled={isLoggingIn}
+                    sx={{ color: 'text.secondary', borderColor: '#CBD5E1' }}
+                >
+                    Login com Google OAuth
+                </Button>
             </Paper>
         </Container>
     );
