@@ -70,6 +70,7 @@ const GerenciarEventosAvancado = lazyWithRetry(() => import('./GerenciarEventosA
 const ConsultaDisponibilidade = lazyWithRetry(() => import('./ConsultaDisponibilidade'));
 
 const LoadingFallback = () => (<Box display="flex" justifyContent="center" alignItems="center" height="80vh"><CircularProgress /></Box>);
+const MainLayout = () => (<Container maxWidth="xl" sx={{ mt: { xs: 1.5, sm: 4 }, mb: { xs: 8, sm: 4 }, px: { xs: 1.5, sm: 3 } }}><Outlet /></Container>);
 const LoginScreen = ({ emailInput, setEmailInput, passwordInput, setPasswordInput, handleDirectLogin, handleGoogleLogin, handleForgotPassword, isLoggingIn, isRegistering, setIsRegistering, nameInput, setNameInput }) => (
     <Container sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '80vh', py: 4 }}>
         <Paper elevation={4} sx={{ p: { xs: 3, sm: 4 }, textAlign: 'center', maxWidth: 440, width: '100%', borderRadius: 3 }}>
