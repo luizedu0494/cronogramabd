@@ -62,6 +62,44 @@ export const userService = {
   },
 
   /**
+   * Login com E-mail e Senha via Supabase Auth
+   */
+  async loginWithPassword(email, password) {
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email,
+      password
+    });
+    if (error) throw error;
+    return data;
+  },
+
+  /**
+   * Registrar novo usuário com E-mail e Senha
+   */
+  async registerWithPassword(email, password, name) {
+    const { data, error } = await supabase.auth.signUp({
+      email,
+      password,
+      options: {
+        data: { full_name: name }
+      }
+    });
+    if (error) throw error;
+    return data;
+  },
+
+  /**
+   * Enviar e-mail de redefinição de senha
+   */
+  async resetPassword(email) {
+    const { data, error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: `${window.location.origin}/`
+    });
+    if (error) throw error;
+    return data;
+  },
+
+  /**
    * Login com Google via Supabase OAuth
    */
   async loginWithGoogle() {

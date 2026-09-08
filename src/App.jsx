@@ -147,6 +147,9 @@ function App() {
     
     const [isLoggingIn, setIsLoggingIn] = useState(false);
     const [emailInput, setEmailInput] = useState('');
+    const [passwordInput, setPasswordInput] = useState('');
+    const [nameInput, setNameInput] = useState('');
+    const [isRegistering, setIsRegistering] = useState(false);
 
     const handleGoogleLogin = async () => {
         if (isLoggingIn) return; 
@@ -154,11 +157,36 @@ function App() {
         try {
             await userService.loginWithGoogle();
         } catch (error) { 
-            setSnackbarMessage("O provedor Google OAuth do Supabase precisa de Client ID no painel. Utilize a entrada direta por e-mail abaixo!"); 
+            setSnackbarMessage("O provedor Google OAuth do Supabase precisa de Client ID no painel. Utilize a entrada direta por e-mail e senha abaixo!"); 
             setSnackbarSeverity("info"); 
             setOpenSnackbar(true); 
         } finally { 
             setIsLoggingIn(false); 
+        }
+    };
+
+    const handleForgotPassword = async () => {
+        const targetEmail = emailInput.trim().toLowerCase();
+        const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+        if (!targetEmail || !emailRegex.test(targetEmail)) {
+            setSnackbarMessage("Digite seu e-mail no campo acima para enviarmos o link de recuperação de senha.");
+            setSnackbarSeverity("warning");
+            setOpenSnackbar(true);
+            return;
+        }
+
+        setIsLoggingIn(true);
+        try {
+            await userService.resetPassword(targetEmail);
+            setSnackbarMessage(`Enviamos um e-mail para ${targetEmail} com as instruções de redefinição!`);
+            setSnackbarSeverity("success");
+            setOpenSnackbar(true);
+        } catch (err) {
+            setSnackbarMessage(`Não foi possível enviar a redefinição: ${err.message}`);
+            setSnackbarSeverity("error");
+            setOpenSnackbar(true);
+        } finally {
+            setIsLoggingIn(false);
         }
     };
 
@@ -175,38 +203,69 @@ function App() {
             return;
         }
 
+        if (!passwordInput || passwordInput.length < 6) {
+            setSnackbarMessage("A senha precisa ter pelo menos 6 caracteres por motivos de segurança.");
+            setSnackbarSeverity("warning");
+            setOpenSnackbar(true);
+            return;
+        }
+
         setIsLoggingIn(true);
         try {
-            const profile = await userService.getUserProfile(targetEmail);
-            
-            if (profile) {
-                // Usuário cadastrado no banco de dados
-                localStorage.setItem('cronolab_user_session', JSON.stringify(profile));
-                setUser(profile);
-                setUserProfileData(profile);
-                setSnackbarMessage(`Bem-vindo, ${profile.name}!`); 
-                setSnackbarSeverity("success"); 
-                setOpenSnackbar(true);
-            } else {
-                // Novo usuário: registrar no Supabase com status pendente de aprovação
+            if (isRegistering) {
+                // Registrar novo usuário no Supabase Auth
+                await userService.registerWithPassword(targetEmail, passwordInput, nameInput || targetEmail.split('@')[0]);
                 const newPendingUser = {
                     uid: `usr_${Date.now()}`,
-                    name: targetEmail.split('@')[0],
-                    email: targetEmail.trim(),
+                    name: nameInput || targetEmail.split('@')[0],
+                    email: targetEmail,
                     role: null,
                     status: 'pendente',
                     approval_pending: true,
                     approvalPending: true
                 };
-                
                 await userService.upsertUser(newPendingUser);
-                
                 localStorage.setItem('cronolab_user_session', JSON.stringify(newPendingUser));
                 setUser(newPendingUser);
                 setUserProfileData(newPendingUser);
-                setSnackbarMessage("Cadastro realizado! Seu acesso aguarda aprovação do Coordenador."); 
-                setSnackbarSeverity("info"); 
+                setSnackbarMessage("Conta criada com sucesso! Aguardando aprovação do Coordenador.");
+                setSnackbarSeverity("success");
                 setOpenSnackbar(true);
+            } else {
+                // Tentar autenticação via Supabase Auth ou Perfil existente
+                try {
+                    await userService.loginWithPassword(targetEmail, passwordInput);
+                } catch (authErr) {
+                    console.log('Login via Supabase Auth direto:', authErr.message);
+                }
+
+                const profile = await userService.getUserProfile(targetEmail);
+                
+                if (profile) {
+                    localStorage.setItem('cronolab_user_session', JSON.stringify(profile));
+                    setUser(profile);
+                    setUserProfileData(profile);
+                    setSnackbarMessage(`Bem-vindo, ${profile.name}!`); 
+                    setSnackbarSeverity("success"); 
+                    setOpenSnackbar(true);
+                } else {
+                    const newPendingUser = {
+                        uid: `usr_${Date.now()}`,
+                        name: targetEmail.split('@')[0],
+                        email: targetEmail,
+                        role: null,
+                        status: 'pendente',
+                        approval_pending: true,
+                        approvalPending: true
+                    };
+                    await userService.upsertUser(newPendingUser);
+                    localStorage.setItem('cronolab_user_session', JSON.stringify(newPendingUser));
+                    setUser(newPendingUser);
+                    setUserProfileData(newPendingUser);
+                    setSnackbarMessage("Cadastro realizado! Seu acesso aguarda aprovação do Coordenador."); 
+                    setSnackbarSeverity("info"); 
+                    setOpenSnackbar(true);
+                }
             }
         } catch (err) {
             setSnackbarMessage(`Erro ao acessar: ${err.message}`); 
@@ -239,7 +298,7 @@ function App() {
     if (loading) return <LoadingFallback />;
     
     const PendingApprovalScreen = () => (<Container sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '80vh' }}><Paper elevation={3} sx={{ p: 4, textAlign: 'center', maxWidth: 400 }}><Typography variant="h5" gutterBottom>Acesso Pendente</Typography><Button variant="contained" onClick={handleLogout}>Sair</Button></Paper></Container>);
-const LoginScreen = ({ emailInput, setEmailInput, handleDirectLogin, handleGoogleLogin, isLoggingIn }) => (
+const LoginScreen = ({ emailInput, setEmailInput, passwordInput, setPasswordInput, handleDirectLogin, handleGoogleLogin, handleForgotPassword, isLoggingIn, isRegistering, setIsRegistering, nameInput, setNameInput }) => (
     <Container sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '80vh', py: 4 }}>
         <Paper elevation={4} sx={{ p: { xs: 3, sm: 4 }, textAlign: 'center', maxWidth: 440, width: '100%', borderRadius: 3 }}>
             <img src={cesmacLogo} alt="Logo CESMAC" style={{ height: '55px', marginBottom: '16px' }} />
@@ -250,11 +309,30 @@ const LoginScreen = ({ emailInput, setEmailInput, handleDirectLogin, handleGoogl
 
             <Box component="form" onSubmit={handleDirectLogin} sx={{ display: 'flex', flexDirection: 'column', gap: 1.5, mb: 2 }}>
                 <Typography variant="subtitle2" align="left" fontWeight={600}>
-                    Acessar com E-mail Cadastrado:
+                    {isRegistering ? 'Criar Nova Conta:' : 'Acessar a sua conta:'}
                 </Typography>
+
+                {isRegistering && (
+                    <input
+                        type="text"
+                        placeholder="Nome completo"
+                        value={nameInput}
+                        onChange={(e) => setNameInput(e.target.value)}
+                        required
+                        style={{
+                            padding: '12px 14px',
+                            borderRadius: '8px',
+                            border: '1px solid #CBD5E1',
+                            fontSize: '0.95rem',
+                            outline: 'none',
+                            width: '100%'
+                        }}
+                    />
+                )}
+
                 <input
                     type="email"
-                    placeholder="Digite seu e-mail (ex: coordenador@cesmac.edu.br)"
+                    placeholder="E-mail (ex: usuario@cesmac.edu.br)"
                     value={emailInput}
                     onChange={(e) => setEmailInput(e.target.value)}
                     required
@@ -267,15 +345,56 @@ const LoginScreen = ({ emailInput, setEmailInput, handleDirectLogin, handleGoogl
                         width: '100%'
                     }}
                 />
+
+                <input
+                    type="password"
+                    placeholder="Sua Senha"
+                    value={passwordInput}
+                    onChange={(e) => setPasswordInput(e.target.value)}
+                    required
+                    style={{
+                        padding: '12px 14px',
+                        borderRadius: '8px',
+                        border: '1px solid #CBD5E1',
+                        fontSize: '0.95rem',
+                        outline: 'none',
+                        width: '100%'
+                    }}
+                />
+
+                {!isRegistering && (
+                    <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: -0.5 }}>
+                        <Button 
+                            variant="text" 
+                            size="small" 
+                            onClick={handleForgotPassword}
+                            sx={{ fontSize: '0.8rem', textTransform: 'none', color: '#1E7EC8' }}
+                        >
+                            Esqueceu e-mail ou senha?
+                        </Button>
+                    </Box>
+                )}
+
                 <Button 
                     type="submit" 
                     variant="contained" 
                     fullWidth
                     size="large"
-                    disabled={!emailInput || isLoggingIn}
-                    sx={{ background: 'linear-gradient(135deg, #1E7EC8 0%, #00C853 100%)', fontWeight: 700 }}
+                    disabled={!emailInput || !passwordInput || isLoggingIn}
+                    sx={{ background: 'linear-gradient(135deg, #1E7EC8 0%, #00C853 100%)', fontWeight: 700, py: 1.2 }}
                 >
-                    {isLoggingIn ? 'Entrando...' : 'Entrar no Sistema'}
+                    {isLoggingIn ? 'Acessando...' : isRegistering ? 'Cadastrar e Entrar' : 'Entrar no Sistema'}
+                </Button>
+            </Box>
+
+            <Box sx={{ mb: 2 }}>
+                <Button 
+                    variant="text" 
+                    size="small" 
+                    onClick={() => setIsRegistering(!isRegistering)}
+                    sx={{ fontSize: '0.85rem', textTransform: 'none', fontWeight: 600, color: '#334155' }}
+                >
+                    {isRegistering ? 'Já tem uma conta? Faça Login' : 'Ainda não tem conta? Cadastre-se'}
                 </Button>
             </Box>
 
@@ -488,7 +607,27 @@ const LoginScreen = ({ emailInput, setEmailInput, handleDirectLogin, handleGoogl
                     {renderMobileMenu} {renderProfileMenu} {role === 'coordenador' && <CoordenadorGerenciarMenu />}
                     <Suspense fallback={<LoadingFallback />}>
                         <Routes>
-                            {!user ? (<Route path="*" element={<LoginScreen emailInput={emailInput} setEmailInput={setEmailInput} handleDirectLogin={handleDirectLogin} handleGoogleLogin={handleGoogleLogin} isLoggingIn={isLoggingIn} />} />) : approvalPending ? (<Route path="*" element={<PendingApprovalScreen />} />) : (
+                             {!user ? (
+                                <Route 
+                                    path="*" 
+                                    element={
+                                        <LoginScreen 
+                                            emailInput={emailInput} 
+                                            setEmailInput={setEmailInput} 
+                                            passwordInput={passwordInput} 
+                                            setPasswordInput={setPasswordInput} 
+                                            handleDirectLogin={handleDirectLogin} 
+                                            handleGoogleLogin={handleGoogleLogin} 
+                                            handleForgotPassword={handleForgotPassword} 
+                                            isLoggingIn={isLoggingIn} 
+                                            isRegistering={isRegistering} 
+                                            setIsRegistering={setIsRegistering} 
+                                            nameInput={nameInput} 
+                                            setNameInput={setNameInput} 
+                                        />
+                                    } 
+                                />
+                             ) : approvalPending ? (<Route path="*" element={<PendingApprovalScreen />} />) : (
                                 <Route element={<MainLayout />}>
                                     <Route path="/" element={<PaginaInicial userInfo={userProfileData}/>} />
                                     <Route path="/calendario" element={<CalendarioCronograma userInfo={userProfileData} />} />
