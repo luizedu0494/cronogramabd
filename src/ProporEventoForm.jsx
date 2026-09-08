@@ -146,38 +146,44 @@ function ProporEventoForm({ userInfo, currentUser, initialDate, onSuccess, onCan
     useEffect(() => {
         const fetchOcupacaoDoMes = async () => {
             setLoadingCalendario(true);
-            const inicioDoMes = mesVisivel.startOf('month').toDate();
-            const fimDoMes = mesVisivel.endOf('month').toDate();
+            const inicioDoMes = mesVisivel.startOf('month').toISOString();
+            const fimDoMes = mesVisivel.endOf('month').toISOString();
             try {
-                const qAulas = query(collection(db, "aulas"), where("dataInicio", ">=", Timestamp.fromDate(inicioDoMes)), where("dataInicio", "<=", Timestamp.fromDate(fimDoMes)));
-                const querySnapshotAulas = await getDocs(qAulas);
-                const aulasDoMes = querySnapshotAulas.docs.map(doc => doc.data());
-                
-                const qEventos = query(collection(db, "eventosManutencao"), where("dataInicio", ">=", Timestamp.fromDate(inicioDoMes)), where("dataInicio", "<=", Timestamp.fromDate(fimDoMes)));
-                const querySnapshotEventos = await getDocs(qEventos);
-                const eventosDoMes = querySnapshotEventos.docs.map(doc => doc.data());
+                const { data: aulasData } = await supabase
+                    .from('aulas')
+                    .select('*')
+                    .gte('data_inicio', inicioDoMes)
+                    .lte('data_inicio', fimDoMes);
 
-                // --- BUSCA PERIODOS BLOQUEADOS (NOVO) ---
-                const qPeriodos = query(collection(db, "periodosSemAtividade"), where("dataFim", ">=", Timestamp.fromDate(inicioDoMes)));
-                const snapPeriodos = await getDocs(qPeriodos);
-                const periodosList = snapPeriodos.docs.map(doc => ({
-                    id: doc.id,
-                    ...doc.data(),
-                    start: dayjs(doc.data().dataInicio.toDate()),
-                    end: dayjs(doc.data().dataFim.toDate())
+                const { data: eventosData } = await supabase
+                    .from('eventos_manutencao')
+                    .select('*')
+                    .gte('data_inicio', inicioDoMes)
+                    .lte('data_inicio', fimDoMes);
+
+                const { data: periodosData } = await supabase
+                    .from('periodos_sem_atividade')
+                    .select('*')
+                    .gte('data_fim', inicioDoMes);
+
+                const periodosList = (periodosData || []).map(p => ({
+                    id: p.id,
+                    ...p,
+                    start: dayjs(p.data_inicio),
+                    end: dayjs(p.data_fim)
                 }));
                 setPeriodosBloqueados(periodosList);
 
                 // Processa bolinhas de ocupação
                 const ocupacaoPorDia = {};
-                aulasDoMes.forEach(aula => {
-                    const dia = dayjs(aula.dataInicio.toDate()).format('YYYY-MM-DD');
+                (aulasData || []).forEach(aula => {
+                    const dia = dayjs(aula.data_inicio).format('YYYY-MM-DD');
                     if (!ocupacaoPorDia[dia]) ocupacaoPorDia[dia] = new Set();
-                    ocupacaoPorDia[dia].add(`${aula.laboratorioSelecionado}-${aula.horarioSlotString}`);
+                    ocupacaoPorDia[dia].add(`${aula.laboratorio}-${aula.horario_slot}`);
                 });
 
-                eventosDoMes.forEach(evento => {
-                    const dia = dayjs(evento.dataInicio.toDate()).format('YYYY-MM-DD');
+                (eventosData || []).forEach(evento => {
+                    const dia = dayjs(evento.data_inicio).format('YYYY-MM-DD');
                     if (!ocupacaoPorDia[dia]) ocupacaoPorDia[dia] = new Set();
                     if (evento.laboratorio === 'Todos') {
                         LISTA_LABORATORIOS.forEach(lab => {
@@ -186,7 +192,7 @@ function ProporEventoForm({ userInfo, currentUser, initialDate, onSuccess, onCan
                             });
                         });
                     } else {
-                        ocupacaoPorDia[dia].add(`${evento.laboratorio}-${evento.horarioSlotString}`);
+                        ocupacaoPorDia[dia].add(`${evento.laboratorio}-${evento.horario_slot}`);
                     }
                 });
 
@@ -227,7 +233,6 @@ function ProporEventoForm({ userInfo, currentUser, initialDate, onSuccess, onCan
         }).then(resultados => {
             const conflitos = resultados[0]?.conflitos ?? [];
 
-            // Adaptador: ConflitoItem → shape esperado pela GradeDisponibilidade
             const adaptarConflito = (c) => ({
                 ...c,
                 dataInicio: typeof formData.dataInicio?.toDate === 'function' ? formData.dataInicio.toDate() : formData.dataInicio,
@@ -282,10 +287,13 @@ function ProporEventoForm({ userInfo, currentUser, initialDate, onSuccess, onCan
             if (eventoId) {
                 setIsEditMode(true);
                 try {
-                    const docRef = doc(db, "eventosManutencao", eventoId);
-                    const docSnap = await getDoc(docRef);
-                    if (docSnap.exists()) {
-                        const data = docSnap.data();
+                    const { data, error } = await supabase
+                        .from('eventos_manutencao')
+                        .select('*')
+                        .eq('id', eventoId)
+                        .single();
+
+                    if (data && !error) {
                         let tipoLab = '';
                         if (data.laboratorio !== 'Todos') {
                             const labObj = LISTA_LABORATORIOS.find(l => l.name === data.laboratorio);
@@ -295,8 +303,8 @@ function ProporEventoForm({ userInfo, currentUser, initialDate, onSuccess, onCan
                             titulo: data.titulo || '', 
                             descricao: data.descricao || '',
                             tipo: data.tipo || EVENT_TYPES[0],
-                            dataInicio: safeDayjs(data.dataInicio), 
-                            horarioSlotString: Array.isArray(data.horarioSlotString) ? data.horarioSlotString : [data.horarioSlotString],
+                            dataInicio: safeDayjs(data.data_inicio), 
+                            horarioSlotString: Array.isArray(data.horario_slot) ? data.horario_slot : [data.horario_slot],
                             dynamicLabs: [{ tipo: tipoLab, laboratorios: data.laboratorio === 'Todos' ? [] : [data.laboratorio] }]
                         });
                     }
@@ -366,9 +374,8 @@ function ProporEventoForm({ userInfo, currentUser, initialDate, onSuccess, onCan
                             dataInicio: dataHoraInicio,
                             dataFim: dataHoraFim,
                             horarioSlotString: slot,
-                            criadoPorUid: currentUser.uid,
-                            criadoPorNome: userInfo?.name || currentUser.displayName || currentUser.email,
-                            createdAt: serverTimestamp()
+                            criadoPorUid: currentUser?.id || currentUser?.uid || "N/A",
+                            criadoPorNome: userInfo?.name || currentUser?.displayName || currentUser?.email || "Usuário"
                         });
                     }
                 }
@@ -412,12 +419,10 @@ function ProporEventoForm({ userInfo, currentUser, initialDate, onSuccess, onCan
         if (substituir) {
             setLoadingSubmit(true);
             try {
-                const batch = writeBatch(db);
-                conflitos.forEach(c => {
-                    const coll = c.conflito.tipoConflito === 'Aula' ? 'aulas' : 'eventosManutencao';
-                    batch.delete(doc(db, coll, c.conflito.id));
-                });
-                await batch.commit();
+                for (const c of conflitos) {
+                    const table = c.conflito.tipoConflito === 'Aula' ? 'aulas' : 'eventos_manutencao';
+                    await supabase.from(table).delete().eq('id', c.conflito.id);
+                }
                 setOpenConfirmModal(true);
             } catch (error) { console.error(error); }
             finally { setLoadingSubmit(false); }
@@ -434,22 +439,44 @@ function ProporEventoForm({ userInfo, currentUser, initialDate, onSuccess, onCan
             if (isEditMode && eventoId) {
                 const ev = eventosParaConfirmar[0];
                 const finalData = {
-                    ...ev,
-                    dataInicio: Timestamp.fromDate(ev.dataInicio.toDate()),
-                    dataFim: Timestamp.fromDate(ev.dataFim.toDate()),
-                    updatedAt: serverTimestamp()
+                    titulo: ev.titulo,
+                    descricao: ev.descricao,
+                    tipo: ev.tipo,
+                    laboratorio: ev.laboratorio,
+                    data_inicio: ev.dataInicio.toISOString(),
+                    data_fim: ev.dataFim.toISOString(),
+                    horario_slot: ev.horarioSlotString,
+                    updated_at: new Date().toISOString()
                 };
-                await updateDoc(doc(db, "eventosManutencao", eventoId), finalData);
+                const { error: updateErr } = await supabase
+                    .from('eventos_manutencao')
+                    .update(finalData)
+                    .eq('id', eventoId);
+
+                if (updateErr) throw updateErr;
                 finalizadas.push({ ...ev, id: eventoId });
             } else {
                 for (const ev of eventosParaConfirmar) {
                     const finalData = {
-                        ...ev,
-                        dataInicio: Timestamp.fromDate(ev.dataInicio.toDate()),
-                        dataFim: Timestamp.fromDate(ev.dataFim.toDate())
+                        titulo: ev.titulo,
+                        descricao: ev.descricao,
+                        tipo: ev.tipo,
+                        laboratorio: ev.laboratorio,
+                        data_inicio: ev.dataInicio.toISOString(),
+                        data_fim: ev.dataFim.toISOString(),
+                        horario_slot: ev.horarioSlotString,
+                        criado_por_uid: ev.criadoPorUid,
+                        criado_por_nome: ev.criadoPorNome,
+                        created_at: new Date().toISOString()
                     };
-                    const docRef = await addDoc(collection(db, "eventosManutencao"), finalData);
-                    finalizadas.push({ ...ev, id: docRef.id });
+                    const { data: inserted, error: insertErr } = await supabase
+                        .from('eventos_manutencao')
+                        .insert([finalData])
+                        .select()
+                        .single();
+
+                    if (insertErr) throw insertErr;
+                    finalizadas.push({ ...ev, id: inserted?.id });
                 }
             }
 

@@ -140,6 +140,18 @@ CREATE TABLE IF NOT EXISTS grupos (
     created_at   TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
+-- ── Períodos sem Atividade (Feriados / Recessos) ───────────
+CREATE TABLE IF NOT EXISTS periodos_sem_atividade (
+    id           UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    descricao    TEXT NOT NULL,
+    data_inicio  TIMESTAMPTZ NOT NULL,
+    data_fim     TIMESTAMPTZ NOT NULL,
+    tipo         TEXT DEFAULT 'manual',
+    fonte        TEXT,
+    created_at   TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+
 CREATE TABLE IF NOT EXISTS grupo_membros (
     grupo_id    INTEGER REFERENCES grupos(id) ON DELETE CASCADE,
     tecnico_uid TEXT REFERENCES users(uid),
