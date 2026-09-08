@@ -1,12 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../../supabaseConfig';
 import { userService } from '../../services/userService';
+import { registrarWebPush, revogarWebPush } from '../../services/webPushService';
 import {
     Container, Typography, Box, Paper, CircularProgress, Alert, Button, Grid,
-    TextField, Dialog, DialogTitle, DialogContent, DialogActions, Snackbar, Avatar
+    TextField, Snackbar, Avatar, Card, CardContent, Divider, Chip
 } from '@mui/material';
 import EditIcon from '@mui/icons-material/Edit';
 import NotificationsIcon from '@mui/icons-material/Notifications';
+import TelegramIcon from '@mui/icons-material/Telegram';
 import UploadImagem from '../../componentes/comuns/UploadImagem';
 
 function ConfiguracoesPerfil() {
@@ -21,6 +23,8 @@ function ConfiguracoesPerfil() {
     const [snackbarSeverity, setSnackbarSeverity] = useState('success');
     
     const [telegramChatId, setTelegramChatId] = useState('');
+    const [codigoTelegram, setCodigoTelegram] = useState(null);
+    const [gerandoCodigo, setGerandoCodigo] = useState(false);
     const [pushAtivo, setPushAtivo] = useState(false);
     const [pushLoading, setPushLoading] = useState(false);
 
@@ -64,6 +68,34 @@ function ConfiguracoesPerfil() {
         };
         fetchProfileAndPushStatus();
     }, []);
+
+    const handleGerarCodigoTelegram = async () => {
+        if (!userProfile?.uid) return;
+        setGerandoCodigo(true);
+        try {
+            const numAleatorio = Math.floor(1000 + Math.random() * 9000);
+            const novoCodigo = `CRN-${numAleatorio}`;
+
+            const { error } = await supabase.from('telegram_vinculos_pendentes').insert({
+                user_uid: userProfile.uid,
+                codigo: novoCodigo,
+            });
+
+            if (error) throw error;
+
+            setCodigoTelegram(novoCodigo);
+            setSnackbarMessage('Código de vinculação gerado! Envie-o para o Bot no Telegram.');
+            setSnackbarSeverity('info');
+            setOpenSnackbar(true);
+        } catch (err) {
+            console.error('Erro ao gerar código Telegram:', err);
+            setSnackbarMessage('Erro ao gerar código temporário.');
+            setSnackbarSeverity('error');
+            setOpenSnackbar(true);
+        } finally {
+            setGerandoCodigo(false);
+        }
+    };
 
     const handleSaveProfile = async () => {
         setLoading(true);
@@ -121,34 +153,30 @@ function ConfiguracoesPerfil() {
         }
     };
 
-    const handleAtivarPush = async () => {
+    const handleTogglePush = async () => {
+        if (!userProfile?.uid) return;
         setPushLoading(true);
-        console.log('[PUSH] Iniciando processo de ativação de notificações...');
         try {
-            if (!('Notification' in window)) {
-                console.error('[PUSH] Navegador não possui a API Notification.');
-                throw new Error('Navegador não suporta notificações Push.');
+            if (pushAtivo) {
+                await revogarWebPush(userProfile.uid);
+                setPushAtivo(false);
+                setSnackbarMessage('Notificações Web Push desativadas neste dispositivo.');
+                setSnackbarSeverity('info');
+            } else {
+                const sucesso = await registrarWebPush(userProfile.uid);
+                if (sucesso) {
+                    setPushAtivo(true);
+                    setSnackbarMessage('Notificações Web Push (VAPID) ativadas com sucesso!');
+                    setSnackbarSeverity('success');
+                } else {
+                    setSnackbarMessage('Não foi possível ativar Notificações Web Push.');
+                    setSnackbarSeverity('error');
+                }
             }
-
-            console.log('[PUSH] Solicitando permissão ao usuário...');
-            const permission = await Notification.requestPermission();
-            console.log('[PUSH] Permissão obtida:', permission);
-            if (permission !== 'granted') {
-                throw new Error('Permissão de notificação negada pelo usuário.');
-            }
-
-            setPushAtivo(true);
-            setSnackbarMessage('Notificações Push ativadas com sucesso neste dispositivo!');
-            setSnackbarSeverity('success');
             setOpenSnackbar(true);
         } catch (err) {
-            console.error('[PUSH ERRO COMPLETO]:', err);
-            let userMsg = err.message || 'Erro ao ativar notificações Push.';
-            setSnackbarMessage(userMsg);
-            setSnackbarSeverity("error");
-            setOpenSnackbar(true);
+            console.error('Erro ao alterar Web Push:', err);
         } finally {
-            console.log('[PUSH] Finalizado');
             setPushLoading(false);
         }
     };
@@ -161,7 +189,7 @@ function ConfiguracoesPerfil() {
 
     return (
         <Container maxWidth="md">
-            <Paper elevation={3} sx={{ p: 4, mt: 4 }}>
+            <Paper elevation={3} sx={{ p: 4, mt: 4, mb: 4 }}>
                 <Typography variant="h5" gutterBottom align="center" sx={{ mb: 3 }}>Configurações do Perfil</Typography>
                 
                 <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', mb: 3, gap: 2 }}>
@@ -173,47 +201,83 @@ function ConfiguracoesPerfil() {
                     />
                 </Box>
 
-                <Grid container spacing={2}>
+                <Grid container spacing={3}>
                     <Grid item xs={12}>
                         <TextField fullWidth label="Nome" value={editedName} onChange={(e) => setEditedName(e.target.value)} disabled={!isEditMode} />
                     </Grid>
-                     <Grid item xs={12}>
-                        <TextField fullWidth label="Telegram Chat ID" value={telegramChatId} onChange={(e) => setTelegramChatId(e.target.value)} disabled={!isEditMode} helperText="Seu ID para receber notificações do Telegram." />
-                    </Grid>
-                    <Grid item xs={12}><TextField fullWidth label="Email" value={userProfile.email} disabled /></Grid>
-                    <Grid item xs={12}><TextField fullWidth label="Cargo" value={userProfile.role || 'Pendente'} disabled /></Grid>
+                    <Grid item xs={12} sm={6}><TextField fullWidth label="Email" value={userProfile.email} disabled /></Grid>
+                    <Grid item xs={12} sm={6}><TextField fullWidth label="Cargo" value={userProfile.role || 'Pendente'} disabled /></Grid>
                     
                     <Grid item xs={12}>
-                        <Alert severity={pushAtivo ? "success" : "info"} sx={{ mb: 1 }}>
+                        <Divider sx={{ my: 1 }} />
+                        <Typography variant="h6" sx={{ mt: 2, mb: 1, display: 'flex', alignItems: 'center', gap: 1 }}>
+                            <TelegramIcon color="primary" /> Conectar Bot do Telegram
+                        </Typography>
+
+                        <Card variant="outlined" sx={{ p: 2, bgcolor: '#f8fafc' }}>
+                            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 2 }}>
+                                <Box>
+                                    <Typography variant="subtitle2">
+                                        Status: {telegramChatId ? <Chip label="Conectado" color="success" size="small" /> : <Chip label="Não vinculado" color="default" size="small" />}
+                                    </Typography>
+                                    {telegramChatId && (
+                                        <Typography variant="caption" color="text.secondary">Chat ID: {telegramChatId}</Typography>
+                                    )}
+                                </Box>
+                                <Button
+                                    variant="contained"
+                                    color="primary"
+                                    startIcon={<TelegramIcon />}
+                                    onClick={handleGerarCodigoTelegram}
+                                    disabled={gerandoCodigo}
+                                >
+                                    {gerandoCodigo ? 'Gerando...' : 'Gerar Código de Vinculação'}
+                                </Button>
+                            </Box>
+
+                            {codigoTelegram && (
+                                <Alert severity="info" sx={{ mt: 2 }}>
+                                    Envie a mensagem <strong>/vincular {codigoTelegram}</strong> para o Bot do Telegram no seu chat do aplicativo. O código expira em 15 minutos.
+                                </Alert>
+                            )}
+                        </Card>
+                    </Grid>
+
+                    <Grid item xs={12}>
+                        <Divider sx={{ my: 1 }} />
+                        <Typography variant="h6" sx={{ mt: 2, mb: 1, display: 'flex', alignItems: 'center', gap: 1 }}>
+                            <NotificationsIcon color="action" /> Notificações Push no Navegador (VAPID)
+                        </Typography>
+                        <Alert severity={pushAtivo ? "success" : "info"} sx={{ mb: 2 }}>
                             {pushAtivo 
-                              ? "As Notificações Push estão ativadas e autorizadas neste navegador."
-                              : "Clique abaixo para receber alertas instantâneos de aulas e avisos. Certifique-se de permitir as notificações na janela/pop-up do navegador (ícone 🔒 do lado da URL)."
+                              ? "Notificações Web Push nativas VAPID estão ativas neste dispositivo."
+                              : "Ative notificações nativas para receber alertas instantâneos diretamente na sua área de trabalho/dispositivo móvel sem necessidade do Firebase."
                             }
                         </Alert>
                         <Button
-                            variant={pushAtivo ? "contained" : "outlined"}
-                            color={pushAtivo ? "success" : "primary"}
+                            variant={pushAtivo ? "outlined" : "contained"}
+                            color={pushAtivo ? "warning" : "primary"}
                             startIcon={pushLoading ? <CircularProgress size={20} color="inherit" /> : <NotificationsIcon />}
-                            onClick={handleAtivarPush}
+                            onClick={handleTogglePush}
                             disabled={pushLoading}
                             fullWidth
                         >
                             {pushLoading 
-                              ? 'Ativando Notificações...' 
+                              ? 'Processando...' 
                               : pushAtivo 
-                                ? 'Notificações Push Ativas neste Dispositivo' 
-                                : 'Ativar Notificações Push no Navegador'
+                                ? 'Desativar Notificações Web Push neste Dispositivo' 
+                                : 'Ativar Notificações Web Push Nativas (VAPID)'
                             }
                         </Button>
                     </Grid>
 
                     {isEditMode ? (
-                        <Grid item xs={12} sx={{ display: 'flex', gap: 2, justifyContent: 'flex-end' }}>
+                        <Grid item xs={12} sx={{ display: 'flex', gap: 2, justifyContent: 'flex-end', mt: 2 }}>
                             <Button variant="outlined" onClick={() => setIsEditMode(false)}>Cancelar</Button>
                             <Button variant="contained" onClick={handleSaveProfile} disabled={loading}>Salvar</Button>
                         </Grid>
                     ) : (
-                        <Grid item xs={12} sx={{ display: 'flex', justifyContent: 'flex-end' }}>
+                        <Grid item xs={12} sx={{ display: 'flex', justifyContent: 'flex-end', mt: 2 }}>
                             <Button variant="contained" startIcon={<EditIcon />} onClick={() => setIsEditMode(true)}>Editar Perfil</Button>
                         </Grid>
                     )}
@@ -226,4 +290,4 @@ function ConfiguracoesPerfil() {
     );
 }
 
-export default ConfiguracoesPerfil;
+export default ConfiguracoesPerfil;

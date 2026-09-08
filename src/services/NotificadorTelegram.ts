@@ -1,4 +1,5 @@
 import { LISTA_LABORATORIOS } from '../constants/laboratorios';
+import { supabase } from '../supabaseConfig';
 
 export interface DadosNotificacaoTelegram {
   assunto?: string;
@@ -40,6 +41,35 @@ class NotificadorTelegram {
     this.topicosFluxo = {
       PENDENTES: 1253,
     };
+  }
+
+  async enviarParaUsuario(uid: string, dados: DadosNotificacaoTelegram, tipoNotificacao: string): Promise<boolean> {
+    try {
+      const { data: usuario } = await supabase
+        .from('users')
+        .select('telegram_chat_id, status')
+        .eq('uid', uid)
+        .single();
+
+      if (!usuario || usuario.status !== 'aprovado' || !usuario.telegram_chat_id) {
+        return false;
+      }
+
+      const { data: pref } = await supabase
+        .from('notificacao_preferencias')
+        .select('telegram_ativo')
+        .eq('user_uid', uid)
+        .single();
+
+      if (pref && !pref.telegram_ativo) {
+        return false;
+      }
+
+      return this.enviarNotificacao(usuario.telegram_chat_id, dados, tipoNotificacao);
+    } catch (err) {
+      console.error(`Erro ao enviar Telegram para usuário ${uid}:`, err);
+      return false;
+    }
   }
 
   escaparHtml(texto?: string | null): string {
