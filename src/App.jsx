@@ -67,7 +67,7 @@ const ConsultaDisponibilidade = lazyWithRetry(() => import('./ConsultaDisponibil
 
 const LoadingFallback = () => (<Box display="flex" justifyContent="center" alignItems="center" height="80vh"><CircularProgress /></Box>);
 const MainLayout = () => (<Container maxWidth="xl" sx={{ mt: { xs: 1.5, sm: 4 }, mb: { xs: 8, sm: 4 }, px: { xs: 1.5, sm: 3 } }}><Outlet /></Container>);
-const LoginScreen = ({ emailInput, setEmailInput, passwordInput, setPasswordInput, handleDirectLogin, handleGoogleLogin, handleForgotPassword, isLoggingIn, isRegistering, setIsRegistering, nameInput, setNameInput }) => (
+const LoginScreen = ({ emailInput, setEmailInput, passwordInput, setPasswordInput, handleDirectLogin, handleGoogleLogin, handleForgotPassword, handlePublicGuestAccess, isLoggingIn, isRegistering, setIsRegistering, nameInput, setNameInput }) => (
     <Container sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '80vh', py: 4 }}>
         <Paper elevation={4} sx={{ p: { xs: 3, sm: 4 }, textAlign: 'center', maxWidth: 440, width: '100%', borderRadius: 3 }}>
             <img src={cesmacLogo} alt="Logo CESMAC" style={{ height: '55px', marginBottom: '16px' }} />
@@ -76,9 +76,46 @@ const LoginScreen = ({ emailInput, setEmailInput, passwordInput, setPasswordInpu
                 Plataforma de Gestão de Laboratórios CESMAC
             </Typography>
 
+            {/* BOTÃO DE ACESSO RÁPIDO PÚBLICO (ALUNOS E PROFESSORES) */}
+            <Paper 
+                elevation={0} 
+                sx={{ 
+                    p: 2, 
+                    mb: 3, 
+                    bgcolor: 'rgba(30, 126, 200, 0.06)', 
+                    border: '1px solid rgba(30, 126, 200, 0.2)', 
+                    borderRadius: 2 
+                }}
+            >
+                <Typography variant="subtitle2" fontWeight={700} color="primary" gutterBottom>
+                    🎓 Alunos e Professores
+                </Typography>
+                <Typography variant="caption" color="text.secondary" display="block" sx={{ mb: 1.5 }}>
+                    Consulte os horários dos laboratórios em tempo real sem precisar de aprovação de conta.
+                </Typography>
+                <Button 
+                    variant="contained" 
+                    color="primary" 
+                    fullWidth 
+                    size="medium"
+                    onClick={handlePublicGuestAccess}
+                    sx={{ 
+                        fontWeight: 700, 
+                        textTransform: 'none', 
+                        boxShadow: '0 2px 8px rgba(30,126,200,0.25)',
+                        bgcolor: '#1E7EC8',
+                        '&:hover': { bgcolor: '#1565C0' }
+                    }}
+                >
+                    Visualizar Calendário (Acesso Público)
+                </Button>
+            </Paper>
+
+            <Divider sx={{ my: 2, fontSize: '0.82rem', color: 'text.secondary' }}>área restrita da equipe</Divider>
+
             <Box component="form" onSubmit={handleDirectLogin} sx={{ display: 'flex', flexDirection: 'column', gap: 1.5, mb: 2 }}>
                 <Typography variant="subtitle2" align="left" fontWeight={600}>
-                    {isRegistering ? 'Criar Nova Conta:' : 'Acessar a sua conta:'}
+                    {isRegistering ? 'Solicitar Acesso à Equipe:' : 'Login de Técnico / Coordenação:'}
                 </Typography>
 
                 {isRegistering && (
@@ -101,7 +138,7 @@ const LoginScreen = ({ emailInput, setEmailInput, passwordInput, setPasswordInpu
 
                 <input
                     type="email"
-                    placeholder="E-mail (ex: usuario@cesmac.edu.br)"
+                    placeholder="E-mail corporativo / institucional"
                     value={emailInput}
                     onChange={(e) => setEmailInput(e.target.value)}
                     required
@@ -139,7 +176,7 @@ const LoginScreen = ({ emailInput, setEmailInput, passwordInput, setPasswordInpu
                             onClick={handleForgotPassword}
                             sx={{ fontSize: '0.8rem', textTransform: 'none', color: '#1E7EC8' }}
                         >
-                            Esqueceu e-mail ou senha?
+                            Esqueceu a senha?
                         </Button>
                     </Box>
                 )}
@@ -152,7 +189,7 @@ const LoginScreen = ({ emailInput, setEmailInput, passwordInput, setPasswordInpu
                     disabled={!emailInput || !passwordInput || isLoggingIn}
                     sx={{ background: 'linear-gradient(135deg, #1E7EC8 0%, #00C853 100%)', fontWeight: 700, py: 1.2 }}
                 >
-                    {isLoggingIn ? 'Acessando...' : isRegistering ? 'Cadastrar e Entrar' : 'Entrar no Sistema'}
+                    {isLoggingIn ? 'Acessando...' : isRegistering ? 'Solicitar Cadastro da Equipe' : 'Entrar como Equipe'}
                 </Button>
             </Box>
 
@@ -163,11 +200,11 @@ const LoginScreen = ({ emailInput, setEmailInput, passwordInput, setPasswordInpu
                     onClick={() => setIsRegistering(!isRegistering)}
                     sx={{ fontSize: '0.85rem', textTransform: 'none', fontWeight: 600, color: '#334155' }}
                 >
-                    {isRegistering ? 'Já tem uma conta? Faça Login' : 'Ainda não tem conta? Cadastre-se'}
+                    {isRegistering ? 'Já tem conta de equipe? Faça Login' : 'Novo Técnico/Coordenador? Cadastre-se'}
                 </Button>
             </Box>
 
-            <Divider sx={{ my: 2, fontSize: '0.85rem', color: 'text.secondary' }}>ou entre com sua conta</Divider>
+            <Divider sx={{ my: 1.5, fontSize: '0.8rem', color: 'text.secondary' }}>ou com conta corporativa Google</Divider>
 
             <Button 
                 variant="outlined" 
@@ -199,7 +236,7 @@ const LoginScreen = ({ emailInput, setEmailInput, passwordInput, setPasswordInpu
                     }
                 }}
             >
-                Continuar com o Google
+                Entrar com o Google da Equipe
             </Button>
         </Paper>
     </Container>
@@ -423,6 +460,24 @@ function App() {
         setCoordenadorMenuAnchorEl(event.currentTarget);
     };
     
+    const handlePublicGuestAccess = () => {
+        const guestUser = {
+            uid: `guest_visitor`,
+            name: 'Visitante (Aluno / Professor)',
+            email: 'visitante@cesmac.edu.br',
+            role: 'visualizador',
+            status: 'aprovado',
+            approval_pending: false,
+            approvalPending: false
+        };
+        localStorage.setItem('cronolab_user_session', JSON.stringify(guestUser));
+        setUser(guestUser);
+        setUserProfileData(guestUser);
+        setSnackbarMessage("Acesso público ativado. Bem-vindo(a) ao Calendário!");
+        setSnackbarSeverity("info");
+        setOpenSnackbar(true);
+    };
+
     const role = userProfileData?.role || 'visualizador';
     const isApproved = userProfileData?.status !== 'rejeitado' && (userProfileData?.status === 'aprovado' || userProfileData?.approval_pending === false || userProfileData?.approvalPending === false || userProfileData?.role === 'visualizador');
     const approvalPending = !isApproved;
@@ -653,6 +708,7 @@ function App() {
                                             handleDirectLogin={handleDirectLogin} 
                                             handleGoogleLogin={handleGoogleLogin} 
                                             handleForgotPassword={handleForgotPassword} 
+                                            handlePublicGuestAccess={handlePublicGuestAccess}
                                             isLoggingIn={isLoggingIn} 
                                             isRegistering={isRegistering} 
                                             setIsRegistering={setIsRegistering} 
