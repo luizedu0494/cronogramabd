@@ -164,11 +164,20 @@ function App() {
 
     const handleDirectLogin = async (e, customEmail = null) => {
         e?.preventDefault();
-        const targetEmail = customEmail || emailInput;
-        if (!targetEmail) return;
+        const targetEmail = (customEmail || emailInput || '').trim().toLowerCase();
+        
+        // Validação estrita de formato de e-mail
+        const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+        if (!targetEmail || !emailRegex.test(targetEmail)) {
+            setSnackbarMessage("Por favor, informe um endereço de e-mail válido (exemplo: usuario@dominio.com).");
+            setSnackbarSeverity("warning");
+            setOpenSnackbar(true);
+            return;
+        }
+
         setIsLoggingIn(true);
         try {
-            const profile = await userService.getUserProfile(targetEmail.trim());
+            const profile = await userService.getUserProfile(targetEmail);
             
             if (profile) {
                 // Usuário cadastrado no banco de dados
