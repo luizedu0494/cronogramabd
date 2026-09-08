@@ -103,10 +103,11 @@ export const userService = {
    * Login com Google via Supabase OAuth
    */
   async loginWithGoogle() {
+    const currentOrigin = window.location.origin.replace(/\/$/, '');
     const { data, error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
-        redirectTo: window.location.origin
+        redirectTo: currentOrigin
       }
     });
     if (error) throw error;
