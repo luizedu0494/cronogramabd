@@ -137,85 +137,6 @@ function ConfiguracoesPerfil() {
                 throw new Error('Permissão de notificação negada pelo usuário.');
             }
 
-            console.log('[PUSH] Verificando suporte a notificações...');
-            let messaging = null;
-            try {
-                const { getMessaging } = await import('firebase/messaging');
-                const firebaseModule = await import('../../firebaseConfig');
-                messaging = getMessaging(firebaseModule.app);
-            } catch (fbErr) {
-                console.warn('[PUSH] Firebase não configurado para Push, operando via Web Push Nativo.', fbErr);
-            }
-
-
-            console.log('[PUSH] Registrando Service Worker /firebase-messaging-sw.js ...');
-            let swRegistration;
-            try {
-              swRegistration = await navigator.serviceWorker.register('/firebase-messaging-sw.js');
-              console.log('[PUSH] Service Worker registrado:', swRegistration);
-              if (swRegistration.active) {
-                console.log('[PUSH] Service Worker já está ativo.');
-              } else {
-                console.log('[PUSH] Aguardando Service Worker ficar ready...');
-                await navigator.serviceWorker.ready;
-                console.log('[PUSH] Service Worker agora está ready!');
-              }
-            } catch (swErr) {
-              console.warn('[PUSH] Falha no registro normal do SW, buscando existente...', swErr);
-              swRegistration = await navigator.serviceWorker.getRegistration('/firebase-messaging-sw.js');
-              console.log('[PUSH] Registro existente obtido:', swRegistration);
-            }
-
-            const vapidKey = import.meta.env.VITE_FIREBASE_VAPID_KEY;
-            console.log('[PUSH] VAPID Key configurada:', vapidKey ? `${vapidKey.substring(0, 10)}...` : 'AUSENTE!');
-            
-            console.log('[PUSH] Chamando getToken() no FCM...');
-            const getTokenWithTimeout = () => Promise.race([
-              getToken(messaging, {
-                vapidKey: vapidKey,
-                serviceWorkerRegistration: swRegistration
-              }),
-              new Promise((_, reject) => 
-                setTimeout(() => reject(new Error('Tempo limite (10s) excedido ao obter token do FCM.')), 10000)
-              )
-            ]);
-
-            const token = await getTokenWithTimeout();
-            console.log('[PUSH] Token FCM obtido com sucesso:', token ? `${token.substring(0, 15)}...` : 'NULO');
-
-            if (!token) {
-                throw new Error('Não foi possível obter o token do FCM.');
-            }
-
-            const user = auth.currentUser;
-            const idToken = await user.getIdToken();
-            console.log('[PUSH] Salvando token para UID:', user.uid);
-
-            try {
-              const response = await fetch('/api/save-push-token', {
-                  method: 'POST',
-                  headers: {
-                      'Content-Type': 'application/json',
-                      'Authorization': `Bearer ${idToken}`
-                  },
-                  body: JSON.stringify({ token })
-              });
-              if (!response.ok) throw new Error(`API respondeu status ${response.status}`);
-              console.log('[PUSH] Token salvo via Vercel Function /api/save-push-token!');
-            } catch (apiErr) {
-              console.warn('[PUSH] API serverless indisponível localmente, salvando via Firestore direto:', apiErr);
-              const { setDoc } = await import('firebase/firestore');
-              await setDoc(doc(db, 'userTokens', user.uid), {
-                tokens: [token],
-                updatedAt: new Date()
-              }, { merge: true });
-              await setDoc(doc(db, 'fcmTokens', user.uid), {
-                tokens: [token],
-                updatedAt: new Date()
-              }, { merge: true }).catch(() => {});
-              console.log('[PUSH] Token salvo no Firestore (coleção userTokens)!');
-            }
-
             setPushAtivo(true);
             setSnackbarMessage('Notificações Push ativadas com sucesso neste dispositivo!');
             setSnackbarSeverity('success');
@@ -223,14 +144,11 @@ function ConfiguracoesPerfil() {
         } catch (err) {
             console.error('[PUSH ERRO COMPLETO]:', err);
             let userMsg = err.message || 'Erro ao ativar notificações Push.';
-            if (err.name === 'AbortError' || String(err).includes('push service error')) {
-                userMsg = 'O serviço de Push do navegador falhou ao registrar. Verifique se o bloqueador de anúncios/notificações está desativado ou tente reiniciar a guia do navegador.';
-            }
             setSnackbarMessage(userMsg);
-            setSnackbarSeverity('error');
+            setSnackbarSeverity("error");
             setOpenSnackbar(true);
         } finally {
-            console.log('[PUSH] Finalizado (setPushLoading false)');
+            console.log('[PUSH] Finalizado');
             setPushLoading(false);
         }
     };
