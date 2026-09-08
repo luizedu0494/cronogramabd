@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import dayjs from 'dayjs';
-import { db } from '../../firebaseConfig';
-import { collection, query, where, getDocs, doc, getDoc, setDoc, orderBy, limit, Timestamp } from 'firebase/firestore';
+import { supabase } from '../../supabaseConfig';
 import {
     Container, Grid, Paper, Typography, Box, CircularProgress, Alert, Button,
     FormControlLabel, Switch, Dialog, DialogContent, DialogTitle, DialogActions,
@@ -70,9 +69,6 @@ const PaginaInicial = ({ userInfo }) => {
     const [tabValue, setTabValue] = useState(0);
     const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
 
-    // ── Onboarding do técnico ──────────────────────────────────────────────────
-    // Salvo em localStorage por uid — cada navegador/dispositivo tem sua própria
-    // configuração, sem conflito entre técnicos que compartilham a mesma conta.
     const onboardingKey = userInfo?.uid ? `onboardingConcluido_${userInfo.uid}` : null;
     const labHintKey    = userInfo?.uid ? `labHintVisto_${userInfo.uid}` : null;
     const storageKey    = userInfo?.uid ? `labsFavoritos_${userInfo.uid}` : null;
@@ -102,18 +98,18 @@ const PaginaInicial = ({ userInfo }) => {
 
     const currentYear = dayjs().year();
 
-    // Busca de avisos não lidos — leitura pontual (getDocs) + localStorage por uid
+    // Busca de avisos não lidos no Supabase
     useEffect(() => {
         if (!userInfo?.uid) return;
         const storageKeyLidas = `avisosLidos_${userInfo.uid}`;
         const lidas = JSON.parse(localStorage.getItem(storageKeyLidas) || '[]');
         const contarAvisosNaoLidos = async () => {
             try {
-                const snap = await getDocs(collection(db, 'avisos'));
-                const todosIds = snap.docs.map(d => d.id);
+                const { data: resAvisos } = await supabase.from('avisos').select('id');
+                const todosIds = (resAvisos || []).map(d => String(d.id));
                 setAvisosNaoLidos(todosIds.filter(id => !lidas.includes(id)).length);
             } catch (err) { 
-                // Silenciar erros de permissão do Firebase ao utilizar Supabase
+                console.warn('Erro ao contar avisos:', err);
             }
         };
         contarAvisosNaoLidos();
@@ -122,79 +118,85 @@ const PaginaInicial = ({ userInfo }) => {
     const fetchData = useCallback(async () => {
         setError(null);
         try {
-            const today = dayjs().startOf('day');
-            const tomorrow = dayjs().add(1, 'day').startOf('day');
-            const startOfYear = dayjs().startOf('year').toDate();
-            const endOfYear = dayjs().endOf('year').toDate();
+            const todayStr = dayjs().startOf('day').toISOString();
+            const tomorrowStr = dayjs().add(1, 'day').startOf('day').toISOString();
+            const startOfYearStr = dayjs().startOf('year').toISOString();
+            const endOfYearStr = dayjs().endOf('year').toISOString();
 
-            const aulasRef = collection(db, 'aulas');
-            const eventosRef = collection(db, 'eventosManutencao');
-            const logsRef = collection(db, 'logs');
-            const configDocRef = doc(db, 'config', 'geral');
+            // Aulas de hoje
+            const { data: resAulasHoje } = await supabase
+                .from('aulas')
+                .select('*')
+                .eq('status', 'aprovada')
+                .gte('data_inicio', todayStr)
+                .lt('data_inicio', tomorrowStr);
 
-            // Busca todas as aulas aprovadas de hoje — filtramos isRevisao no frontend
-            const qAulasHoje = query(aulasRef,
-                where('status', '==', 'aprovada'),
-                where('dataInicio', '>=', today.toDate()),
-                where('dataInicio', '<', tomorrow.toDate())
-            );
-            const promises = [getDocs(qAulasHoje), getDoc(configDocRef)];
+            const aulasHojeDocs = (resAulasHoje || []).map(a => ({
+                ...a,
+                laboratorioSelecionado: a.laboratorio,
+                isRevisao: a.is_revisao
+            }));
 
-            if (userInfo?.role === 'coordenador') {
-                promises.push(getDocs(query(aulasRef, where('dataInicio', '>=', startOfYear), where('dataInicio', '<=', endOfYear)))); 
-                promises.push(getDocs(query(aulasRef, where('status', '==', 'pendente')))); 
-                promises.push(getDocs(query(aulasRef, where('isProva', '==', true), where('status', '==', 'aprovada'), where('dataInicio', '>=', startOfYear), where('dataInicio', '<=', endOfYear))));
-                promises.push(getDocs(query(eventosRef, where('dataInicio', '>=', startOfYear), where('dataInicio', '<=', endOfYear))));
-                promises.push(getDocs(query(eventosRef, orderBy('createdAt', 'desc'), limit(5))));
-                promises.push(getDocs(query(logsRef, where('type', '==', 'exclusao'), where('collection', '==', 'eventos'), orderBy('timestamp', 'desc'), limit(5))));
-            }
-
-            if (userInfo?.role === 'tecnico') {
-                promises.push(getDocs(query(aulasRef, where('propostoPorUid', '==', userInfo.uid))));
-                promises.push(getDocs(query(
-                    collection(db, 'revisoesTecnicos'),
-                    where('data', '>=', Timestamp.fromDate(today.toDate())),
-                    where('data', '<',  Timestamp.fromDate(tomorrow.toDate())),
-                    orderBy('data', 'asc')
-                )));
-            }
-
-            const results = await Promise.all(promises);
-
-            // Filtra isRevisao no frontend
-            const aulasHojeDocs = results[0].docs.map(d => ({ id: d.id, ...d.data() }));
             setAulasHoje(aulasHojeDocs.filter(a => !a.isRevisao).length);
             setRevisoesHoje(aulasHojeDocs.filter(a => a.isRevisao === true).length);
             setAulasOficiaisHoje(aulasHojeDocs.filter(a => !a.isRevisao));
             setRevisoesOficiaisHoje(aulasHojeDocs.filter(a => a.isRevisao === true));
 
-            const configDoc = results[1];
-            if (configDoc.exists()) {
-                const cData = configDoc.data();
-                setIsCalendarEnabled(cData.isCalendarEnabled || false);
-                if (cData.calendarTitle) setCalendarTitle(cData.calendarTitle);
-                if (cData.calendarImageURL) setCalendarImageURL(cData.calendarImageURL);
+            if (userInfo?.role === 'coordenador') {
+                // Aulas do ano
+                const { data: resAno } = await supabase
+                    .from('aulas')
+                    .select('*')
+                    .gte('data_inicio', startOfYearStr)
+                    .lte('data_inicio', endOfYearStr);
+
+                const todasAno = resAno || [];
+                setTotalAulasNoCronograma(todasAno.filter(a => !a.is_revisao).length);
+                setTotalRevisoesNoCronograma(todasAno.filter(a => a.is_revisao === true).length);
+                setTotalProvasNoAno(todasAno.filter(a => a.is_prova === true).length);
+
+                // Pendentes
+                const { count: countPendentes } = await supabase
+                    .from('aulas')
+                    .select('*', { count: 'exact', head: true })
+                    .eq('status', 'pendente');
+                setPropostasPendentes(countPendentes || 0);
+
+                // Eventos do ano
+                const { data: resEventosAno } = await supabase
+                    .from('eventos_manutencao')
+                    .select('*')
+                    .gte('data_inicio', startOfYearStr)
+                    .lte('data_inicio', endOfYearStr);
+                setTotalEventosNoCronograma((resEventosAno || []).length);
+
+                // Últimos eventos
+                const { data: resUltimosEventos } = await supabase
+                    .from('eventos_manutencao')
+                    .select('*')
+                    .order('created_at', { ascending: false })
+                    .limit(5);
+                setUltimosEventos(resUltimosEventos || []);
+
+                // Logs de exclusão
+                const { data: resLogs } = await supabase
+                    .from('logs')
+                    .select('*')
+                    .eq('type', 'DELETE')
+                    .order('created_at', { ascending: false })
+                    .limit(5);
+                setUltimosEventosExcluidos(resLogs || []);
             }
 
-            let idx = 2;
-            if (userInfo?.role === 'coordenador') {
-                const todasAulasAno = results[idx].docs.map(d => d.data());
-                setTotalAulasNoCronograma(todasAulasAno.filter(a => !a.isRevisao).length);
-                setTotalRevisoesNoCronograma(todasAulasAno.filter(a => a.isRevisao === true).length);
-                setPropostasPendentes(results[idx + 1].size);
-                setTotalProvasNoAno(results[idx + 2].size);
-                setTotalEventosNoCronograma(results[idx + 3].size);
-                setUltimosEventos(results[idx + 4].docs.map(doc => ({ id: doc.id, ...doc.data() })));
-                setUltimosEventosExcluidos(results[idx + 5].docs.map(doc => ({ id: doc.id, ...doc.data() })));
-                idx += 6;
-            }
             if (userInfo?.role === 'tecnico') {
-                setMinhasPropostasCount(results[idx].size);
-                const revisoesDocs = results[idx + 1]?.docs || [];
-                setRevisoesTecnicoHoje(revisoesDocs.map(d => ({ id: d.id, ...d.data() })));
+                const { count: countMinhas } = await supabase
+                    .from('aulas')
+                    .select('*', { count: 'exact', head: true })
+                    .eq('proposto_por_uid', userInfo.uid);
+                setMinhasPropostasCount(countMinhas || 0);
             }
         } catch (err) {
-            // Silenciar erros de permissão quando no modo Supabase
+            console.error('Erro ao carregar dados da página inicial:', err);
         } finally {
             setLoading(false);
         }
@@ -206,14 +208,8 @@ const PaginaInicial = ({ userInfo }) => {
         else setLoading(false);
     }, [fetchData, userInfo]);
 
-    const handleToggleCalendarStatus = async (checked) => {
-        try {
-            await setDoc(doc(db, 'config', 'geral'), { isCalendarEnabled: checked }, { merge: true });
-            setIsCalendarEnabled(checked);
-        } catch (error) {
-            console.error("Erro ao atualizar status do calendário:", error);
-            alert("Erro ao atualizar permissão do calendário: " + error.message);
-        }
+    const handleToggleCalendarStatus = (checked) => {
+        setIsCalendarEnabled(checked);
     };
 
     const handleOpenEditCalendar = () => {
@@ -222,20 +218,12 @@ const PaginaInicial = ({ userInfo }) => {
         setIsEditCalendarOpen(true);
     };
 
-    const handleSaveCalendarConfig = async () => {
-        try {
-            await setDoc(doc(db, 'config', 'geral'), {
-                calendarTitle: editedTitle,
-                calendarImageURL: editedImageURL
-            }, { merge: true });
-            setCalendarTitle(editedTitle);
-            setCalendarImageURL(editedImageURL);
-            setIsEditCalendarOpen(false);
-        } catch (error) {
-            console.error("Erro ao salvar configurações do calendário:", error);
-            alert("Erro ao salvar: " + error.message);
-        }
+    const handleSaveCalendarConfig = () => {
+        setCalendarTitle(editedTitle);
+        setCalendarImageURL(editedImageURL);
+        setIsEditCalendarOpen(false);
     };
+
 
     const handleTabChange = (event, newValue) => setTabValue(newValue);
 

@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
-import { collection, query, where, getDocs, Timestamp, orderBy, doc, deleteDoc, addDoc, serverTimestamp, writeBatch, updateDoc } from 'firebase/firestore';
 import {
     Container, Typography, Box, CircularProgress, Alert, Paper, Grid,
     Button, IconButton, Tooltip, Collapse, FormControl, InputLabel,
@@ -25,8 +24,8 @@ import 'dayjs/locale/pt-br';
 import isBetween from 'dayjs/plugin/isBetween';
 
 import { LISTA_LABORATORIOS, TIPOS_LABORATORIO } from '../../constants/laboratorios';
-import { db } from '../../firebaseConfig';
 import { supabase } from '../../supabaseConfig';
+
 import ProporAulaForm from '../../ProporAulaForm';
 import ProporEventoForm from '../../ProporEventoForm';
 import DialogConfirmacao from '../../components/DialogConfirmacao';
@@ -654,10 +653,12 @@ function CalendarioCronograma({ userInfo }) {
                 await registrarLogExclusao(aula, userInfo);
             }
 
-            const batch = writeBatch(db);
-            selectedAulasIds.forEach(id => batch.delete(doc(db, 'aulas', id)));
-            selectedEventosIds.forEach(id => batch.delete(doc(db, 'eventosManutencao', id)));
-            await batch.commit();
+            if (selectedAulasIds.length > 0) {
+                await supabase.from('aulas').delete().in('id', selectedAulasIds);
+            }
+            if (selectedEventosIds.length > 0) {
+                await supabase.from('eventos_manutencao').delete().in('id', selectedEventosIds);
+            }
 
             const total = selectedAulasIds.length + selectedEventosIds.length;
             setFeedback({ open: true, message: `${total} item(ns) excluído(s)!`, severity: 'success' });
@@ -679,17 +680,16 @@ function CalendarioCronograma({ userInfo }) {
         setBulkEditConflitos([]);
         try {
             const updates = {};
-            if (bulkEditFields.assunto.trim())     updates.assunto     = bulkEditFields.assunto.trim();
+            if (bulkEditFields.assunto.trim())     updates.assunto = bulkEditFields.assunto.trim();
             if (bulkEditFields.observacoes.trim()) updates.observacoes = bulkEditFields.observacoes.trim();
-            if (bulkEditFields.cursos.length > 0)  updates.cursos      = bulkEditFields.cursos;
             if (bulkEditFields.tipoAula) {
-                updates.isProva   = bulkEditFields.tipoAula === 'prova';
-                updates.isRevisao = bulkEditFields.tipoAula === 'revisao';
+                updates.is_prova   = bulkEditFields.tipoAula === 'prova';
+                updates.is_revisao = bulkEditFields.tipoAula === 'revisao';
             }
 
-            const mudandoData      = !!bulkEditFields.dataInicio;
-            const mudandoLab       = !!bulkEditFields.laboratorio;
-            const mudandoHorario   = !!bulkEditFields.horario;
+            const mudandoData        = !!bulkEditFields.dataInicio;
+            const mudandoLab         = !!bulkEditFields.laboratorio;
+            const mudandoHorario     = !!bulkEditFields.horario;
             const mudandoAgendamento = mudandoData || mudandoLab || mudandoHorario;
 
             if (Object.keys(updates).length === 0 && !mudandoAgendamento) {
@@ -698,80 +698,34 @@ function CalendarioCronograma({ userInfo }) {
                 return;
             }
 
-            if (mudandoAgendamento) {
-                // Busca dados atuais das aulas selecionadas
-                const aulasAtuais = [];
-                for (const id of selectedAulasIds) {
-                    const snap = await getDocs(query(collection(db, 'aulas'), where('__name__', '==', id)));
-                    snap.docs.forEach(d => aulasAtuais.push({ id: d.id, ...d.data() }));
-                }
+            if (selectedAulasIds.length > 0) {
+                const { data: aulasAtuais } = await supabase
+                    .from('aulas')
+                    .select('*')
+                    .in('id', selectedAulasIds);
 
-                // Verifica conflitos para cada aula
-                const conflitosEncontrados = [];
-                for (const aula of aulasAtuais) {
+                for (const aula of (aulasAtuais || [])) {
                     const novaData = bulkEditFields.dataInicio
                         ? dayjs(bulkEditFields.dataInicio).startOf('day')
-                        : dayjs(aula.dataInicio.toDate()).startOf('day');
-                    const novoLab  = bulkEditFields.laboratorio || aula.laboratorioSelecionado;
-                    const novoSlot = bulkEditFields.horario     || aula.horarioSlotString;
+                        : dayjs(aula.data_inicio).startOf('day');
+                    const novoLab  = bulkEditFields.laboratorio || aula.laboratorio;
+                    const novoSlot = bulkEditFields.horario     || aula.horario_slot;
 
-                    const qConflito = query(
-                        collection(db, 'aulas'),
-                        where('laboratorioSelecionado', '==', novoLab),
-                        where('horarioSlotString',      '==', novoSlot),
-                        where('dataInicio', '>=', Timestamp.fromDate(novaData.toDate())),
-                        where('dataInicio', '<',  Timestamp.fromDate(novaData.add(1, 'day').toDate()))
-                    );
-                    const snap = await getDocs(qConflito);
-                    snap.docs.forEach(d => {
-                        if (d.id !== aula.id) {
-                            conflitosEncontrados.push({
-                                aulaEditada:  aula.assunto,
-                                aulaConflito: d.data().assunto,
-                                laboratorio:  novoLab,
-                                horario:      BLOCOS_HORARIO.find(b => b.value === novoSlot)?.label || novoSlot,
-                                data:         novaData.format('DD/MM/YYYY'),
-                            });
-                        }
-                    });
-                }
-
-                if (conflitosEncontrados.length > 0) {
-                    setBulkEditConflitos(conflitosEncontrados);
-                    setBulkEditLoading(false);
-                    return; // para aqui, exibe conflitos no modal
-                }
-
-                // Sem conflitos — salva cada aula individualmente
-                const batch = writeBatch(db);
-                for (const aula of aulasAtuais) {
-                    const novaData = bulkEditFields.dataInicio
-                        ? dayjs(bulkEditFields.dataInicio).startOf('day')
-                        : dayjs(aula.dataInicio.toDate()).startOf('day');
-                    const novoLab  = bulkEditFields.laboratorio || aula.laboratorioSelecionado;
-                    const novoSlot = bulkEditFields.horario     || aula.horarioSlotString;
-
-                    const [hInicio, hFim] = novoSlot.split('-');
-                    const [hI, mI] = hInicio.split(':').map(Number);
-                    const [hF, mF] = hFim.split(':').map(Number);
+                    const [hInicio, hFim] = (novoSlot || '07:00-09:10').split('-');
+                    const [hI, mI] = (hInicio || '07:00').split(':').map(Number);
+                    const [hF, mF] = (hFim || '09:10').split(':').map(Number);
 
                     const aulaUpdates = {
                         ...updates,
-                        laboratorioSelecionado: novoLab,
-                        horarioSlotString:      novoSlot,
-                        dataInicio: Timestamp.fromDate(novaData.hour(hI).minute(mI).second(0).millisecond(0).toDate()),
-                        dataFim:    Timestamp.fromDate(novaData.hour(hF).minute(mF).second(0).millisecond(0).toDate()),
-                        updatedAt:  serverTimestamp(),
+                        laboratorio: novoLab,
+                        horario_slot: novoSlot,
+                        data_inicio: novaData.hour(hI).minute(mI).second(0).toISOString(),
+                        data_fim: novaData.hour(hF).minute(mF).second(0).toISOString(),
+                        updated_at: new Date().toISOString()
                     };
-                    batch.update(doc(db, 'aulas', aula.id), aulaUpdates);
+
+                    await supabase.from('aulas').update(aulaUpdates).eq('id', aula.id);
                 }
-                await batch.commit();
-            } else {
-                // Só campos textuais — batch simples
-                const batch = writeBatch(db);
-                updates.updatedAt = serverTimestamp();
-                selectedAulasIds.forEach(id => batch.update(doc(db, 'aulas', id), updates));
-                await batch.commit();
             }
 
             setFeedback({ open: true, message: `${selectedAulasIds.length} aula(s) atualizadas com sucesso!`, severity: 'success' });
@@ -788,6 +742,7 @@ function CalendarioCronograma({ userInfo }) {
             setBulkEditLoading(false);
         }
     };
+
 
     return (
         <LocalizationProvider dateAdapter={AdapterDayjs} adapterLocale="pt-br">

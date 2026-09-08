@@ -1,21 +1,26 @@
 import { useQuery } from '@tanstack/react-query';
-import { collection, getDocs, query, where, Timestamp } from 'firebase/firestore';
+import { supabase } from '../supabaseConfig';
 import dayjs from 'dayjs';
-import { db } from '../firebaseConfig';
 
 export const useAulasDia = (dataFormatted?: string) => {
-  const targetDate = dataFormatted || dayjs().format('DD/MM/YYYY');
+  const targetDate = dataFormatted || dayjs().format('YYYY-MM-DD');
 
   return useQuery({
     queryKey: ['aulas', targetDate],
     queryFn: async () => {
-      const q = query(
-        collection(db, 'aulas'),
-        where('data', '==', targetDate)
-      );
-      const snapshot = await getDocs(q);
-      return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      const inicio = dayjs(targetDate).startOf('day').toISOString();
+      const fim = dayjs(targetDate).endOf('day').toISOString();
+
+      const { data, error } = await supabase
+        .from('aulas')
+        .select('*')
+        .gte('data_inicio', inicio)
+        .lte('data_inicio', fim);
+
+      if (error) throw error;
+      return data || [];
     },
     staleTime: 5 * 60 * 1000,
   });
 };
+

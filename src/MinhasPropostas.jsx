@@ -1,8 +1,7 @@
 // src/MinhasPropostas.js
 
 import React, { useState, useEffect } from 'react';
-import { db, auth } from './firebaseConfig';
-import { collection, query, where, getDocs, orderBy } from 'firebase/firestore';
+import { supabase } from './supabaseConfig';
 import {
     Container, Typography, Box, CircularProgress, Alert, Paper,
     List, ListItem, ListItemText, ListItemSecondaryAction, Chip, Divider,
@@ -17,60 +16,47 @@ const MinhasPropostas = () => {
     const [propostas, setPropostas] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
-    const currentUser = auth.currentUser;
 
     useEffect(() => {
         const fetchPropostas = async () => {
-            if (!currentUser) {
-                setLoading(false);
-                return;
-            }
-
             setLoading(true);
             setError(null);
 
             try {
-                // Busca por propostoPorUid (campo novo/correto)
-                const q1 = query(
-                    collection(db, 'aulas'),
-                    where('propostoPorUid', '==', currentUser.uid)
-                );
-                // Busca por professorUid (campo legado, registros antigos)
-                const q2 = query(
-                    collection(db, 'aulas'),
-                    where('professorUid', '==', currentUser.uid)
-                );
+                const { data: { user } } = await supabase.auth.getUser();
+                if (!user) {
+                    setLoading(false);
+                    return;
+                }
 
-                const [snap1, snap2] = await Promise.all([getDocs(q1), getDocs(q2)]);
+                const { data, error } = await supabase
+                    .from('aulas')
+                    .select('*')
+                    .eq('proposto_por_uid', user.id)
+                    .order('created_at', { ascending: false });
 
-                const idsVistos = new Set();
-                const propostasList = [];
+                if (error) throw error;
 
-                [...snap1.docs, ...snap2.docs].forEach(doc => {
-                    if (!idsVistos.has(doc.id)) {
-                        idsVistos.add(doc.id);
-                        propostasList.push({ id: doc.id, ...doc.data() });
-                    }
-                });
-
-                // Ordena por data de criação decrescente
-                propostasList.sort((a, b) => {
-                    const dateA = a.createdAt?.toDate?.() ?? new Date(0);
-                    const dateB = b.createdAt?.toDate?.() ?? new Date(0);
-                    return dateB - dateA;
-                });
+                const propostasList = (data || []).map(d => ({
+                    ...d,
+                    id: d.id,
+                    laboratorioSelecionado: d.laboratorio,
+                    horarioSlotString: d.horario_slot,
+                    dataInicio: d.data_inicio,
+                    createdAt: d.created_at
+                }));
 
                 setPropostas(propostasList);
             } catch (err) {
-                console.error("Erro ao buscar propostas:", err);
-                setError("Erro ao carregar suas propostas. Por favor, tente novamente.");
+                console.error("Erro ao carregar propostas:", err);
+                setError("Erro ao carregar propostas.");
             } finally {
                 setLoading(false);
             }
         };
 
         fetchPropostas();
-    }, [currentUser]);
+    }, []);
 
     const getChipProps = (status) => {
         switch (status) {

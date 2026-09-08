@@ -13,24 +13,18 @@ import SearchIcon from '@mui/icons-material/Search';
 import WarningAmberIcon from '@mui/icons-material/WarningAmber';
 import FilterListIcon from '@mui/icons-material/FilterList';
 import TaskAltIcon from '@mui/icons-material/TaskAlt';
-import {
-    collection, query, where, onSnapshot, doc, updateDoc,
-    Timestamp, orderBy
-} from 'firebase/firestore';
 import dayjs from 'dayjs';
 import 'dayjs/locale/pt-br';
-import { db } from '../../firebaseConfig';
+import { supabase } from '../../supabaseConfig';
 import { LISTA_CURSOS } from '../../constants/cursos';
 import { notificadorTelegram } from '../../services/NotificadorTelegram';
 import { autoRejeitarPendentesConflitantes } from '../../utils/conflitoUtils';
+import Checkbox from '@mui/material/Checkbox';
+import PlaylistAddCheckIcon from '@mui/icons-material/PlaylistAddCheck';
 
 const TELEGRAM_CHAT_ID = import.meta.env.VITE_TELEGRAM_CHAT_ID;
 
 dayjs.locale('pt-br');
-
-import Checkbox from '@mui/material/Checkbox';
-import PlaylistAddCheckIcon from '@mui/icons-material/PlaylistAddCheck';
-import { writeBatch } from 'firebase/firestore';
 
 const MONTHS = Array.from({ length: 12 }, (_, i) => ({ value: i, label: dayjs().month(i).format('MMMM') }));
 const YEARS  = Array.from({ length: 5  }, (_, i) => dayjs().year() - 2 + i);
@@ -43,14 +37,14 @@ function AulaCard({ aula, onAction, processando, isSelected, onClick, temConflit
     }, [aula.cursos]);
 
     const dataFormatada = useMemo(() => {
-        try { return dayjs(aula.dataInicio.toDate ? aula.dataInicio.toDate() : aula.dataInicio).format('ddd, DD/MM/YYYY [às] HH:mm'); }
+        try { return dayjs(aula.data_inicio || aula.dataInicio).format('ddd, DD/MM/YYYY [às] HH:mm'); }
         catch { return '—'; }
-    }, [aula.dataInicio]);
+    }, [aula.data_inicio, aula.dataInicio]);
 
     const borderLeftColor = 
         temConflito ? '#d32f2f' :
-        aula.isRevisao ? '#9c27b0' :
-        aula.isProva   ? '#ff9800' :
+        aula.isRevisao || aula.is_revisao ? '#9c27b0' :
+        aula.isProva || aula.is_prova   ? '#ff9800' :
         aula.status === 'aprovada'  ? '#2e7d32' :
         aula.status === 'rejeitada' ? '#c62828' : '#1E7EC8';
 
@@ -60,32 +54,26 @@ function AulaCard({ aula, onAction, processando, isSelected, onClick, temConflit
         <Card variant="outlined" 
             onClick={onClick}
             sx={{
-                mb: 2,
-                cursor: 'pointer',
-                borderLeft: `6px solid ${borderLeftColor}`,
-                backgroundColor: isSelected ? 'action.selected' : 'background.paper',
+                mb: 1.5, cursor: 'pointer', borderLeft: `5px solid ${borderLeftColor}`,
+                bgcolor: isSelected ? 'action.selected' : 'background.paper',
                 transition: 'all 0.2s',
-                opacity: isProcessando ? 0.6 : 1,
-                '&:hover': { boxShadow: 3, transform: 'translateY(-1px)' }
-            }}>
-            <CardContent sx={{ pb: 1.5, position: 'relative' }}>
-                <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1, flexWrap: 'wrap', gap: 1, alignItems: 'center' }}>
+                '&:hover': { boxShadow: 2 }
+            }}
+        >
+            <CardContent sx={{ p: 2, '&:last-child': { pb: 2 } }}>
+                <Box display="flex" justifyContent="space-between" alignItems="flex-start" mb={0.5}>
                     <Box display="flex" alignItems="center" gap={1}>
                         {isCheckable && (
                             <Checkbox
                                 size="small"
                                 checked={isChecked}
-                                onChange={(e) => {
-                                    e.stopPropagation();
-                                    onToggleCheck(aula.id);
-                                }}
+                                onChange={(e) => { e.stopPropagation(); onToggleCheck(aula.id); }}
                                 onClick={(e) => e.stopPropagation()}
                             />
                         )}
-                        <Typography variant="subtitle1" fontWeight="bold">{aula.assunto}</Typography>
-                        {aula.isRevisao && <Chip label="Revisão" size="small" color="secondary" sx={{ height: 20, fontSize: '0.65rem' }} />}
-                        {aula.isProva && <Chip label="Prova" size="small" color="warning" sx={{ height: 20, fontSize: '0.65rem' }} />}
-                        {temConflito && <Chip label="⚠️ Conflito" size="small" color="error" sx={{ height: 20, fontSize: '0.65rem', fontWeight: 'bold' }} />}
+                        <Typography variant="subtitle1" fontWeight="bold" lineHeight={1.2}>
+                            {aula.assunto || 'Sem Assunto'}
+                        </Typography>
                     </Box>
                     <Chip
                         label={aula.status === 'pendente' ? 'Pendente' : aula.status === 'aprovada' ? 'Aprovada' : 'Rejeitada'}
@@ -94,10 +82,10 @@ function AulaCard({ aula, onAction, processando, isSelected, onClick, temConflit
                     />
                 </Box>
                 <Typography color="text.secondary" variant="body2">
-                    🏛️ {aula.laboratorioSelecionado || '—'} &nbsp;|&nbsp; 🎓 {cursosLabel}
+                    🏛️ {aula.laboratorio || aula.laboratorioSelecionado || '—'} &nbsp;|&nbsp; 🎓 {cursosLabel}
                 </Typography>
                 <Typography variant="caption" color="text.secondary" sx={{ mt: 0.5, display: 'block' }}>
-                    📅 {dataFormatada} | 👤 {aula.propostoPorNome || aula.professorNome || 'N/A'}
+                    📅 {dataFormatada} | 👤 {aula.proposto_por_nome || aula.propostoPorNome || 'N/A'}
                 </Typography>
             </CardContent>
         </Card>
@@ -121,17 +109,20 @@ function GerenciarAprovacoes() {
     const conflitosMap = useMemo(() => {
         const mapa = {};
         pendentesGlobal.forEach(p => {
-            if (!p.dataInicio || !p.laboratorioSelecionado) return;
-            const dateStr = dayjs(p.dataInicio?.toDate ? p.dataInicio.toDate() : p.dataInicio).format('YYYY-MM-DD');
-            const lab = p.laboratorioSelecionado;
-            const hSlots = Array.isArray(p.horarioSlotString) ? p.horarioSlotString : [p.horarioSlotString];
+            const pStart = p.data_inicio || p.dataInicio;
+            const pLab = p.laboratorio || p.laboratorioSelecionado;
+            if (!pStart || !pLab) return;
+            const dateStr = dayjs(pStart).format('YYYY-MM-DD');
+            const hSlots = Array.isArray(p.horario_slot || p.horarioSlotString) ? (p.horario_slot || p.horarioSlotString) : [(p.horario_slot || p.horarioSlotString)];
 
             const temConflito = aulasDoMes.some(aprov => {
                 if (aprov.status !== 'aprovada') return false;
-                const aDate = dayjs(aprov.dataInicio?.toDate ? aprov.dataInicio.toDate() : aprov.dataInicio).format('YYYY-MM-DD');
+                const aStart = aprov.data_inicio || aprov.dataInicio;
+                const aLab = aprov.laboratorio || aprov.laboratorioSelecionado;
+                const aDate = dayjs(aStart).format('YYYY-MM-DD');
                 if (aDate !== dateStr) return false;
-                if (aprov.laboratorioSelecionado !== lab) return false;
-                const aSlots = Array.isArray(aprov.horarioSlotString) ? aprov.horarioSlotString : [aprov.horarioSlotString];
+                if (aLab !== pLab) return false;
+                const aSlots = Array.isArray(aprov.horario_slot || aprov.horarioSlotString) ? (aprov.horario_slot || aprov.horarioSlotString) : [(aprov.horario_slot || aprov.horarioSlotString)];
                 return hSlots.some(h => aSlots.includes(h));
             });
 
@@ -153,11 +144,7 @@ function GerenciarAprovacoes() {
         if (selectedIds.length === 0 || loadingBatch) return;
         setLoadingBatch(true);
         try {
-            const batch = writeBatch(db);
-            selectedIds.forEach(id => {
-                batch.update(doc(db, 'aulas', id), { status: 'aprovada' });
-            });
-            await batch.commit();
+            await supabase.from('aulas').update({ status: 'aprovada' }).in('id', selectedIds);
 
             setSnackbar({
                 open: true,
@@ -165,6 +152,7 @@ function GerenciarAprovacoes() {
                 message: `✅ ${selectedIds.length} proposta(s) aprovada(s) em lote!`
             });
             setSelectedIds([]);
+            fetchPendentes();
         } catch (err) {
             console.error('Erro na aprovação em lote:', err);
             setSnackbar({ open: true, severity: 'error', message: 'Erro ao aprovar em lote.' });
@@ -188,46 +176,72 @@ function GerenciarAprovacoes() {
 
     const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
 
-    // ── Pendentes: query global ───────────────────────────────────────────
-    useEffect(() => {
+    // ── Pendentes: query Supabase ───────────────────────────────────────────
+    const fetchPendentes = useCallback(async () => {
         setLoadingPendentes(true);
-        const q = query(
-            collection(db, 'aulas'),
-            where('status', '==', 'pendente'),
-            orderBy('createdAt', 'asc')
-        );
-        const unsub = onSnapshot(q, snap => {
-            const docs = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-            setPendentesGlobal(docs);
-            setLoadingPendentes(false);
-        }, err => {
+        try {
+            const { data, error } = await supabase
+                .from('aulas')
+                .select('*')
+                .eq('status', 'pendente')
+                .order('created_at', { ascending: true });
+
+            if (error) throw error;
+            setPendentesGlobal((data || []).map(a => ({
+                ...a,
+                laboratorioSelecionado: a.laboratorio,
+                horarioSlotString: a.horario_slot,
+                propostoPorNome: a.proposto_por_nome
+            })));
+        } catch (err) {
             console.error(err);
+        } finally {
             setLoadingPendentes(false);
-        });
-        return () => unsub();
+        }
     }, []);
+
+    useEffect(() => {
+        fetchPendentes();
+        const channel = supabase
+            .channel('public:aulas')
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'aulas' }, () => {
+                fetchPendentes();
+            })
+            .subscribe();
+        return () => { supabase.removeChannel(channel); };
+    }, [fetchPendentes]);
 
     // ── Aprovadas/Rejeitadas: filtradas por mês/ano ───────────────────────
     useEffect(() => {
-        setLoadingMes(true);
-        const start = dayjs().year(selectedYear).month(selectedMonth).startOf('month');
-        const end   = dayjs().year(selectedYear).month(selectedMonth).endOf('month');
-        const q = query(
-            collection(db, 'aulas'),
-            where('dataInicio', '>=', Timestamp.fromDate(start.toDate())),
-            where('dataInicio', '<=', Timestamp.fromDate(end.toDate())),
-            where('status', 'in', ['aprovada', 'rejeitada']),
-            orderBy('dataInicio', 'asc')
-        );
-        const unsub = onSnapshot(q, snap => {
-            setAulasDoMes(snap.docs.map(d => ({ id: d.id, ...d.data() })));
-            setLoadingMes(false);
-        }, err => {
-            console.error(err);
-            setLoadingMes(false);
-        });
-        return () => unsub();
+        const fetchMes = async () => {
+            setLoadingMes(true);
+            try {
+                const start = dayjs().year(selectedYear).month(selectedMonth).startOf('month').toISOString();
+                const end   = dayjs().year(selectedYear).month(selectedMonth).endOf('month').toISOString();
+                const { data, error } = await supabase
+                    .from('aulas')
+                    .select('*')
+                    .gte('data_inicio', start)
+                    .lte('data_inicio', end)
+                    .in('status', ['aprovada', 'rejeitada'])
+                    .order('data_inicio', { ascending: true });
+
+                if (error) throw error;
+                setAulasDoMes((data || []).map(a => ({
+                    ...a,
+                    laboratorioSelecionado: a.laboratorio,
+                    horarioSlotString: a.horario_slot,
+                    propostoPorNome: a.proposto_por_nome
+                })));
+            } catch (err) {
+                console.error(err);
+            } finally {
+                setLoadingMes(false);
+            }
+        };
+        fetchMes();
     }, [selectedMonth, selectedYear]);
+
 
     // Seleciona automaticamente o primeiro item ao mudar a lista
     const listaAtiva = useMemo(() => {
@@ -269,12 +283,15 @@ function GerenciarAprovacoes() {
         setConfirmDialog({ open: false, aula: null, acao: null });
         setProcessando(aula.id);
         try {
-            const updatePayload = { status: acao };
+            const updatePayload = { status: acao, updated_at: new Date().toISOString() };
             if (acao === 'rejeitada') {
-                updatePayload.motivoRejeicao = motivoRejeicao.trim();
+                updatePayload.observacoes = aula.observacoes
+                    ? `${aula.observacoes}\n[MOTIVO REJEIÇÃO]: ${motivoRejeicao.trim()}`
+                    : `[MOTIVO REJEIÇÃO]: ${motivoRejeicao.trim()}`;
             }
 
-            await updateDoc(doc(db, 'aulas', aula.id), updatePayload);
+            await supabase.from('aulas').update(updatePayload).eq('id', aula.id);
+
 
             if (acao === 'aprovada') {
                 await autoRejeitarPendentesConflitantes({

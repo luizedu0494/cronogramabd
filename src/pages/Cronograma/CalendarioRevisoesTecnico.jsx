@@ -1,9 +1,5 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
-import { db } from '../../firebaseConfig';
-import {
-    collection, query, where, getDocs, Timestamp, orderBy,
-    doc, deleteDoc, addDoc, updateDoc, serverTimestamp
-} from 'firebase/firestore';
+import { supabase } from '../../supabaseConfig';
 import {
     Container, Typography, Box, CircularProgress, Paper, Grid,
     Button, IconButton, Tooltip, TextField, Divider, Snackbar, Alert,
@@ -34,7 +30,6 @@ import { registrarLogExclusao } from '../../services/loggerService';
 dayjs.locale('pt-br');
 dayjs.extend(isBetween);
 
-const COLECAO_REVISOES = 'revisoesTecnicos';
 
 const BLOCOS_HORARIO = [
     { value: '07:00-09:10', label: '07:00 - 09:10', turno: 'Matutino'   },
@@ -642,36 +637,41 @@ function CalendarioRevisoesTecnico({ userInfo }) {
     const fetchTudo = useCallback(async () => {
         setLoading(true);
         try {
-            const start = Timestamp.fromDate(weekStart.toDate());
-            const end   = Timestamp.fromDate(weekEnd.toDate());
+            const startStr = weekStart.toISOString();
+            const endStr   = weekEnd.toISOString();
 
-            const [snapRevisoes, snapAulas] = await Promise.all([
-                getDocs(query(
-                    collection(db, COLECAO_REVISOES),
-                    where('data', '>=', start),
-                    where('data', '<=', end),
-                    orderBy('data', 'asc')
-                )),
-                getDocs(query(
-                    collection(db, 'aulas'),
-                    where('status', '==', 'aprovada'),
-                    where('dataInicio', '>=', start),
-                    where('dataInicio', '<=', end),
-                    orderBy('dataInicio', 'asc')
-                )),
+            const [resRevisoes, resAulas] = await Promise.all([
+                supabase.from('aulas')
+                    .select('*')
+                    .eq('is_revisao', true)
+                    .gte('data_inicio', startStr)
+                    .lte('data_inicio', endStr)
+                    .order('data_inicio', { ascending: true }),
+                supabase.from('aulas')
+                    .select('*')
+                    .eq('status', 'aprovada')
+                    .gte('data_inicio', startStr)
+                    .lte('data_inicio', endStr)
+                    .order('data_inicio', { ascending: true })
             ]);
 
-            setRevisoes(snapRevisoes.docs.map(d => ({ id: d.id, ...d.data() })));
-            setAulasOficiais(snapAulas.docs.map(d => {
-                const data = d.data();
-                return {
-                    id: d.id,
-                    ...data,
-                    title: data.assunto || 'Sem título',
-                    start: data.dataInicio?.toDate() || new Date(),
-                    laboratorio: data.laboratorioSelecionado,
-                };
-            }));
+            setRevisoes((resRevisoes.data || []).map(d => ({
+                id: d.id,
+                ...d,
+                titulo: d.assunto,
+                data: d.data_inicio,
+                horarioSlot: d.horario_slot,
+                criadoPorUid: d.proposto_por_uid,
+                criadoPorNome: d.proposto_por_nome
+            })));
+
+            setAulasOficiais((resAulas.data || []).map(d => ({
+                id: d.id,
+                ...d,
+                title: d.assunto || 'Sem título',
+                start: new Date(d.data_inicio),
+                laboratorio: d.laboratorio
+            })));
         } catch (e) {
             console.error(e);
             setFeedback({ open: true, message: 'Erro ao carregar dados.', severity: 'error' });
@@ -684,7 +684,7 @@ function CalendarioRevisoesTecnico({ userInfo }) {
 
     const revisoesDoDia = useCallback((day) => {
         return revisoes.filter(r => {
-            const d = r.data?.toDate ? r.data.toDate() : new Date(r.data);
+            const d = new Date(r.data_inicio || r.data);
             if (!dayjs(d).isSame(day, 'day')) return false;
             if (filtroBusca  && !r.titulo?.toLowerCase().includes(filtroBusca.toLowerCase())) return false;
             if (filtroStatus && r.status !== filtroStatus) return false;
@@ -697,7 +697,6 @@ function CalendarioRevisoesTecnico({ userInfo }) {
         return aulasOficiais.filter(a => dayjs(a.start).isSame(day, 'day'));
     }, [aulasOficiais]);
 
-    // Aulas do dia selecionado no form (para passar ao formulário)
     const aulasFormDia = useMemo(() => {
         if (!dataSelecionada) return [];
         return aulasOficiais.filter(a => dayjs(a.start).isSame(dayjs(dataSelecionada), 'day'));
@@ -707,20 +706,26 @@ function CalendarioRevisoesTecnico({ userInfo }) {
         setActionLoading(true);
         try {
             const dados = {
-                titulo: form.titulo, tipo: form.tipo, cursos: form.cursos,
-                laboratorio: form.laboratorio || '', professor: form.professor || '',
-                horarioSlot: form.horarioSlot || '', descricao: form.descricao || '',
-                status: form.status, data: Timestamp.fromDate(form.data.toDate()),
-                criadoPorUid:  userInfo?.uid,
-                criadoPorNome: userInfo?.name || userInfo?.email || 'Técnico',
-                atualizadoEm:  serverTimestamp(),
+                assunto: form.titulo,
+                tipo_atividade: 'revisao',
+                cursos: form.cursos || [],
+                laboratorio: form.laboratorio || '',
+                horario_slot: form.horarioSlot || '',
+                observacoes: form.descricao || '',
+                status: form.status || 'aprovada',
+                data_inicio: form.data ? form.data.toISOString() : new Date().toISOString(),
+                proposto_por_uid: userInfo?.uid,
+                proposto_por_nome: userInfo?.name || userInfo?.email || 'Técnico',
+                is_revisao: true,
+                tipo_revisao_label: form.tipo || 'Revisão',
+                updated_at: new Date().toISOString()
             };
+
             if (revisaoSelecionada?.id) {
-                await updateDoc(doc(db, COLECAO_REVISOES, revisaoSelecionada.id), dados);
+                await supabase.from('aulas').update(dados).eq('id', revisaoSelecionada.id);
                 setFeedback({ open: true, message: 'Revisão atualizada!', severity: 'success' });
             } else {
-                dados.criadoEm = serverTimestamp();
-                await addDoc(collection(db, COLECAO_REVISOES), dados);
+                await supabase.from('aulas').insert([dados]);
                 setFeedback({ open: true, message: 'Revisão adicionada!', severity: 'success' });
             }
             setIsFormOpen(false);
@@ -739,15 +744,15 @@ function CalendarioRevisoesTecnico({ userInfo }) {
         setActionLoading(true);
         try {
             await registrarLogExclusao({
-                assunto: revisaoSelecionada.assunto || revisaoSelecionada.disciplina || 'Revisão',
-                cursos: revisaoSelecionada.cursos || (revisaoSelecionada.curso ? [revisaoSelecionada.curso] : []),
+                assunto: revisaoSelecionada.assunto || revisaoSelecionada.titulo || 'Revisão',
+                cursos: revisaoSelecionada.cursos || [],
                 status: revisaoSelecionada.status || 'aprovada',
-                dataInicio: revisaoSelecionada.dataInicio || revisaoSelecionada.data || null,
-                laboratorio: revisaoSelecionada.laboratorio || revisaoSelecionada.laboratorioSelecionado || '',
+                dataInicio: revisaoSelecionada.data_inicio || revisaoSelecionada.data || null,
+                laboratorio: revisaoSelecionada.laboratorio || '',
                 isRevisao: true,
-                tipoRevisaoLabel: revisaoSelecionada.tipoRevisaoLabel || revisaoSelecionada.tipo || 'Revisão'
+                tipoRevisaoLabel: revisaoSelecionada.tipo_revisao_label || 'Revisão'
             }, userInfo);
-            await deleteDoc(doc(db, COLECAO_REVISOES, revisaoSelecionada.id));
+            await supabase.from('aulas').delete().eq('id', revisaoSelecionada.id);
             setFeedback({ open: true, message: 'Revisão excluída.', severity: 'info' });
             setIsDeleteOpen(false);
             setRevisaoSelecionada(null);
@@ -759,6 +764,7 @@ function CalendarioRevisoesTecnico({ userInfo }) {
             setActionLoading(false);
         }
     };
+
 
     const abrirForm = (revisao = null, data = null) => {
         setRevisaoSelecionada(revisao);

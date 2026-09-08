@@ -1,8 +1,5 @@
-// src/GerenciarPeriodos.js
-
 import React, { useState, useEffect } from 'react';
-import { db } from '../../firebaseConfig';
-import { collection, addDoc, query, where, getDocs, doc, deleteDoc, Timestamp } from 'firebase/firestore';
+import { supabase } from '../../supabaseConfig';
 import {
     Container, Typography, Box, Paper, CircularProgress, Alert,
     List, ListItem, ListItemText, ListItemSecondaryAction, IconButton,
@@ -34,10 +31,21 @@ function GerenciarPeriodos() {
         const fetchPeriodos = async () => {
             setLoading(true);
             try {
-                const q = query(collection(db, 'periodosSemAtividade'), where('dataFim', '>=', Timestamp.fromDate(dayjs().subtract(1, 'year').toDate())));
-                const querySnapshot = await getDocs(q);
-                const periodosList = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-                setPeriodos(periodosList.sort((a, b) => a.dataInicio.toDate() - b.dataInicio.toDate()));
+                const limitDate = dayjs().subtract(1, 'year').toISOString();
+                const { data, error } = await supabase
+                    .from('periodos_sem_atividade')
+                    .select('*')
+                    .gte('data_fim', limitDate)
+                    .order('data_inicio', { ascending: true });
+
+                if (error) throw error;
+
+                const periodosList = (data || []).map(p => ({
+                    ...p,
+                    dataInicio: dayjs(p.data_inicio),
+                    dataFim: dayjs(p.data_fim),
+                }));
+                setPeriodos(periodosList);
             } catch (err) {
                 console.error("Erro ao buscar períodos inativos:", err);
                 setError("Não foi possível carregar os períodos. Tente novamente.");
@@ -55,12 +63,15 @@ function GerenciarPeriodos() {
         }
         setLoading(true);
         try {
-            await addDoc(collection(db, 'periodosSemAtividade'), {
+            const { error } = await supabase.from('periodos_sem_atividade').insert([{
                 descricao: newPeriodoDesc,
-                dataInicio: Timestamp.fromDate(newPeriodoStart.toDate()),
-                dataFim: Timestamp.fromDate(newPeriodoEnd.toDate()),
+                data_inicio: newPeriodoStart.toISOString(),
+                data_fim: newPeriodoEnd.toISOString(),
                 tipo: 'manual'
-            });
+            }]);
+
+            if (error) throw error;
+
             setNewPeriodoDesc('');
             setNewPeriodoStart(null);
             setNewPeriodoEnd(null);
@@ -78,7 +89,13 @@ function GerenciarPeriodos() {
         if (!periodoToDelete) return;
         setLoading(true);
         try {
-            await deleteDoc(doc(db, 'periodosSemAtividade', periodoToDelete.id));
+            const { error } = await supabase
+                .from('periodos_sem_atividade')
+                .delete()
+                .eq('id', periodoToDelete.id);
+
+            if (error) throw error;
+
             setPeriodos(periodos.filter(p => p.id !== periodoToDelete.id));
             setFeedback({ open: true, message: "Período excluído com sucesso!", severity: 'success' });
         } catch (err) {
@@ -104,22 +121,22 @@ function GerenciarPeriodos() {
             const holidays = await getHolidays(currentYear, 'AL', 'Maceió');
             
             if (holidays.length > 0) {
-                const existingDates = periodos.map(p => dayjs(p.dataInicio.toDate()).format('YYYY-MM-DD'));
+                const existingDates = periodos.map(p => dayjs(p.data_inicio).format('YYYY-MM-DD'));
                 let newHolidaysCount = 0;
                 
-                await Promise.all(holidays.map(async (holiday) => {
+                for (const holiday of holidays) {
                     const holidayDate = dayjs(holiday.date);
                     if (!existingDates.includes(holidayDate.format('YYYY-MM-DD'))) {
-                        await addDoc(collection(db, 'periodosSemAtividade'), {
+                        await supabase.from('periodos_sem_atividade').insert([{
                             descricao: holiday.name,
-                            dataInicio: Timestamp.fromDate(holidayDate.startOf('day').toDate()),
-                            dataFim: Timestamp.fromDate(holidayDate.endOf('day').toDate()),
+                            data_inicio: holidayDate.startOf('day').toISOString(),
+                            data_fim: holidayDate.endOf('day').toISOString(),
                             tipo: holiday.type,
-                            fonte: holiday.source || '' // CORRIGIDO: Adiciona um valor padrão se a fonte for undefined
-                        });
+                            fonte: holiday.source || ''
+                        }]);
                         newHolidaysCount++;
                     }
-                }));
+                }
                 
                 setFeedback({ open: true, message: `Importação concluída. ${newHolidaysCount} feriados adicionados.`, severity: 'success' });
             } else {
@@ -132,6 +149,7 @@ function GerenciarPeriodos() {
             setImportLoading(false);
         }
     };
+
 
     const handleCloseSnackbar = (event, reason) => {
         if (reason === 'clickaway') {

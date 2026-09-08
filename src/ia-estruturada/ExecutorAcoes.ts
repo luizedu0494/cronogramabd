@@ -1,16 +1,4 @@
-import { db } from '../firebaseConfig';
-import {
-  collection,
-  query,
-  where,
-  getDocs,
-  Timestamp,
-  writeBatch,
-  doc,
-  updateDoc,
-  serverTimestamp,
-  QueryConstraint,
-} from 'firebase/firestore';
+import { supabase } from '../supabaseConfig';
 import dayjs from 'dayjs';
 import 'dayjs/locale/pt-br';
 import { notificadorTelegram } from '../services/NotificadorTelegram';
@@ -158,37 +146,39 @@ export class ExecutorAcoes {
 
   async buscarAulas(criterios: CriteriosBusca): Promise<any[]> {
     try {
-      let q = collection(db, 'aulas');
-      const constraints: any[] = [];
+      let queryRef = supabase.from('aulas').select('*');
 
       if (criterios.data) {
         const d = dayjs(criterios.data, 'DD/MM/YYYY');
-        constraints.push(where('dataInicio', '>=', Timestamp.fromDate(d.startOf('day').toDate())));
-        constraints.push(where('dataInicio', '<=', Timestamp.fromDate(d.endOf('day').toDate())));
+        queryRef = queryRef
+          .gte('data_inicio', d.startOf('day').toISOString())
+          .lte('data_inicio', d.endOf('day').toISOString());
       } else if (criterios.mes) {
         const [mes, ano] = criterios.mes.split('/');
         const d = dayjs()
           .month(parseInt(mes) - 1)
           .year(parseInt(ano));
-        constraints.push(
-          where('dataInicio', '>=', Timestamp.fromDate(d.startOf('month').toDate()))
-        );
-        constraints.push(where('dataInicio', '<=', Timestamp.fromDate(d.endOf('month').toDate())));
+        queryRef = queryRef
+          .gte('data_inicio', d.startOf('month').toISOString())
+          .lte('data_inicio', d.endOf('month').toISOString());
       } else if (criterios.ano) {
         const d = dayjs().year(parseInt(criterios.ano));
-        constraints.push(where('dataInicio', '>=', Timestamp.fromDate(d.startOf('year').toDate())));
-        constraints.push(where('dataInicio', '<=', Timestamp.fromDate(d.endOf('year').toDate())));
+        queryRef = queryRef
+          .gte('data_inicio', d.startOf('year').toISOString())
+          .lte('data_inicio', d.endOf('year').toISOString());
       }
 
-      let queryRef: any = q;
-      for (const constraint of constraints) {
-        queryRef = query(queryRef, constraint);
-      }
+      const { data, error } = await queryRef;
+      if (error) throw error;
 
-      const snapshot = await getDocs(queryRef);
-      let aulas: any[] = snapshot.docs.map(docSnap =>
-        Object.assign({ id: docSnap.id }, docSnap.data())
-      );
+      let aulas: any[] = (data || []).map(a => ({
+        ...a,
+        laboratorioSelecionado: a.laboratorio,
+        horarioSlotString: a.horario_slot,
+        dataInicio: { toDate: () => new Date(a.data_inicio) },
+        isProva: a.is_prova,
+        isRevisao: a.is_revisao
+      }));
 
       if (criterios.laboratorio) {
         const t = criterios.laboratorio.toLowerCase().trim();
@@ -230,6 +220,7 @@ export class ExecutorAcoes {
       return [];
     }
   }
+
 
   gerarEvolucaoTemporal(
     aulas: any[],

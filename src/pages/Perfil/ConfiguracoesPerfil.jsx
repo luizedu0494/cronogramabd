@@ -137,10 +137,16 @@ function ConfiguracoesPerfil() {
                 throw new Error('Permissão de notificação negada pelo usuário.');
             }
 
-            console.log('[PUSH] Importando SDK do Firebase Messaging...');
-            const { getMessaging, getToken } = await import('firebase/messaging');
-            const { app } = await import('../../firebaseConfig');
-            const messaging = getMessaging(app);
+            console.log('[PUSH] Verificando suporte a notificações...');
+            let messaging = null;
+            try {
+                const { getMessaging } = await import('firebase/messaging');
+                const firebaseModule = await import('../../firebaseConfig');
+                messaging = getMessaging(firebaseModule.app);
+            } catch (fbErr) {
+                console.warn('[PUSH] Firebase não configurado para Push, operando via Web Push Nativo.', fbErr);
+            }
+
 
             console.log('[PUSH] Registrando Service Worker /firebase-messaging-sw.js ...');
             let swRegistration;

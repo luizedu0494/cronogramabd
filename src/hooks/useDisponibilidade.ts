@@ -1,6 +1,5 @@
 import { useState, useCallback } from 'react';
-import { db } from '../firebaseConfig';
-import { collection, query, where, getDocs, Timestamp } from 'firebase/firestore';
+import { supabase } from '../supabaseConfig';
 import dayjs from 'dayjs';
 import 'dayjs/locale/pt-br';
 
@@ -77,23 +76,25 @@ export function useDisponibilidade() {
         return [];
       }
 
-      // Executar APENAS 2 queries no Firestore para cobrir todo o período
-      const startTs = Timestamp.fromDate(startDt.toDate());
-      const endTs = Timestamp.fromDate(endDt.toDate());
+      const startIso = startDt.toISOString();
+      const endIso = endDt.toISOString();
 
-      const [snapAulas, snapEventos] = await Promise.all([
-        getDocs(query(
-          collection(db, 'aulas'),
-          where('dataInicio', '>=', startTs),
-          where('dataInicio', '<=', endTs),
-          where('status', '==', 'aprovada')
-        )),
-        getDocs(query(
-          collection(db, 'eventosManutencao'),
-          where('dataInicio', '>=', startTs),
-          where('dataInicio', '<=', endTs)
-        ))
+      const [resAulas, resEventos] = await Promise.all([
+        supabase
+          .from('aulas')
+          .select('*')
+          .gte('data_inicio', startIso)
+          .lte('data_inicio', endIso)
+          .eq('status', 'aprovada'),
+        supabase
+          .from('eventos_manutencao')
+          .select('*')
+          .gte('data_inicio', startIso)
+          .lte('data_inicio', endIso)
       ]);
+
+      const aulas = resAulas.data || [];
+      const eventos = resEventos.data || [];
 
       // Mapeamento local dos ocupados por: "YYYY-MM-DD_HORARIO_LAB"
       const ocupadosMap = new Map<string, ConflitoItem[]>();
@@ -106,55 +107,52 @@ export function useDisponibilidade() {
       };
 
       // Processar Aulas
-      snapAulas.docs.forEach(docSnap => {
-        const data = docSnap.data();
-        const start = data.dataInicio instanceof Timestamp ? data.dataInicio.toDate() : new Date(data.dataInicio);
+      aulas.forEach(aula => {
+        const start = new Date(aula.data_inicio);
         const dateKey = dayjs(start).format('YYYY-MM-DD');
-        const lab = data.laboratorioSelecionado || data.laboratorio;
+        const lab = aula.laboratorio;
 
         if (params.laboratorios.includes(lab) || params.laboratorios.includes('Todos')) {
-          let slotStr = data.horarioSlotString;
+          let slotStr = aula.horario_slot;
           if (!slotStr) {
-            slotStr = `${dayjs(start).format('HH:mm')}-${dayjs(data.dataFim?.toDate?.() || start).format('HH:mm')}`;
+            slotStr = `${dayjs(start).format('HH:mm')}-${dayjs(aula.data_fim || start).format('HH:mm')}`;
           }
 
           const conflito: ConflitoItem = {
-            id: docSnap.id,
+            id: String(aula.id),
             tipo: 'aula',
             laboratorio: lab,
             horario: slotStr,
-            titulo: data.assunto || data.disciplina || 'Aula Agendada',
-            detalhe: `Prof: ${data.propostoPorNome || data.professor || 'N/A'}${data.cursos ? ` (${data.cursos.join(', ')})` : ''}`,
+            titulo: aula.assunto || 'Aula Agendada',
+            detalhe: `Prof: ${aula.proposto_por_nome || 'N/A'}`,
           };
 
           registrarOcupacao(`${dateKey}_${slotStr}_${lab}`, conflito);
-          // Se lab for genérico
           registrarOcupacao(`${dateKey}_${slotStr}_Todos`, conflito);
         }
       });
 
       // Processar Eventos de Manutenção
-      snapEventos.docs.forEach(docSnap => {
-        const data = docSnap.data();
-        if (data.status === 'cancelado') return;
+      eventos.forEach(evento => {
+        if (evento.status === 'cancelado') return;
 
-        const start = data.dataInicio instanceof Timestamp ? data.dataInicio.toDate() : new Date(data.dataInicio);
+        const start = new Date(evento.data_inicio);
         const dateKey = dayjs(start).format('YYYY-MM-DD');
-        const lab = data.laboratorio || 'Todos';
+        const lab = evento.laboratorio || 'Todos';
 
         if (lab === 'Todos' || params.laboratorios.includes(lab) || params.laboratorios.includes('Todos')) {
-          let slotStr = data.horarioSlotString;
+          let slotStr = evento.horario_slot;
           if (!slotStr) {
-            slotStr = `${dayjs(start).format('HH:mm')}-${dayjs(data.dataFim?.toDate?.() || start).format('HH:mm')}`;
+            slotStr = `${dayjs(start).format('HH:mm')}-${dayjs(evento.data_fim || start).format('HH:mm')}`;
           }
 
           const conflito: ConflitoItem = {
-            id: docSnap.id,
+            id: String(evento.id),
             tipo: 'evento',
             laboratorio: lab,
             horario: slotStr,
-            titulo: data.titulo || 'Evento / Manutenção',
-            detalhe: `${data.tipo || 'Manutenção'}${data.descricao ? `: ${data.descricao}` : ''}`,
+            titulo: evento.titulo || 'Evento / Manutenção',
+            detalhe: `${evento.tipo || 'Manutenção'}${evento.descricao ? `: ${evento.descricao}` : ''}`,
           };
 
           if (lab === 'Todos') {
@@ -246,3 +244,4 @@ export function useDisponibilidade() {
     error,
   };
 }
+

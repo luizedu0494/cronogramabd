@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { db } from '../../firebaseConfig';
 import { supabase } from '../../supabaseConfig';
+
 import {
     Container, Typography, Box, Paper, CircularProgress, Alert,
     List, ListItem, ListItemText, ListItemSecondaryAction, IconButton, Chip,

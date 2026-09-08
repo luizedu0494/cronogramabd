@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { db } from '../../firebaseConfig';
+import { supabase } from '../../supabaseConfig';
 import UsageMonitor from '../../components/UsageMonitor';
-import { collection, query, where, getDocs } from 'firebase/firestore';
+
 import {
     Container,
     Typography,
@@ -82,35 +82,39 @@ function AnaliseAulas() {
         setLoading(true);
         setError(null);
         try {
-            // Buscar TODAS as aulas (não só aprovadas)
-            let q = collection(db, 'aulas');
+            let queryRef = supabase.from('aulas').select('*');
 
-            // 1. Filtro por Laboratório (se houver)
             if (laboratoriosFiltro.length > 0) {
-                q = query(q, where('laboratorioSelecionado', 'in', laboratoriosFiltro));
+                queryRef = queryRef.in('laboratorio', laboratoriosFiltro);
             }
 
-            // 2. Filtro por Ano (usando dataInicio)
             if (anoFiltro) {
-                const startOfYear = dayjs().year(anoFiltro).startOf('year').toDate();
-                const endOfYear = dayjs().year(anoFiltro).endOf('year').toDate();
-
-                // O Firestore exige que a propriedade seja a mesma para todos os filtros de intervalo
-                q = query(q, where('dataInicio', '>=', startOfYear), where('dataInicio', '<=', endOfYear));
+                const startOfYear = dayjs().year(anoFiltro).startOf('year').toISOString();
+                const endOfYear = dayjs().year(anoFiltro).endOf('year').toISOString();
+                queryRef = queryRef.gte('data_inicio', startOfYear).lte('data_inicio', endOfYear);
             }
 
-            const querySnapshot = await getDocs(q);
-            let listaCompleta = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+            const { data, error } = await queryRef;
+            if (error) throw error;
 
-            // 3. Filtro por Curso (feito no frontend devido a limitações de consulta do Firestore)
+            let listaCompleta = (data || []).map(a => ({
+                id: a.id,
+                ...a,
+                laboratorioSelecionado: a.laboratorio,
+                horarioSlotString: a.horario_slot,
+                dataInicio: a.data_inicio,
+                isProva: a.is_prova,
+                isRevisao: a.is_revisao
+            }));
+
             if (cursosFiltro.length > 0) {
                 listaCompleta = listaCompleta.filter(aula =>
                     aula.cursos && aula.cursos.some(curso => cursosFiltro.includes(curso))
                 );
             }
 
-            setPropostas(listaCompleta); // Todas as propostas
-            setAulas(listaCompleta.filter(a => a.status === 'aprovada')); // Só aprovadas
+            setPropostas(listaCompleta);
+            setAulas(listaCompleta.filter(a => a.status === 'aprovada'));
 
         } catch (err) {
             console.error("Erro ao buscar aulas para análise:", err);
@@ -119,6 +123,7 @@ function AnaliseAulas() {
             setLoading(false);
         }
     }, [laboratoriosFiltro, cursosFiltro, anoFiltro]);
+
 
     // Efeito para popular os anos disponíveis (exemplo: 2023, 2024, 2025)
     useEffect(() => {

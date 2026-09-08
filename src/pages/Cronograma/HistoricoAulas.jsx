@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { db } from '../../firebaseConfig';
-import { collection, query, orderBy, limit, getDocs } from 'firebase/firestore';
+import { supabase } from '../../supabaseConfig';
 import {
     Container, Paper, Typography, Box, CircularProgress, Alert,
     Table, TableBody, TableCell, TableContainer, TableHead, TableRow,
@@ -32,7 +31,7 @@ const HistoricoAulas = () => {
     const [filtroTipo, setFiltroTipo] = useState(''); // '' | 'aula' | 'revisao'
     const [filtroDataInicio, setFiltroDataInicio] = useState('');
     const [filtroDataFim, setFiltroDataFim] = useState('');
-    const MAX_RESULTS = 30; // Limite de resultados para o histórico
+    const MAX_RESULTS = 50;
 
     // Listas únicas para os filtros
     const [cursos, setCursos] = useState([]);
@@ -42,81 +41,98 @@ const HistoricoAulas = () => {
         try {
             setLoading(true);
             
-            // 1. Buscar Aulas Adicionadas (Coleção 'aulas')
-            const aulasRef = collection(db, 'aulas');
-            const qAulas = query(aulasRef, orderBy('createdAt', 'desc'), limit(MAX_RESULTS));
-            const aulasSnapshot = await getDocs(qAulas);
-            
-            const aulasAdicionadas = aulasSnapshot.docs.map(doc => {
-                const data = doc.data();
-                return {
-                    id: doc.id,
-                    type: 'adicionada',
-                    aula: data,
-                    timestamp: data.createdAt ? data.createdAt.toDate() : new Date(),
-                    user: { nome: data.propostoPorNome || data.propostoPor || 'Desconhecido' }
-                };
-            });
+            // 1. Buscar Aulas Adicionadas no Supabase
+            const { data: resAulas, error: errAulas } = await supabase
+                .from('aulas')
+                .select('*')
+                .order('created_at', { ascending: false })
+                .limit(MAX_RESULTS);
 
-            // 2. Buscar Eventos Adicionados (Coleção 'eventosManutencao')
-            const eventosRef = collection(db, 'eventosManutencao');
-            const qEventos = query(eventosRef, orderBy('createdAt', 'desc'), limit(MAX_RESULTS));
-            const eventosSnapshot = await getDocs(qEventos);
+            if (errAulas) console.warn('Erro ao buscar aulas:', errAulas);
 
-            const eventosAdicionados = eventosSnapshot.docs.map(doc => {
-                const data = doc.data();
-                return {
-                    id: doc.id,
-                    type: 'evento', // Tipo específico para eventos
-                    aula: {
-                        // Mapeia campos do evento para parecerem com aula na tabela
-                        assunto: data.titulo + (data.descricao ? ` - ${data.descricao}` : ''),
-                        curso: data.tipo, // Usa o campo curso para mostrar o Tipo do Evento
-                        cursos: [data.tipo], // Para filtro funcionar
-                        laboratorio: data.laboratorio || data.laboratorioSelecionado || 'Todos',
-                        status: 'evento', // Status visual
-                        dataInicio: data.dataInicio
-                    },
-                    timestamp: data.createdAt ? data.createdAt.toDate() : new Date(),
-                    user: { nome: data.criadoPorNome || 'Sistema' }
-                };
-            });
+            const aulasAdicionadas = (resAulas || []).map(item => ({
+                id: `aula-${item.id}`,
+                type: 'adicionada',
+                aula: {
+                    assunto: item.assunto,
+                    cursos: item.cursos || [],
+                    laboratorio: item.laboratorio,
+                    status: item.status,
+                    dataInicio: item.data_inicio,
+                    isRevisao: item.is_revisao,
+                    tipoRevisaoLabel: item.tipo_revisao_label
+                },
+                timestamp: item.created_at ? new Date(item.created_at) : new Date(),
+                user: { nome: item.proposto_por_nome || 'Sistema' }
+            }));
 
-            // 3. Buscar Logs de Exclusão (Coleção 'logs')
-            const logsRef = collection(db, 'logs');
-            const qLogs = query(logsRef, orderBy('timestamp', 'desc'), limit(MAX_RESULTS * 2)); 
-            const logsSnapshot = await getDocs(qLogs);
-            
-            const aulasExcluidas = logsSnapshot.docs
-                .filter(doc => doc.data().type === 'exclusao')
-                .map(doc => {
-                    const data = doc.data();
+            // 2. Buscar Eventos de Manutenção no Supabase
+            const { data: resEventos, error: errEventos } = await supabase
+                .from('eventos_manutencao')
+                .select('*')
+                .order('created_at', { ascending: false })
+                .limit(MAX_RESULTS);
+
+            if (errEventos) console.warn('Erro ao buscar eventos:', errEventos);
+
+            const eventosAdicionados = (resEventos || []).map(item => ({
+                id: `evento-${item.id}`,
+                type: 'evento',
+                aula: {
+                    assunto: item.titulo + (item.descricao ? ` - ${item.descricao}` : ''),
+                    curso: item.tipo,
+                    cursos: [item.tipo],
+                    laboratorio: item.laboratorio || 'Todos',
+                    status: 'evento',
+                    dataInicio: item.data_inicio
+                },
+                timestamp: item.created_at ? new Date(item.created_at) : new Date(),
+                user: { nome: item.criado_por_nome || 'Sistema' }
+            }));
+
+            // 3. Buscar Logs de Exclusão no Supabase
+            const { data: resLogs, error: errLogs } = await supabase
+                .from('logs')
+                .select('*')
+                .order('created_at', { ascending: false })
+                .limit(MAX_RESULTS);
+
+            if (errLogs) console.warn('Erro ao buscar logs:', errLogs);
+
+            const aulasExcluidas = (resLogs || [])
+                .filter(l => l.type === 'DELETE')
+                .map(item => {
+                    const payload = item.payload || {};
+                    const aulaData = payload.item || {};
                     return {
-                        id: doc.id,
+                        id: `log-${item.id}`,
                         type: 'exclusao',
-                        aula: data.aula,
-                        timestamp: data.timestamp ? data.timestamp.toDate() : new Date(),
-                        user: data.user || { nome: 'Desconhecido' }
+                        aula: {
+                            assunto: aulaData.assunto || aulaData.title || payload.descricao || 'Excluído',
+                            cursos: aulaData.cursos || ['Geral'],
+                            laboratorio: aulaData.laboratorio || aulaData.laboratorioSelecionado || 'N/A',
+                            status: 'rejeitada',
+                            dataInicio: aulaData.dataInicio || item.created_at
+                        },
+                        timestamp: item.created_at ? new Date(item.created_at) : new Date(),
+                        user: { nome: item.user_nome || 'Desconhecido' }
                     };
                 });
 
-            // 4. Unificar e Ordenar
+            // 4. Unificar e Ordenar por Data
             let todosLogs = [...aulasAdicionadas, ...eventosAdicionados, ...aulasExcluidas];
-            
             todosLogs.sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
-            
             todosLogs = todosLogs.slice(0, MAX_RESULTS);
 
             setLogs(todosLogs);
             setLogsFiltered(todosLogs);
-            
-            // Extrair cursos e anos únicos para os filtros
+
+            // Extrair cursos e anos únicos
             const todosCursos = todosLogs.flatMap(log => log.aula?.cursos || []).filter(Boolean);
             const todosAnos = todosLogs.map(log => {
                 const data = log.aula?.dataInicio;
                 if (!data) return null;
-                const dateObj = data.toDate ? data.toDate() : new Date(data);
-                return dayjs(dateObj).year().toString();
+                return dayjs(data).year().toString();
             }).filter(Boolean);
 
             setCursos([...new Set(todosCursos)].sort());
@@ -125,7 +141,7 @@ const HistoricoAulas = () => {
             setError(null);
         } catch (err) {
             console.error("Erro ao buscar histórico:", err);
-            setError("Erro ao carregar o histórico. Verifique a conexão com o Firestore.");
+            setError("Erro ao carregar o histórico no Supabase.");
         } finally {
             setLoading(false);
         }
@@ -134,6 +150,7 @@ const HistoricoAulas = () => {
     useEffect(() => {
         fetchAulas();
     }, []);
+
 
     useEffect(() => {
         let resultado = [...logs];

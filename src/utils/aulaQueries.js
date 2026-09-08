@@ -1,9 +1,8 @@
-import { collection, query, where, getDocs, Timestamp } from 'firebase/firestore';
+import { supabase } from '../supabaseConfig';
 import dayjs from 'dayjs';
-import { db } from '../firebaseConfig';
 
 /**
- * Realiza busca pontual no Firestore de todas as aulas aprovadas para um dia específico.
+ * Realiza busca pontual de todas as aulas aprovadas para um dia específico.
  * @param {string|Date|dayjs.Dayjs} data - Data a ser consultada
  * @returns {Promise<Array>} Lista de aulas encontradas
  */
@@ -12,20 +11,28 @@ export async function buscarAulasPorDia(data) {
   const dataStr = dayjs(data).format('YYYY-MM-DD');
   if (!dayjs(dataStr).isValid()) return [];
 
-  const inicio = Timestamp.fromDate(dayjs(dataStr).startOf('day').toDate());
-  const fim = Timestamp.fromDate(dayjs(dataStr).endOf('day').toDate());
+  const inicioStr = dayjs(dataStr).startOf('day').toISOString();
+  const fimStr = dayjs(dataStr).endOf('day').toISOString();
 
   try {
-    const snap = await getDocs(query(
-      collection(db, 'aulas'),
-      where('dataInicio', '>=', inicio),
-      where('dataInicio', '<=', fim),
-      where('status', '==', 'aprovada')
-    ));
+    const { data: aulas, error } = await supabase
+      .from('aulas')
+      .select('*')
+      .gte('data_inicio', inicioStr)
+      .lte('data_inicio', fimStr)
+      .eq('status', 'aprovada');
 
-    return snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    if (error) throw error;
+
+    return (aulas || []).map(a => ({
+      ...a,
+      laboratorioSelecionado: a.laboratorio,
+      horarioSlotString: a.horario_slot,
+      dataInicio: a.data_inicio
+    }));
   } catch (error) {
     console.error('Erro ao buscar aulas por dia:', error);
     return [];
   }
 }
+
