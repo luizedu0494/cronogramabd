@@ -195,30 +195,34 @@ function ProporAulaForm({ userInfo, currentUser, initialDate, onSuccess, onCance
     const handleRepetirUltimaProposta = async () => {
         try {
             if (!currentUser?.uid) return;
-            const q = query(
-                collection(db, 'aulas'),
-                where('propostoPorUid', '==', currentUser.uid),
-                orderBy('createdAt', 'desc')
-            );
-            const snap = await getDocs(q);
-            if (!snap.empty) {
-                const ultima = snap.docs[0].data();
-                const labObj = LISTA_LABORATORIOS.find(l => l.name === ultima.laboratorioSelecionado || l.id === ultima.laboratorioSelecionado);
-                if (ultima.isRevisao) setTipoEntrada('revisao');
-                else if (ultima.isProva) setTipoEntrada('prova');
+            const { data: snap, error } = await supabase
+                .from('aulas')
+                .select('*')
+                .eq('proposto_por_uid', currentUser.uid)
+                .order('created_at', { ascending: false })
+                .limit(1);
+
+            if (!error && snap && snap.length > 0) {
+                const ultima = snap[0];
+                const labNome = ultima.laboratorio || ultima.laboratorioSelecionado;
+                const labObj = LISTA_LABORATORIOS.find(l => l.name === labNome || l.id === labNome);
+                if (ultima.is_revisao || ultima.isRevisao) setTipoEntrada('revisao');
+                else if (ultima.is_prova || ultima.isProva) setTipoEntrada('prova');
+
+                const slot = ultima.horario_slot || ultima.horarioSlotString;
 
                 setFormData(prev => ({
                     ...prev,
                     assunto: ultima.assunto || '',
                     observacoes: ultima.observacoes || '',
-                    tipoAtividade: ultima.tipoAtividade || '',
+                    tipoAtividade: ultima.tipo_atividade || ultima.tipoAtividade || '',
                     cursos: ultima.cursos || [],
                     liga: ultima.liga || '',
-                    dataInicio: null, // Limpa data para nova seleção
-                    horarioSlotString: Array.isArray(ultima.horarioSlotString) ? ultima.horarioSlotString : [ultima.horarioSlotString],
-                    dynamicLabs: [{ tipo: labObj ? labObj.tipo : '', laboratorios: [ultima.laboratorioSelecionado] }],
-                    tipoRevisao: ultima.tipoRevisao || 'revisao_conteudo',
-                    professorRevisao: ultima.professorRevisao || '',
+                    dataInicio: null,
+                    horarioSlotString: Array.isArray(slot) ? slot : [slot],
+                    dynamicLabs: [{ tipo: labObj ? labObj.tipo : '', laboratorios: [labNome] }],
+                    tipoRevisao: ultima.tipo_revisao || ultima.tipoRevisao || 'revisao_conteudo',
+                    professorRevisao: ultima.professor_revisao || ultima.professorRevisao || '',
                 }));
                 setSnackbarMessage('🔄 Proposta anterior duplicada com sucesso! Selecione a nova data.');
                 setSnackbarSeverity('success');
@@ -309,33 +313,46 @@ function ProporAulaForm({ userInfo, currentUser, initialDate, onSuccess, onCance
     useEffect(() => {
         const fetchOcupacaoDoMes = async () => {
             setLoadingCalendario(true);
-            const inicioDoMes = mesVisivel.startOf('month').toDate();
-            const fimDoMes = mesVisivel.endOf('month').toDate();
+            const inicioDoMesIso = mesVisivel.startOf('month').toISOString();
+            const fimDoMesIso = mesVisivel.endOf('month').toISOString();
             try {
-                const q = query(collection(db, "aulas"), where("dataInicio", ">=", Timestamp.fromDate(inicioDoMes)), where("dataInicio", "<=", Timestamp.fromDate(fimDoMes)));
-                const querySnapshot = await getDocs(q);
-                const aulasDoMes = querySnapshot.docs.map(doc => doc.data());
+                const { data: aulasRes } = await supabase
+                    .from('aulas')
+                    .select('*')
+                    .gte('data_inicio', inicioDoMesIso)
+                    .lte('data_inicio', fimDoMesIso);
+
+                const aulasDoMes = (aulasRes || []).map(a => ({
+                    ...a,
+                    laboratorioSelecionado: a.laboratorio || a.laboratorioSelecionado,
+                    horarioSlotString: a.horario_slot || a.horarioSlotString,
+                    dataInicio: a.data_inicio
+                }));
                 setAulasDoMesState(aulasDoMes);
                 
-                const qEventos = query(collection(db, "eventosManutencao"), where("dataInicio", ">=", Timestamp.fromDate(inicioDoMes)), where("dataInicio", "<=", Timestamp.fromDate(fimDoMes)));
-                const querySnapshotEventos = await getDocs(qEventos);
-                const eventosDoMes = querySnapshotEventos.docs
-                    .map(doc => doc.data())
-                    .filter(e => {
-                        const start = e.dataInicio instanceof Timestamp ? e.dataInicio.toDate() : new Date(e.dataInicio);
-                        return dayjs(start).isAfter(dayjs(inicioDoMes)) || dayjs(start).isSame(dayjs(inicioDoMes));
-                    });
+                const { data: eventosRes } = await supabase
+                    .from('eventos_manutencao')
+                    .select('*')
+                    .gte('data_inicio', inicioDoMesIso)
+                    .lte('data_inicio', fimDoMesIso);
+
+                const eventosDoMes = (eventosRes || []).map(e => ({
+                    ...e,
+                    laboratorio: e.laboratorio,
+                    horarioSlotString: e.horario_slot || e.horarioSlotString,
+                    dataInicio: e.data_inicio
+                }));
                 setEventosDoMesState(eventosDoMes);
 
                 const ocupacaoPorDia = {};
                 aulasDoMes.forEach(aula => {
-                    const dia = dayjs(aula.dataInicio.toDate()).format('YYYY-MM-DD');
+                    const dia = dayjs(aula.dataInicio).format('YYYY-MM-DD');
                     if (!ocupacaoPorDia[dia]) ocupacaoPorDia[dia] = new Set();
                     ocupacaoPorDia[dia].add(`${aula.laboratorioSelecionado}-${aula.horarioSlotString}`);
                 });
 
                 eventosDoMes.forEach(evento => {
-                    const dia = dayjs(evento.dataInicio.toDate()).format('YYYY-MM-DD');
+                    const dia = dayjs(evento.dataInicio).format('YYYY-MM-DD');
                     if (!ocupacaoPorDia[dia]) ocupacaoPorDia[dia] = new Set();
                     if (evento.laboratorio === 'Todos') {
                         LISTA_LABORATORIOS.forEach(lab => {
@@ -392,25 +409,32 @@ function ProporAulaForm({ userInfo, currentUser, initialDate, onSuccess, onCance
             setVerificandoDisp(true);
             try {
                 const diaSelecionado = dayjs(formData.dataInicio).startOf('day');
+                const inicioIso = diaSelecionado.toISOString();
+                const fimIso = diaSelecionado.add(1, 'day').toISOString();
                 
                 // 1. Busca Aulas
-                const q = query(collection(db, "aulas"), where("laboratorioSelecionado", "in", laboratoriosParaVerificar), where("dataInicio", ">=", Timestamp.fromDate(diaSelecionado.toDate())), where("dataInicio", "<", Timestamp.fromDate(diaSelecionado.add(1, 'day').toDate())));
-                const querySnapshot = await getDocs(q);
+                const { data: aulasRes } = await supabase
+                    .from('aulas')
+                    .select('*')
+                    .in('laboratorio', laboratoriosParaVerificar)
+                    .gte('data_inicio', inicioIso)
+                    .lt('data_inicio', fimIso);
                 
                 // 2. Busca Eventos
-                const qEventos = query(collection(db, "eventosManutencao"), where("dataInicio", ">=", Timestamp.fromDate(diaSelecionado.startOf('day').toDate())), where("dataInicio", "<=", Timestamp.fromDate(diaSelecionado.endOf('day').toDate())));
-                const querySnapshotEventos = await getDocs(qEventos);
+                const { data: eventosRes } = await supabase
+                    .from('eventos_manutencao')
+                    .select('*')
+                    .gte('data_inicio', inicioIso)
+                    .lte('data_inicio', diaSelecionado.endOf('day').toISOString());
 
                 const ocupacaoMap = {};
 
-                // Processa Aulas
-                querySnapshot.docs.forEach(doc => {
-                    if (doc.id !== aulaId) {
-                        const data = doc.data();
+                (aulasRes || []).forEach(data => {
+                    if (data.id !== aulaId) {
                         const st = data.status || 'aprovada';
-                        // Se já tem aula aprovada ou evento, prevalece aprovada/evento
-                        if (!ocupacaoMap[data.horarioSlotString] || ocupacaoMap[data.horarioSlotString].status !== 'aprovada') {
-                            ocupacaoMap[data.horarioSlotString] = {
+                        const slot = data.horario_slot || data.horarioSlotString;
+                        if (!ocupacaoMap[slot] || ocupacaoMap[slot].status !== 'aprovada') {
+                            ocupacaoMap[slot] = {
                                 assunto: data.assunto,
                                 status: st
                             };
@@ -418,12 +442,11 @@ function ProporAulaForm({ userInfo, currentUser, initialDate, onSuccess, onCance
                     }
                 });
 
-                // Processa Eventos
-                querySnapshotEventos.docs.forEach(doc => {
-                    const data = doc.data();
+                (eventosRes || []).forEach(data => {
                     if (data.laboratorio === 'Todos' || laboratoriosParaVerificar.includes(data.laboratorio)) {
-                        if (data.horarioSlotString) {
-                            ocupacaoMap[data.horarioSlotString] = {
+                        const slot = data.horario_slot || data.horarioSlotString;
+                        if (slot) {
+                            ocupacaoMap[slot] = {
                                 assunto: data.titulo || "Evento/Manutenção",
                                 status: 'evento'
                             };
@@ -447,24 +470,30 @@ function ProporAulaForm({ userInfo, currentUser, initialDate, onSuccess, onCance
             if (aulaId) {
                 setIsEditMode(true);
                 try {
-                    const docRef = doc(db, "aulas", aulaId);
-                    const docSnap = await getDoc(docRef);
-                    if (docSnap.exists()) {
-                        const data = docSnap.data();
-                        const labObj = LISTA_LABORATORIOS.find(l => l.name === data.laboratorioSelecionado);
-                        if (data.isRevisao) setTipoEntrada('revisao');
-                        else if (data.isProva) setTipoEntrada('prova');
+                    const { data, error } = await supabase
+                        .from('aulas')
+                        .select('*')
+                        .eq('id', aulaId)
+                        .single();
+
+                    if (!error && data) {
+                        const labNome = data.laboratorio || data.laboratorioSelecionado;
+                        const labObj = LISTA_LABORATORIOS.find(l => l.name === labNome);
+                        if (data.is_revisao || data.isRevisao) setTipoEntrada('revisao');
+                        else if (data.is_prova || data.isProva) setTipoEntrada('prova');
+                        const slot = data.horario_slot || data.horarioSlotString;
+
                         setFormData({
                             assunto: data.assunto || '',
                             observacoes: data.observacoes || '',
-                            tipoAtividade: data.tipoAtividade || '',
+                            tipoAtividade: data.tipo_atividade || data.tipoAtividade || '',
                             cursos: data.cursos || [],
                             liga: data.liga || '',
-                            dataInicio: dayjs(data.dataInicio.toDate()),
-                            horarioSlotString: Array.isArray(data.horarioSlotString) ? data.horarioSlotString : [data.horarioSlotString],
-                            dynamicLabs: [{ tipo: labObj ? labObj.tipo : '', laboratorios: [data.laboratorioSelecionado] }],
-                            tipoRevisao: data.tipoRevisao || 'revisao_conteudo',
-                            professorRevisao: data.professorRevisao || '',
+                            dataInicio: dayjs(data.data_inicio || data.dataInicio),
+                            horarioSlotString: Array.isArray(slot) ? slot : [slot],
+                            dynamicLabs: [{ tipo: labObj ? labObj.tipo : '', laboratorios: [labNome] }],
+                            tipoRevisao: data.tipo_revisao || data.tipoRevisao || 'revisao_conteudo',
+                            professorRevisao: data.professor_revisao || data.professorRevisao || '',
                         });
                     }
                 } catch (error) {
@@ -579,7 +608,7 @@ function ProporAulaForm({ userInfo, currentUser, initialDate, onSuccess, onCance
                             propostoPorUid: currentUser.uid,
                             propostoPorNome: userInfo?.name || currentUser.displayName || currentUser.email,
                             status: (userInfo?.role === 'coordenador') ? 'aprovada' : 'pendente',
-                            createdAt: serverTimestamp(),
+                            createdAt: new Date().toISOString(),
                             // Campos de revisão
                             isRevisao: tipoEntrada === 'revisao',
                             tipoRevisao: tipoEntrada === 'revisao' ? formData.tipoRevisao : null,
@@ -595,13 +624,18 @@ function ProporAulaForm({ userInfo, currentUser, initialDate, onSuccess, onCance
 
             const conflitosEncontrados = [];
             for (const nova of aulasParaAgendar) {
-                const q = query(collection(db, "aulas"), where("laboratorioSelecionado", "==", nova.laboratorioSelecionado), where("dataInicio", "==", Timestamp.fromDate(nova.dataInicio.toDate())), where("horarioSlotString", "==", nova.horarioSlotString));
-                const querySnapshot = await getDocs(q);
-                querySnapshot.docs.forEach(doc => {
-                    if (doc.id !== aulaId) {
-                        const data = doc.data();
-                        if (!data.status || data.status === 'aprovada') {
-                            conflitosEncontrados.push({ novaAula: nova, conflito: { id: doc.id, ...data } });
+                const inicioIso = nova.dataInicio.toISOString();
+                const { data: conflitosRes } = await supabase
+                    .from('aulas')
+                    .select('*')
+                    .eq('laboratorio', nova.laboratorioSelecionado)
+                    .eq('data_inicio', inicioIso)
+                    .eq('horario_slot', nova.horarioSlotString);
+
+                (conflitosRes || []).forEach(docData => {
+                    if (docData.id !== aulaId) {
+                        if (!docData.status || docData.status === 'aprovada') {
+                            conflitosEncontrados.push({ novaAula: nova, conflito: { id: docData.id, ...docData } });
                         }
                     }
                 });
@@ -627,9 +661,8 @@ function ProporAulaForm({ userInfo, currentUser, initialDate, onSuccess, onCance
         if (substituir) {
             setLoadingSubmit(true);
             try {
-                const batch = writeBatch(db);
-                conflitos.forEach(c => batch.delete(doc(db, "aulas", c.conflito.id)));
-                await batch.commit();
+                const idsParaDeletar = conflitos.map(c => c.conflito.id);
+                await supabase.from('aulas').delete().in('id', idsParaDeletar);
                 setOpenConfirmModal(true);
             } catch (error) {
                 console.error("Erro ao substituir aulas:", error);
@@ -649,22 +682,51 @@ function ProporAulaForm({ userInfo, currentUser, initialDate, onSuccess, onCance
             if (isEditMode && aulaId) {
                 const aula = aulasParaConfirmar[0];
                 const finalData = {
-                    ...aula,
-                    dataInicio: Timestamp.fromDate(aula.dataInicio.toDate()),
-                    dataFim: Timestamp.fromDate(aula.dataFim.toDate()),
-                    updatedAt: serverTimestamp()
+                    assunto: aula.assunto,
+                    tipo_atividade: aula.tipoAtividade || 'aula',
+                    laboratorio: aula.laboratorioSelecionado || aula.laboratorio,
+                    horario_slot: aula.horarioSlotString,
+                    data_inicio: aula.dataInicio.toISOString(),
+                    data_fim: aula.dataFim.toISOString(),
+                    status: aula.status,
+                    proposto_por_uid: aula.propostoPorUid,
+                    proposto_por_nome: aula.propostoPorNome,
+                    is_revisao: aula.isRevisao || false,
+                    tipo_revisao_label: aula.tipoRevisaoLabel || null,
+                    liga: aula.liga || null,
+                    observacoes: aula.observacoes || null,
+                    updated_at: new Date().toISOString()
                 };
-                await updateDoc(doc(db, "aulas", aulaId), finalData);
-                finalizadas.push(aula);
+                const { error } = await supabase.from('aulas').update(finalData).eq('id', aulaId);
+                if (error) throw error;
+                finalizadas.push({ ...aula, id: aulaId });
             } else {
                 for (const aula of aulasParaConfirmar) {
                     const finalData = {
-                        ...aula,
-                        dataInicio: Timestamp.fromDate(aula.dataInicio.toDate()),
-                        dataFim: Timestamp.fromDate(aula.dataFim.toDate())
+                        assunto: aula.assunto,
+                        tipo_atividade: aula.tipoAtividade || 'aula',
+                        laboratorio: aula.laboratorioSelecionado || aula.laboratorio,
+                        horario_slot: aula.horarioSlotString,
+                        data_inicio: aula.dataInicio.toISOString(),
+                        data_fim: aula.dataFim.toISOString(),
+                        status: aula.status,
+                        proposto_por_uid: aula.propostoPorUid,
+                        proposto_por_nome: aula.propostoPorNome,
+                        is_revisao: aula.isRevisao || false,
+                        tipo_revisao_label: aula.tipoRevisaoLabel || null,
+                        liga: aula.liga || null,
+                        observacoes: aula.observacoes || null,
                     };
-                    const docRef = await addDoc(collection(db, "aulas"), finalData);
-                    finalizadas.push({ ...aula, id: docRef.id });
+                    const { data: novaAula, error } = await supabase.from('aulas').insert([finalData]).select().single();
+                    if (error) throw error;
+
+                    if (aula.cursos && aula.cursos.length > 0) {
+                        await supabase.from('aula_cursos').insert(
+                            aula.cursos.map(curso => ({ aula_id: novaAula.id, curso }))
+                        );
+                    }
+
+                    finalizadas.push({ ...aula, id: novaAula.id });
                 }
             }
 
@@ -689,7 +751,7 @@ function ProporAulaForm({ userInfo, currentUser, initialDate, onSuccess, onCance
             try {
                 if (TELEGRAM_CHAT_ID) {
                     for (const aula of finalizadas) {
-                        const dateObj = dayjs(aula.dataInicio.toDate ? aula.dataInicio.toDate() : aula.dataInicio);
+                        const dateObj = dayjs(aula.dataInicio);
                         const dadosNotificacao = {
                             assunto: aula.assunto,
                             data: dateObj.isValid() ? dateObj.format('DD/MM/YYYY') : 'N/A',
@@ -715,7 +777,7 @@ function ProporAulaForm({ userInfo, currentUser, initialDate, onSuccess, onCance
             if (formData.dataInicio && dayjs(formData.dataInicio).isValid()) {
                 const novasAulasFormatadas = finalizadas.map(a => ({
                     ...a,
-                    dataInicio: a.dataInicio instanceof Timestamp ? a.dataInicio : Timestamp.fromDate(dayjs(a.dataInicio.toDate ? a.dataInicio.toDate() : a.dataInicio).toDate()),
+                    dataInicio: a.dataInicio ? dayjs(a.dataInicio).toISOString() : null,
                     laboratorioSelecionado: a.laboratorioSelecionado || a.laboratorio,
                     horarioSlotString: a.horarioSlotString
                 }));
