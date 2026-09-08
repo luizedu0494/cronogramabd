@@ -557,7 +557,13 @@ function App() {
         </Menu>
     );
     
-    const navMenuItems = [
+    const navMenuItems = role === 'visualizador' ? [
+        <MenuItem key="cal" component={Link} to="/calendario" onClick={handleMenuClose}><ListItemIcon><Calendar size={18} /></ListItemIcon><ListItemText primary="Calendário" primaryTypographyProps={{ noWrap: true }} /></MenuItem>,
+        <MenuItem key="ia" component={Link} to="/assistente-ia" onClick={handleMenuClose}><ListItemIcon><Bot size={18} /></ListItemIcon><ListItemText primary="Assistente IA" primaryTypographyProps={{ noWrap: true }} /></MenuItem>,
+        <MenuItem key="ajuda" component={Link} to="/ajuda" onClick={handleMenuClose}><ListItemIcon><HelpCircle size={18} /></ListItemIcon><ListItemText primary="Dúvidas do Visitante" primaryTypographyProps={{ noWrap: true }} /></MenuItem>,
+        <Divider key="div-guest" sx={{ my: 0.5 }} />,
+        <MenuItem key="sair-guest" onClick={handleLogout} sx={{ color: 'error.main' }}><ListItemIcon><LogOut size={18} color="red" /></ListItemIcon><ListItemText primary="Sair do Modo Visitante" primaryTypographyProps={{ noWrap: true }} /></MenuItem>
+    ] : [
         <MenuItem key="painel" component={Link} to="/" onClick={handleMenuClose}><ListItemIcon><LayoutDashboard size={18} /></ListItemIcon><ListItemText primary="Painel" primaryTypographyProps={{ noWrap: true }} /></MenuItem>,
         <MenuItem key="cal" component={Link} to="/calendario" onClick={handleMenuClose}><ListItemIcon><Calendar size={18} /></ListItemIcon><ListItemText primary="Calendário" primaryTypographyProps={{ noWrap: true }} /></MenuItem>,
         !approvalPending ? <MenuItem key="historico" component={Link} to="/historico-aulas" onClick={handleMenuClose}><ListItemIcon><History size={18} /></ListItemIcon><ListItemText primary="Histórico" primaryTypographyProps={{ noWrap: true }} /></MenuItem> : null,
@@ -607,15 +613,17 @@ function App() {
             transformOrigin={{ vertical: 'top', horizontal: 'right' }}
         >
             {cleanMenuItems(navMenuItems)}
-            <Divider sx={{ my: 0.5 }} />
-            <MenuItem component={Link} to="/perfil" onClick={handleMenuClose}>
-                <ListItemIcon><User size={18} /></ListItemIcon>
-                <ListItemText primary="Perfil" primaryTypographyProps={{ noWrap: true }} />
-            </MenuItem>
-            <MenuItem onClick={handleLogout}>
-                <ListItemIcon><LogOut size={18} /></ListItemIcon>
-                <ListItemText primary="Sair" primaryTypographyProps={{ noWrap: true }} />
-            </MenuItem>
+            {role !== 'visualizador' && [
+                <Divider key="div-prof" sx={{ my: 0.5 }} />,
+                <MenuItem key="perfil" component={Link} to="/perfil" onClick={handleMenuClose}>
+                    <ListItemIcon><User size={18} /></ListItemIcon>
+                    <ListItemText primary="Perfil" primaryTypographyProps={{ noWrap: true }} />
+                </MenuItem>,
+                <MenuItem key="logout" onClick={handleLogout}>
+                    <ListItemIcon><LogOut size={18} /></ListItemIcon>
+                    <ListItemText primary="Sair" primaryTypographyProps={{ noWrap: true }} />
+                </MenuItem>
+            ]}
         </Menu>
     );
     const renderProfileMenu = (
@@ -626,13 +634,15 @@ function App() {
             anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
             transformOrigin={{ vertical: 'top', horizontal: 'right' }}
         >
-            <MenuItem component={Link} to="/perfil" onClick={handleMenuClose}>
-                <ListItemIcon><User size={18} /></ListItemIcon>
-                <ListItemText primary="Perfil" primaryTypographyProps={{ noWrap: true }} />
-            </MenuItem>
+            {role !== 'visualizador' && (
+                <MenuItem component={Link} to="/perfil" onClick={handleMenuClose}>
+                    <ListItemIcon><User size={18} /></ListItemIcon>
+                    <ListItemText primary="Perfil" primaryTypographyProps={{ noWrap: true }} />
+                </MenuItem>
+            )}
             <MenuItem onClick={handleLogout}>
                 <ListItemIcon><LogOut size={18} /></ListItemIcon>
-                <ListItemText primary="Sair" primaryTypographyProps={{ noWrap: true }} />
+                <ListItemText primary={role === 'visualizador' ? "Sair do Modo Visitante" : "Sair"} primaryTypographyProps={{ noWrap: true }} />
             </MenuItem>
         </Menu>
     );
@@ -654,22 +664,22 @@ function App() {
                             }}
                         >
                             <Toolbar>
-                                <Box component={Link} to="/" sx={{ display: 'flex', alignItems: 'center', textDecoration: 'none', color: 'inherit', flexGrow: 1, gap: 1 }}>
+                                <Box component={Link} to={role === 'visualizador' ? "/calendario" : "/"} sx={{ display: 'flex', alignItems: 'center', textDecoration: 'none', color: 'inherit', flexGrow: 1, gap: 1 }}>
                                     <img src={cesmacLogo} alt="Logo CESMAC" style={{ height: '35px', marginRight: '4px' }} />
                                     {!isMobile && (
                                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                                             <Typography variant="h6" fontWeight={700} noWrap>Cronograma Lab</Typography>
                                             <Chip 
-                                                label="v2.0 • PostgreSQL" 
+                                                label={role === 'visualizador' ? "Modo Visitante" : "v2.0 • PostgreSQL"} 
                                                 size="small" 
                                                 sx={{ 
                                                     height: 22, 
                                                     fontSize: '0.68rem', 
                                                     fontWeight: 700, 
-                                                    background: 'linear-gradient(135deg, #1E7EC8 0%, #00C853 100%)', 
+                                                    background: role === 'visualizador' ? 'linear-gradient(135deg, #0284C7 0%, #2563EB 100%)' : 'linear-gradient(135deg, #1E7EC8 0%, #00C853 100%)', 
                                                     color: '#ffffff',
                                                     borderRadius: '6px',
-                                                    boxShadow: '0 2px 6px rgba(0,200,83,0.3)'
+                                                    boxShadow: '0 2px 6px rgba(0,0,0,0.15)'
                                                 }} 
                                             />
                                         </Box>
@@ -679,13 +689,32 @@ function App() {
                                     <IconButton onClick={handleThemeChange} color="inherit" aria-label="Alternar tema">
                                         {darkMode ? <Sun size={20}/> : <Moon size={20}/>}
                                     </IconButton>
-                                    <IconButton onClick={handleProfileMenuOpen} color="inherit" aria-label="Menu de perfil">
-                                        {(userProfileData?.photo_url || userProfileData?.photoURL) ? (
-                                            <Avatar src={userProfileData.photo_url || userProfileData.photoURL} sx={{ width: 28, height: 28 }} />
-                                        ) : (
-                                            <AccountCircle sx={{ fontSize: 28 }} />
-                                        )}
-                                    </IconButton>
+                                    {role === 'visualizador' ? (
+                                        <Button
+                                            variant="outlined"
+                                            size="small"
+                                            onClick={handleLogout}
+                                            startIcon={<LogOut size={16} />}
+                                            sx={{
+                                                textTransform: 'none',
+                                                fontWeight: 600,
+                                                fontSize: '0.8rem',
+                                                ml: 1,
+                                                borderRadius: 2,
+                                                borderColor: 'rgba(0,0,0,0.2)'
+                                            }}
+                                        >
+                                            Sair
+                                        </Button>
+                                    ) : (
+                                        <IconButton onClick={handleProfileMenuOpen} color="inherit" aria-label="Menu de perfil">
+                                            {(userProfileData?.photo_url || userProfileData?.photoURL) ? (
+                                                <Avatar src={userProfileData.photo_url || userProfileData.photoURL} sx={{ width: 28, height: 28 }} />
+                                            ) : (
+                                                <AccountCircle sx={{ fontSize: 28 }} />
+                                            )}
+                                        </IconButton>
+                                    )}
                                     <IconButton edge="end" onClick={handleMobileMenuOpen} color="inherit" aria-label="Menu principal">
                                         <MenuIcon size={22} />
                                     </IconButton>
@@ -719,16 +748,16 @@ function App() {
                                 />
                              ) : approvalPending ? (<Route path="*" element={<PendingApprovalScreen />} />) : (
                                 <Route element={<MainLayout />}>
-                                    <Route path="/" element={<PaginaInicial userInfo={userProfileData}/>} />
+                                    <Route path="/" element={role === 'visualizador' ? <Navigate to="/calendario" replace /> : <PaginaInicial userInfo={userProfileData}/>} />
                                     <Route path="/calendario" element={<CalendarioCronograma userInfo={userProfileData} />} />
-                                    <Route path="/historico-aulas" element={<HistoricoAulas />} />
+                                    <Route path="/historico-aulas" element={role === 'visualizador' ? <Navigate to="/calendario" replace /> : <HistoricoAulas />} />
                                     <Route path="/propor-aula" element={<ProporAulaForm userInfo={userProfileData} currentUser={user} />} />
                                     <Route path="/propor-evento" element={<ProporEventoForm userInfo={userProfileData} currentUser={user} />} />
                                     <Route path="/propor-aula/:aulaId" element={<ProporAulaForm userInfo={userProfileData} currentUser={user} />} />
                                     <Route path="/propor-evento/:eventoId" element={<ProporEventoForm userInfo={userProfileData} currentUser={user} />} />
                                     <Route path="/avisos" element={<PainelAvisos />} />
-                                    <Route path="/ajuda" element={<AjudaFAQ />} />
-                                    <Route path="/perfil" element={<ConfiguracoesPerfil />} />
+                                    <Route path="/ajuda" element={<AjudaFAQ userInfo={userProfileData} />} />
+                                    <Route path="/perfil" element={role === 'visualizador' ? <Navigate to="/calendario" replace /> : <ConfiguracoesPerfil />} />
                                     <Route path="/consulta-disponibilidade" element={<ConsultaDisponibilidade />} />
                                     {role === 'tecnico' && (<><Route path="/minhas-propostas" element={<MinhasPropostas />} /><Route path="/minhas-designacoes" element={<MinhasDesignacoes />} /><Route path="/revisoes" element={<CalendarioRevisoesTecnico userInfo={userProfileData} />} /></>)}
                                     {role === 'coordenador' && (<>
@@ -744,7 +773,7 @@ function App() {
                                     </>)}
                                     <Route path="/assistente-ia" element={<AssistenteIA userInfo={userProfileData} currentUser={user} mode={darkMode ? 'dark' : 'light'} />} />
                                     {isCoordenadorOrTecnico && (<Route path="/download-cronograma" element={<DownloadCronograma />} />)}
-                                    <Route path="*" element={<Navigate to="/" />} />
+                                    <Route path="*" element={<Navigate to={role === 'visualizador' ? "/calendario" : "/"} replace />} />
 
                                 </Route>
                             )}
