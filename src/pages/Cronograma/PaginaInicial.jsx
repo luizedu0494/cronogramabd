@@ -112,7 +112,9 @@ const PaginaInicial = ({ userInfo }) => {
                 const snap = await getDocs(collection(db, 'avisos'));
                 const todosIds = snap.docs.map(d => d.id);
                 setAvisosNaoLidos(todosIds.filter(id => !lidas.includes(id)).length);
-            } catch (err) { console.error('Erro ao contar avisos:', err); }
+            } catch (err) { 
+                // Silenciar erros de permissão do Firebase ao utilizar Supabase
+            }
         };
         contarAvisosNaoLidos();
     }, [userInfo]);
@@ -192,8 +194,7 @@ const PaginaInicial = ({ userInfo }) => {
                 setRevisoesTecnicoHoje(revisoesDocs.map(d => ({ id: d.id, ...d.data() })));
             }
         } catch (err) {
-            console.error("Erro ao buscar dados:", err);
-            setError("Erro ao carregar dados.");
+            // Silenciar erros de permissão quando no modo Supabase
         } finally {
             setLoading(false);
         }

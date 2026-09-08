@@ -169,20 +169,36 @@ function App() {
         setIsLoggingIn(true);
         try {
             const profile = await userService.getUserProfile(targetEmail.trim());
-            const userObj = profile || {
-                uid: `usr_${Date.now()}`,
-                name: targetEmail.split('@')[0],
-                email: targetEmail.trim(),
-                role: 'coordenador',
-                status: 'aprovado',
-                approval_pending: false
-            };
-            localStorage.setItem('cronolab_user_session', JSON.stringify(userObj));
-            setUser(userObj);
-            setUserProfileData(userObj);
-            setSnackbarMessage(`Bem-vindo, ${userObj.name}!`); 
-            setSnackbarSeverity("success"); 
-            setOpenSnackbar(true);
+            
+            if (profile) {
+                // Usuário cadastrado no banco de dados
+                localStorage.setItem('cronolab_user_session', JSON.stringify(profile));
+                setUser(profile);
+                setUserProfileData(profile);
+                setSnackbarMessage(`Bem-vindo, ${profile.name}!`); 
+                setSnackbarSeverity("success"); 
+                setOpenSnackbar(true);
+            } else {
+                // Novo usuário: registrar no Supabase com status pendente de aprovação
+                const newPendingUser = {
+                    uid: `usr_${Date.now()}`,
+                    name: targetEmail.split('@')[0],
+                    email: targetEmail.trim(),
+                    role: null,
+                    status: 'pendente',
+                    approval_pending: true,
+                    approvalPending: true
+                };
+                
+                await userService.upsertUser(newPendingUser);
+                
+                localStorage.setItem('cronolab_user_session', JSON.stringify(newPendingUser));
+                setUser(newPendingUser);
+                setUserProfileData(newPendingUser);
+                setSnackbarMessage("Cadastro realizado! Seu acesso aguarda aprovação do Coordenador."); 
+                setSnackbarSeverity("info"); 
+                setOpenSnackbar(true);
+            }
         } catch (err) {
             setSnackbarMessage(`Erro ao acessar: ${err.message}`); 
             setSnackbarSeverity("error"); 
