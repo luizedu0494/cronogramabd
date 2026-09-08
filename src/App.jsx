@@ -8,7 +8,7 @@ import getAppTheme from './theme';
 import cesmacLogo from './assets/images/cesmac-logo.png';
 import {
     AppBar, Toolbar, Typography, Button, Container, Box,
-    CircularProgress, Snackbar, Alert, IconButton, Menu, MenuItem, Badge,
+    CircularProgress, Snackbar, Alert, IconButton, Menu, MenuItem, Badge, Chip,
     ThemeProvider, CssBaseline, useMediaQuery, Avatar, Divider, Paper,
     Drawer, BottomNavigation, BottomNavigationAction, List, ListItemButton,
     ListItemIcon, ListItemText, Collapse
@@ -267,14 +267,34 @@ function App() {
                         <AppBar 
                             position="static"
                             sx={{
-                                bgcolor: darkMode ? 'primary.main' : '#ffffff',
-                                color: darkMode ? '#ffffff' : '#000000'
+                                bgcolor: darkMode ? '#0B132B' : '#ffffff',
+                                color: darkMode ? '#ffffff' : '#1A202C',
+                                borderBottom: '2px solid',
+                                borderImage: 'linear-gradient(90deg, #1E7EC8, #00C853) 1',
+                                boxShadow: darkMode ? '0 4px 20px rgba(0,0,0,0.4)' : '0 2px 10px rgba(0,0,0,0.06)'
                             }}
                         >
                             <Toolbar>
-                                <Box component={Link} to="/" sx={{ display: 'flex', alignItems: 'center', textDecoration: 'none', color: 'inherit', flexGrow: 1 }}>
-                                    <img src={cesmacLogo} alt="Logo CESMAC" style={{ height: '35px', marginRight: '8px' }} />
-                                    {!isMobile && <Typography variant="h6" noWrap>Cronograma Lab</Typography>}
+                                <Box component={Link} to="/" sx={{ display: 'flex', alignItems: 'center', textDecoration: 'none', color: 'inherit', flexGrow: 1, gap: 1 }}>
+                                    <img src={cesmacLogo} alt="Logo CESMAC" style={{ height: '35px', marginRight: '4px' }} />
+                                    {!isMobile && (
+                                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                            <Typography variant="h6" fontWeight={700} noWrap>Cronograma Lab</Typography>
+                                            <Chip 
+                                                label="v2.0 • PostgreSQL" 
+                                                size="small" 
+                                                sx={{ 
+                                                    height: 22, 
+                                                    fontSize: '0.68rem', 
+                                                    fontWeight: 700, 
+                                                    background: 'linear-gradient(135deg, #1E7EC8 0%, #00C853 100%)', 
+                                                    color: '#ffffff',
+                                                    borderRadius: '6px',
+                                                    boxShadow: '0 2px 6px rgba(0,200,83,0.3)'
+                                                }} 
+                                            />
+                                        </Box>
+                                    )}
                                 </Box>
                                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
                                     <IconButton onClick={handleThemeChange} color="inherit" aria-label="Alternar tema">
