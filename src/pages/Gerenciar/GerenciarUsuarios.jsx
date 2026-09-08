@@ -8,6 +8,7 @@ import {
     MenuItem, Select, FormControl, InputLabel, Tooltip, Snackbar
 } from '@mui/material';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
+import CancelIcon from '@mui/icons-material/Cancel';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
 import EmptyState from '../../components/EmptyState';
@@ -67,13 +68,16 @@ function GerenciarUsuarios() {
             let successMessage = '';
             if (action === 'approve') {
                 await supabase.from('users').update({ approval_pending: false, status: 'aprovado' }).eq('uid', userId);
-                successMessage = 'Usuário aprovado!';
+                successMessage = 'Usuário aprovado com sucesso!';
+            } else if (action === 'reject') {
+                await supabase.from('users').update({ approval_pending: false, status: 'rejeitado' }).eq('uid', userId);
+                successMessage = 'Usuário rejeitado. O acesso foi negado.';
             } else if (action === 'editRole') {
-                await supabase.from('users').update({ role: payload.role }).eq('uid', userId);
-                successMessage = 'Cargo do usuário atualizado!';
+                await supabase.from('users').update({ role: payload.role, approval_pending: false, status: 'aprovado' }).eq('uid', userId);
+                successMessage = `Cargo atualizado para "${payload.role}" e acesso liberado!`;
             } else if (action === 'delete') {
                 await supabase.from('users').delete().eq('uid', userId);
-                successMessage = 'Usuário removido com sucesso!';
+                successMessage = 'Usuário removido do banco com sucesso!';
             }
             setFeedback({ open: true, message: successMessage, severity: 'success' });
         } catch (err) {
@@ -121,8 +125,18 @@ function GerenciarUsuarios() {
                                 <ListItemText
                                     primary={`${user.name} (${user.email})`}
                                     secondary={<>
-                                        {user.role && <Chip label={user.role} size="small" sx={{ mr: 1 }} color={user.role === 'coordenador' ? 'primary' : 'default'} />}
-                                        {user.approvalPending && <Chip label="Pendente" size="small" color="warning" />}
+                                        {user.role ? (
+                                            <Chip label={user.role === 'coordenador' ? 'Coordenador' : 'Técnico'} size="small" sx={{ mr: 1 }} color={user.role === 'coordenador' ? 'primary' : 'secondary'} />
+                                        ) : (
+                                            <Chip label="Sem Cargo" size="small" sx={{ mr: 1 }} variant="outlined" />
+                                        )}
+                                        {user.status === 'rejeitado' ? (
+                                            <Chip label="Recusado" size="small" color="error" />
+                                        ) : user.approvalPending ? (
+                                            <Chip label="Pendente" size="small" color="warning" />
+                                        ) : (
+                                            <Chip label="Aprovado" size="small" color="success" variant="outlined" />
+                                        )}
                                     </>}
                                 />
                                 <ListItemSecondaryAction>
@@ -131,9 +145,12 @@ function GerenciarUsuarios() {
                                     ) : (
                                         <>
                                             {user.approvalPending && (
-                                                <Tooltip title="Aprovar Usuário"><IconButton edge="end" onClick={() => handleAction('approve', user.id)} sx={{ mr: 1 }}><CheckCircleIcon color="success" /></IconButton></Tooltip>
+                                                <>
+                                                    <Tooltip title="Aprovar Usuário"><IconButton edge="end" onClick={() => handleAction('approve', user.id)} sx={{ mr: 0.5 }}><CheckCircleIcon color="success" /></IconButton></Tooltip>
+                                                    <Tooltip title="Rejeitar Usuário"><IconButton edge="end" onClick={() => handleAction('reject', user.id)} sx={{ mr: 0.5 }}><CancelIcon color="error" /></IconButton></Tooltip>
+                                                </>
                                             )}
-                                            <Tooltip title="Editar Cargo"><IconButton edge="end" onClick={() => handleAbrirEditDialog(user)} sx={{ mr: 1 }}><EditIcon color="info" /></IconButton></Tooltip>
+                                            <Tooltip title="Editar Cargo"><IconButton edge="end" onClick={() => handleAbrirEditDialog(user)} sx={{ mr: 0.5 }}><EditIcon color="info" /></IconButton></Tooltip>
                                             <Tooltip title="Excluir Usuário"><IconButton onClick={() => handleOpenDeleteDialog(user)} color="error"><DeleteIcon /></IconButton></Tooltip>
                                         </>
                                     )}

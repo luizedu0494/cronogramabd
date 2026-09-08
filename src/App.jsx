@@ -430,7 +430,46 @@ function App() {
     
     if (loading) return <LoadingFallback />;
     
-    const PendingApprovalScreen = () => (<Container sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '80vh' }}><Paper elevation={3} sx={{ p: 4, textAlign: 'center', maxWidth: 400 }}><Typography variant="h5" gutterBottom>Acesso Pendente</Typography><Button variant="contained" onClick={handleLogout}>Sair</Button></Paper></Container>);
+    const PendingApprovalScreen = () => {
+        const isRejeitado = userProfileData?.status === 'rejeitado';
+        return (
+            <Container sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '80vh', py: 4 }}>
+                <Paper elevation={4} sx={{ p: { xs: 3, sm: 4 }, textAlign: 'center', maxWidth: 460, width: '100%', borderRadius: 3 }}>
+                    <img src={cesmacLogo} alt="Logo CESMAC" style={{ height: '55px', marginBottom: '16px' }} />
+                    
+                    {isRejeitado ? (
+                        <>
+                            <Typography variant="h5" fontWeight={700} color="error" gutterBottom>
+                                Acesso Não Autorizado
+                            </Typography>
+                            <Alert severity="error" sx={{ my: 2, textAlign: 'left' }}>
+                                Seu cadastro neste e-mail (<strong>{userProfileData?.email}</strong>) foi analisado e <strong>recusado/desativado</strong> pela coordenação dos laboratórios.
+                            </Alert>
+                            <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
+                                Se você acredita que isto é um engano, entre em contato diretamente com a coordenação para solicitar a liberação do seu perfil.
+                            </Typography>
+                        </>
+                    ) : (
+                        <>
+                            <Typography variant="h5" fontWeight={700} color="warning.main" gutterBottom>
+                                Cadastro em Análise
+                            </Typography>
+                            <Alert severity="warning" sx={{ my: 2, textAlign: 'left' }}>
+                                Seu cadastro (<strong>{userProfileData?.email}</strong>) está pendente de aprovação pela coordenação.
+                            </Alert>
+                            <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
+                                Assim que o seu perfil for aprovado e o cargo (Coordenador ou Técnico) for atribuído, você terá acesso total às funcionalidades da plataforma.
+                            </Typography>
+                        </>
+                    )}
+
+                    <Button variant="contained" color="primary" fullWidth onClick={handleLogout} sx={{ py: 1.2, fontWeight: 700 }}>
+                        Sair / Voltar à Tela Inicial
+                    </Button>
+                </Paper>
+            </Container>
+        );
+    };
     const CoordenadorGerenciarMenu = () => (
         <Menu 
             anchorEl={coordenadorMenuAnchorEl} 
