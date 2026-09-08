@@ -245,6 +245,21 @@ const LoginScreen = ({ emailInput, setEmailInput, passwordInput, setPasswordInpu
     </Container>
 );
 
+const NotificacoesMenuArea = ({ uid, open, onClose }) => {
+    const { notificacoes, naoLidas, carregando, marcarLida, marcarTodasLidas } = useNotificacoes(uid);
+    return (
+        <CentroNotificacoesDrawer
+            open={open}
+            onClose={onClose}
+            notificacoes={notificacoes}
+            naoLidas={naoLidas}
+            carregando={carregando}
+            marcarLida={marcarLida}
+            marcarTodasLidas={marcarTodasLidas}
+        />
+    );
+};
+
 function App() {
     const [user, setUser] = useState(null);
     const [userProfileData, setUserProfileData] = useState(null);
@@ -651,7 +666,6 @@ function App() {
     );
 
     const [drawerNotificacoesAberto, setDrawerNotificacoesAberto] = useState(false);
-    const { notificacoes, naoLidas, carregando: carregandoNotifs, marcarLida, marcarTodasLidas } = useNotificacoes(userProfileData?.uid);
 
     return (
         <ThemeProvider theme={theme}>
@@ -738,14 +752,10 @@ function App() {
                     )}
                     {renderMobileMenu} {renderProfileMenu} {role === 'coordenador' && <CoordenadorGerenciarMenu />}
                     {user && !approvalPending && (
-                        <CentroNotificacoesDrawer
+                        <NotificacoesMenuArea
+                            uid={userProfileData?.uid}
                             open={drawerNotificacoesAberto}
                             onClose={() => setDrawerNotificacoesAberto(false)}
-                            notificacoes={notificacoes}
-                            naoLidas={naoLidas}
-                            carregando={carregandoNotifs}
-                            marcarLida={marcarLida}
-                            marcarTodasLidas={marcarTodasLidas}
                         />
                     )}
                     <Suspense fallback={<LoadingFallback />}>
