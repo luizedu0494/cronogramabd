@@ -14,7 +14,7 @@ import DeleteIcon from '@mui/icons-material/Delete';
 import EmptyState from '../../components/EmptyState';
 import PeopleOutlineIcon from '@mui/icons-material/PeopleOutline';
 
-const ROLES = ['coordenador', 'tecnico'];
+const ROLES = ['coordenador', 'tecnico', 'visualizador'];
 
 function GerenciarUsuarios() {
     const [usuarios, setUsuarios] = useState([]);
@@ -126,7 +126,12 @@ function GerenciarUsuarios() {
                                     primary={`${user.name} (${user.email})`}
                                     secondary={<>
                                         {user.role ? (
-                                            <Chip label={user.role === 'coordenador' ? 'Coordenador' : 'Técnico'} size="small" sx={{ mr: 1 }} color={user.role === 'coordenador' ? 'primary' : 'secondary'} />
+                                            <Chip 
+                                                label={user.role === 'coordenador' ? 'Coordenador' : user.role === 'tecnico' ? 'Técnico' : 'Visualizador (Aluno/Prof)'} 
+                                                size="small" 
+                                                sx={{ mr: 1 }} 
+                                                color={user.role === 'coordenador' ? 'primary' : user.role === 'tecnico' ? 'secondary' : 'info'} 
+                                            />
                                         ) : (
                                             <Chip label="Sem Cargo" size="small" sx={{ mr: 1 }} variant="outlined" />
                                         )}

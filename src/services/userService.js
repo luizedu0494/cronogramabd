@@ -36,14 +36,14 @@ export const userService = {
       return existing;
     }
 
-    // Criar novo usuário pendente de aprovação
+    // Criar novo usuário pré-aprovado como visualizador (Leitura de Calendário)
     const newUser = {
       uid: user.id || `user_${Date.now()}`,
       name,
       email,
-      role: null,
-      status: 'pendente',
-      approval_pending: true,
+      role: 'visualizador',
+      status: 'aprovado',
+      approval_pending: false,
       photo_url,
       created_at: new Date().toISOString()
     };

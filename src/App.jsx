@@ -381,21 +381,21 @@ function App() {
                     setSnackbarSeverity("success"); 
                     setOpenSnackbar(true);
                 } else {
-                    const newPendingUser = {
+                    const newViewerUser = {
                         uid: `usr_${Date.now()}`,
                         name: targetEmail.split('@')[0],
                         email: targetEmail,
-                        role: null,
-                        status: 'pendente',
-                        approval_pending: true,
-                        approvalPending: true
+                        role: 'visualizador',
+                        status: 'aprovado',
+                        approval_pending: false,
+                        approvalPending: false
                     };
-                    await userService.upsertUser(newPendingUser);
-                    localStorage.setItem('cronolab_user_session', JSON.stringify(newPendingUser));
-                    setUser(newPendingUser);
-                    setUserProfileData(newPendingUser);
-                    setSnackbarMessage("Cadastro realizado! Seu acesso aguarda aprovação do Coordenador."); 
-                    setSnackbarSeverity("info"); 
+                    await userService.upsertUser(newViewerUser);
+                    localStorage.setItem('cronolab_user_session', JSON.stringify(newViewerUser));
+                    setUser(newViewerUser);
+                    setUserProfileData(newViewerUser);
+                    setSnackbarMessage("Conta criada com sucesso! Acesso à visualização do calendário liberado."); 
+                    setSnackbarSeverity("success"); 
                     setOpenSnackbar(true);
                 }
             }
@@ -423,8 +423,8 @@ function App() {
         setCoordenadorMenuAnchorEl(event.currentTarget);
     };
     
-    const role = userProfileData?.role || 'coordenador';
-    const isApproved = userProfileData?.status === 'aprovado' || userProfileData?.approval_pending === false || userProfileData?.approvalPending === false;
+    const role = userProfileData?.role || 'visualizador';
+    const isApproved = userProfileData?.status !== 'rejeitado' && (userProfileData?.status === 'aprovado' || userProfileData?.approval_pending === false || userProfileData?.approvalPending === false || userProfileData?.role === 'visualizador');
     const approvalPending = !isApproved;
     const isCoordenadorOrTecnico = role === 'coordenador' || role === 'tecnico';
     
