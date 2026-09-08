@@ -34,10 +34,10 @@ const faqData = [
     resposta: 'Acesse a página "Calendário". Você pode usar os filtros no topo da tela para selecionar o tipo de laboratório ou pesquisar pelo nome da sua disciplina/assunto para encontrar os horários exatos.',
   },
   {
-    id: 'faq-visitante-ia',
+    id: 'faq-visitante-download',
     categoria: 'visitante',
-    pergunta: 'Como funciona o Assistente IA para visitantes?',
-    resposta: 'No menu "Assistente IA", você pode fazer perguntas em linguagem natural sobre as aulas e ocupações dos laboratórios, como "Quais aulas teremos hoje à tarde?" ou "Qual o horário da aula de Semiologia?".',
+    pergunta: 'Como faço para exportar ou baixar o cronograma de aulas?',
+    resposta: 'No menu "Baixar Cronograma", você pode exportar a lista das aulas em planilha Excel (.xlsx), arquivo de calendário (.ics para Google Calendar/Outlook) ou relatórios em PDF.',
   },
   {
     id: 'faq-visitante-cores',
