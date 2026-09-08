@@ -1,7 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { db } from '../firebaseConfig';
 import { supabase } from '../supabaseConfig';
-import { collection, query, where, orderBy, limit, onSnapshot } from 'firebase/firestore';
 import {
     Card, CardContent, Typography, Box, CircularProgress, Alert, Button, Divider, Chip, Tabs, Tab
 } from '@mui/material';

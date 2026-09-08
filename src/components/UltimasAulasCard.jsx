@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { db } from '../firebaseConfig';
-import { collection, query, orderBy, limit, getDocs } from 'firebase/firestore';
+import { supabase } from '../supabaseConfig';
 import {
     Card, CardContent, Typography, Box, CircularProgress, Alert,
     Divider, Button, Chip, Tabs, Tab
@@ -26,17 +25,29 @@ const UltimasAulasCard = () => {
         const fetch = async () => {
             try {
                 setLoading(true);
-                const q = query(collection(db, 'aulas'), orderBy('createdAt', 'desc'), limit(30));
-                const snap = await getDocs(q);
-                const all = snap.docs.map(doc => ({
-                    id: doc.id, ...doc.data(),
-                    createdAt: doc.data().createdAt?.toDate() || new Date(),
-                    dataInicio: doc.data().dataInicio?.toDate() || null
+                const { data, error: fetchErr } = await supabase
+                    .from('aulas')
+                    .select('*')
+                    .order('created_at', { ascending: false })
+                    .limit(30);
+
+                if (fetchErr) throw fetchErr;
+
+                const all = (data || []).map(item => ({
+                    id: item.id,
+                    ...item,
+                    createdAt: item.created_at ? new Date(item.created_at) : new Date(),
+                    dataInicio: item.data_inicio ? new Date(item.data_inicio) : null,
+                    isRevisao: item.is_revisao || false,
+                    laboratorioSelecionado: item.laboratorio,
+                    propostoPorNome: item.proposto_por_nome
                 }));
+
                 setAulasNormais(all.filter(a => !a.isRevisao).slice(0, 5));
                 setRevisoes(all.filter(a => a.isRevisao === true).slice(0, 5));
                 setError(null);
             } catch (err) {
+                console.error("Erro ao carregar últimas aulas:", err);
                 setError("Erro ao carregar as últimas aulas.");
             } finally {
                 setLoading(false);
