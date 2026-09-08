@@ -1,21 +1,11 @@
 import { useState, useEffect, useCallback } from 'react';
-import {
-  collection,
-  query,
-  orderBy,
-  limit,
-  getDocs,
-  where,
-  Timestamp,
-  OrderByDirection,
-} from 'firebase/firestore';
-import { db } from '../firebaseConfig';
+import { supabase } from '../supabaseConfig';
 import { Aula } from '../types';
 
 export interface DateFilterOption {
   field: string;
-  start: Timestamp;
-  end: Timestamp;
+  start: string;
+  end: string;
 }
 
 export interface UseFetchAulasOptions {
@@ -24,7 +14,7 @@ export interface UseFetchAulasOptions {
   authorFilter?: string | null;
   dateFilter?: DateFilterOption | null;
   orderByField?: string;
-  orderByDirection?: OrderByDirection;
+  orderByDirection?: 'asc' | 'desc';
 }
 
 export interface UseFetchAulasReturn {
@@ -40,7 +30,7 @@ const useFetchAulas = (options: UseFetchAulasOptions = {}): UseFetchAulasReturn 
     statusFilter = null,
     authorFilter = null,
     dateFilter = null,
-    orderByField = 'dataCriacao',
+    orderByField = 'created_at',
     orderByDirection = 'desc',
   } = options;
 
@@ -52,51 +42,47 @@ const useFetchAulas = (options: UseFetchAulasOptions = {}): UseFetchAulasReturn 
     setLoading(true);
     setError(null);
     try {
-      const aulasRef = collection(db, 'aulas');
-      let q = query(aulasRef);
+      let query = supabase.from('aulas').select('*');
 
       if (statusFilter) {
-        q = query(q, where('status', '==', statusFilter));
+        query = query.eq('status', statusFilter);
       }
 
       if (authorFilter) {
-        q = query(q, where('autorUid', '==', authorFilter));
+        query = query.eq('proposto_por_uid', authorFilter);
       }
 
       if (dateFilter && dateFilter.field && dateFilter.start && dateFilter.end) {
-        q = query(
-          q,
-          where(dateFilter.field, '>=', dateFilter.start),
-          where(dateFilter.field, '<=', dateFilter.end)
-        );
+        const campoDate = dateFilter.field === 'dataInicio' ? 'data_inicio' : dateFilter.field;
+        query = query.gte(campoDate, dateFilter.start).lte(campoDate, dateFilter.end);
       }
 
-      q = query(q, orderBy(orderByField, orderByDirection));
+      const campoOrder = orderByField === 'dataCriacao' ? 'created_at' : orderByField;
+      query = query.order(campoOrder, { ascending: orderByDirection === 'asc' });
 
       if (limitCount) {
-        q = query(q, limit(limitCount));
+        query = query.limit(limitCount);
       }
 
-      const querySnapshot = await getDocs(q);
+      const { data, error: sbError } = await query;
 
-      const aulasList: Aula[] = querySnapshot.docs.map(docSnap => {
-        const data = docSnap.data();
-        return {
-          id: docSnap.id,
-          disciplina: data.disciplina || data.assunto || '',
-          professor: data.professor || data.propostoPorNome || '',
-          laboratorio: data.laboratorio || data.laboratorioSelecionado || '',
-          status: data.status || 'agendada',
-          turma: data.turma || '',
-          dataInicio: data.dataInicio?.toDate().toISOString() || null,
-          dataFim: data.dataFim?.toDate().toISOString() || null,
-          criadoEm: data.dataCriacao?.toDate().toISOString() || null,
-          ...data,
-        } as Aula;
-      });
+      if (sbError) throw sbError;
+
+      const aulasList: Aula[] = (data || []).map(data => ({
+        id: data.id,
+        disciplina: data.assunto || '',
+        professor: data.proposto_por_nome || '',
+        laboratorio: data.laboratorio || '',
+        status: data.status || 'aprovada',
+        turma: '',
+        dataInicio: data.data_inicio || null,
+        dataFim: data.data_fim || null,
+        criadoEm: data.created_at || null,
+        ...data,
+      })) as Aula[];
 
       setAulas(aulasList);
-    } catch (err) {
+    } catch (err: any) {
       console.error('Erro ao buscar aulas:', err);
       setError('Não foi possível carregar as aulas.');
     } finally {

@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react';
-import { db } from './firebaseConfig';
-import { collection, query, onSnapshot, doc, addDoc, updateDoc, deleteDoc, Timestamp, serverTimestamp, getDocs, where } from 'firebase/firestore';
+import { supabase } from './supabaseConfig';
 import {
   Container, Typography, Box, Paper, CircularProgress, Alert,
   List, ListItem, ListItemText, ListItemSecondaryAction, IconButton, Chip,
@@ -58,26 +57,50 @@ function EventosManutencao() {
   });
   const [errors, setErrors] = useState({});
 
-  useEffect(() => {
-    const q = query(collection(db, 'eventosManutencao'));
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-      const eventosList = snapshot.docs.map(doc => {
-        const data = doc.data();
-        return {
-          id: doc.id,
-          ...data,
-          dataInicio: data.dataInicio instanceof Timestamp ? data.dataInicio.toDate() : new Date(data.dataInicio),
-          dataFim: data.dataFim instanceof Timestamp ? data.dataFim.toDate() : new Date(data.dataFim),
-        };
-      });
-      setEventos(eventosList.sort((a, b) => b.dataInicio - a.dataInicio));
-      setLoading(false);
-    }, (err) => {
+  const carregarEventos = async () => {
+    setLoading(true);
+    try {
+      const { data, error: sbError } = await supabase
+        .from('eventos_manutencao')
+        .select('*')
+        .order('data_inicio', { ascending: false });
+
+      if (sbError) throw sbError;
+
+      const eventosList = (data || []).map(item => ({
+        id: item.id,
+        titulo: item.titulo,
+        descricao: item.descricao,
+        tipo: item.tipo,
+        laboratorio: item.laboratorio || 'Todos',
+        dataInicio: item.data_inicio ? new Date(item.data_inicio) : new Date(),
+        dataFim: item.data_fim ? new Date(item.data_fim) : new Date(),
+        horarioSlotString: item.horario_slot,
+      }));
+
+      setEventos(eventosList);
+    } catch (err) {
       console.error("Erro ao carregar eventos:", err);
       setError("Não foi possível carregar os eventos de manutenção.");
+    } finally {
       setLoading(false);
-    });
-    return () => unsubscribe();
+    }
+  };
+
+  useEffect(() => {
+    carregarEventos();
+
+    // Escuta em tempo real no Supabase
+    const channel = supabase
+      .channel('public:eventos_manutencao')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'eventos_manutencao' }, () => {
+        carregarEventos();
+      })
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, []);
 
   const notificarTelegramEvento = async (evento, tipoAcao) => {
@@ -87,8 +110,8 @@ function EventosManutencao() {
       titulo: evento.titulo,
       tipoEvento: evento.tipo,
       laboratorio: evento.laboratorio,
-      dataInicio: dayjs(evento.dataInicio instanceof Timestamp ? evento.dataInicio.toDate() : evento.dataInicio).format('DD/MM/YYYY HH:mm'),
-      dataFim: dayjs(evento.dataFim instanceof Timestamp ? evento.dataFim.toDate() : evento.dataFim).format('DD/MM/YYYY HH:mm'),
+      dataInicio: dayjs(evento.dataInicio).format('DD/MM/YYYY HH:mm'),
+      dataFim: dayjs(evento.dataFim).format('DD/MM/YYYY HH:mm'),
       descricao: evento.descricao
     };
 
@@ -113,14 +136,12 @@ function EventosManutencao() {
     if (evento) {
       setEventoParaEditar(evento);
       
-      // Tentar encontrar o tipo de laboratório baseado no nome do laboratório
       let tipoLab = 'Todos';
       if (evento.laboratorio !== 'Todos') {
         const labObj = LISTA_LABORATORIOS.find(l => l.name === evento.laboratorio);
         if (labObj) tipoLab = labObj.tipo;
       }
 
-      // Tentar mapear os horários de volta para os slots
       const start = dayjs(evento.dataInicio);
       const end = dayjs(evento.dataFim);
       const slotString = `${start.format('HH:mm')}-${end.format('HH:mm')}`;
@@ -160,9 +181,6 @@ function EventosManutencao() {
 
     setActionLoading(true);
     try {
-      // Para cada horário selecionado, criamos um evento ou validamos conflitos
-      // O usuário quer que eventos tenham prioridade, então vamos avisar se houver aulas
-      
       for (const slot of formData.horarios) {
         const [inicioStr, fimStr] = slot.split('-');
         const finalStart = formData.dataInicio.hour(parseInt(inicioStr.split(':')[0])).minute(parseInt(inicioStr.split(':')[1])).second(0);
@@ -172,37 +190,28 @@ function EventosManutencao() {
           titulo: formData.titulo,
           descricao: formData.descricao,
           tipo: formData.tipo,
-          laboratorio: formData.laboratorio,
-          dataInicio: Timestamp.fromDate(finalStart.toDate()),
-          dataFim: Timestamp.fromDate(finalEnd.toDate()),
-          horarioSlotString: slot,
-          criadoEm: serverTimestamp ? serverTimestamp() : new Date(),
+          laboratorio: formData.laboratorio === 'Todos' ? null : formData.laboratorio,
+          horario_slot: slot,
+          data_inicio: finalStart.toISOString(),
+          data_fim: finalEnd.toISOString(),
+          updated_at: new Date().toISOString()
         };
 
-        // Verificar se existem aulas no mesmo horário e laboratório
-        const qAulas = query(
-          collection(db, "aulas"),
-          where("dataInicio", "==", eventoData.dataInicio)
-        );
-        const querySnapshotAulas = await getDocs(qAulas);
-        const aulasConflitantes = querySnapshotAulas.docs.filter(doc => {
-          const aula = doc.data();
-          return formData.laboratorio === 'Todos' || aula.laboratorioSelecionado === formData.laboratorio;
-        });
-
-        if (aulasConflitantes.length > 0) {
-          // Se houver aulas, vamos avisar (ou poderíamos cancelar as aulas automaticamente)
-          // Por enquanto, vamos apenas prosseguir pois o evento tem prioridade conforme solicitado
-          console.log(`Aviso: Existem ${aulasConflitantes.length} aulas que conflitam com este evento.`);
-        }
-
         if (eventoParaEditar) {
-          const docRef = doc(db, 'eventosManutencao', eventoParaEditar.id);
-          await updateDoc(docRef, eventoData);
-          await notificarTelegramEvento(eventoData, 'editar');
+          const { error: updateErr } = await supabase
+            .from('eventos_manutencao')
+            .update(eventoData)
+            .eq('id', eventoParaEditar.id);
+
+          if (updateErr) throw updateErr;
+          await notificarTelegramEvento({ ...eventoData, dataInicio: finalStart.toDate(), dataFim: finalEnd.toDate(), laboratorio: formData.laboratorio }, 'editar');
         } else {
-          await addDoc(collection(db, 'eventosManutencao'), eventoData);
-          await notificarTelegramEvento(eventoData, 'adicionar');
+          const { error: insertErr } = await supabase
+            .from('eventos_manutencao')
+            .insert([eventoData]);
+
+          if (insertErr) throw insertErr;
+          await notificarTelegramEvento({ ...eventoData, dataInicio: finalStart.toDate(), dataFim: finalEnd.toDate(), laboratorio: formData.laboratorio }, 'adicionar');
         }
       }
 
@@ -212,6 +221,7 @@ function EventosManutencao() {
         severity: 'success' 
       });
       handleCloseDialog();
+      carregarEventos();
     } catch (err) {
       console.error("Erro ao salvar evento:", err);
       setFeedback({ open: true, message: `Erro ao salvar o evento: ${err.message}`, severity: 'error' });
@@ -229,11 +239,18 @@ function EventosManutencao() {
     if (!eventoParaExcluir) return;
     setActionLoading(true);
     try {
-      await deleteDoc(doc(db, 'eventosManutencao', eventoParaExcluir.id));
+      const { error: deleteErr } = await supabase
+        .from('eventos_manutencao')
+        .delete()
+        .eq('id', eventoParaExcluir.id);
+
+      if (deleteErr) throw deleteErr;
+
       await notificarTelegramEvento(eventoParaExcluir, 'excluir');
       setFeedback({ open: true, message: 'Evento excluído com sucesso!', severity: 'success' });
       setOpenDeleteDialog(false);
       setEventoParaExcluir(null);
+      carregarEventos();
     } catch (err) {
       console.error("Erro ao excluir evento:", err);
       setFeedback({ open: true, message: `Erro ao excluir o evento: ${err.message}`, severity: 'error' });
@@ -252,32 +269,45 @@ function EventosManutencao() {
       case 'Manutenção': return 'error';
       case 'Feriado': return 'warning';
       case 'Evento': return 'primary';
-      case 'Giro': return 'secondary';
+      case 'Giro': return 'info';
       default: return 'default';
     }
   };
 
-  if (loading) return (<Container sx={{ textAlign: 'center', mt: 4 }}><CircularProgress /></Container>);
-  if (error) return (<Container sx={{ mt: 4 }}><Alert severity="error">{error}</Alert></Container>);
-
   return (
     <LocalizationProvider dateAdapter={AdapterDayjs} adapterLocale="pt-br">
-      <Container maxWidth="lg">
-        <Paper elevation={3} sx={{ p: { xs: 2, md: 4 }, mt: 4 }}>
-          <Box display="flex" justifyContent="space-between" alignItems="center" mb={3} flexDirection={{ xs: 'column', sm: 'row' }} gap={2}>
-            <Typography variant="h4" component="h1">Gerenciar Eventos</Typography>
-            <Button variant="contained" startIcon={<AddIcon />} onClick={() => handleOpenDialog()}>
+      <Container maxWidth="md">
+        <Paper elevation={3} sx={{ p: 4, mt: 4 }}>
+          <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
+            <Box>
+              <Typography variant="h5" component="h1" gutterBottom fontWeight="bold">
+                Eventos e Manutenções
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                Gerencie bloqueios de laboratórios por manutenção, feriados ou eventos especiais.
+              </Typography>
+            </Box>
+            <Button
+              variant="contained"
+              color="primary"
+              startIcon={<AddIcon />}
+              onClick={() => handleOpenDialog()}
+            >
               Novo Evento
             </Button>
           </Box>
 
-          <Divider sx={{ mb: 3 }} />
-
-          {eventos.length === 0 ? (
+          {loading ? (
+            <Box display="flex" justifyContent="center" my={4}>
+              <CircularProgress />
+            </Box>
+          ) : error ? (
+            <Alert severity="error" sx={{ my: 2 }}>{error}</Alert>
+          ) : eventos.length === 0 ? (
             <EmptyState
-              icon={CalendarOff}
-              title="Nenhum evento cadastrado"
-              message="Adicione eventos como manutenções de laboratório ou feriados para organizar o cronograma."
+              icon={<CalendarOff size={48} />}
+              title="Nenhum Evento Cadastrado"
+              description="Cadastre manutenções ou eventos para bloquear horários no cronograma."
             />
           ) : (
             <List>
@@ -285,37 +315,42 @@ function EventosManutencao() {
                 <ListItem key={evento.id} divider sx={{ py: 2 }}>
                   <ListItemText
                     primary={
-                      <Box display="flex" alignItems="center" flexWrap="wrap" gap={1}>
-                        <Chip label={evento.tipo} size="small" color={getChipColor(evento.tipo)} />
-                        <Typography variant="subtitle1" fontWeight="bold">{evento.titulo}</Typography>
+                      <Box display="flex" alignItems="center" gap={1} mb={0.5}>
+                        <Typography variant="subtitle1" fontWeight="bold">
+                          {evento.titulo}
+                        </Typography>
+                        <Chip
+                          label={evento.tipo}
+                          color={getChipColor(evento.tipo)}
+                          size="small"
+                        />
                       </Box>
                     }
                     secondary={
-                      <Box component="span" sx={{ display: 'block', mt: 0.5 }}>
-                        <Typography component="span" variant="body2" color="text.primary" sx={{ fontWeight: 'medium' }}>
-                          {evento.laboratorio === 'Todos' ? 'Todos os Laboratórios' : `Laboratório: ${evento.laboratorio}`}
-                        </Typography>
-                        <br />
-                        <Typography component="span" variant="body2" color="text.secondary">
-                          {dayjs(evento.dataInicio).format('DD/MM/YYYY HH:mm')} até {dayjs(evento.dataFim).format('DD/MM/YYYY HH:mm')}
-                        </Typography>
+                      <Box>
                         {evento.descricao && (
-                          <Typography component="span" variant="body2" color="text.secondary" sx={{ display: 'block', mt: 0.5, fontStyle: 'italic' }}>
+                          <Typography variant="body2" color="text.primary" sx={{ mb: 0.5 }}>
                             {evento.descricao}
                           </Typography>
                         )}
+                        <Typography variant="caption" color="text.secondary" display="block">
+                          🏢 Laboratório: {evento.laboratorio}
+                        </Typography>
+                        <Typography variant="caption" color="text.secondary" display="block">
+                          📅 {dayjs(evento.dataInicio).format('DD/MM/YYYY HH:mm')} até {dayjs(evento.dataFim).format('HH:mm')}
+                        </Typography>
                       </Box>
                     }
                   />
                   <ListItemSecondaryAction>
                     <Tooltip title="Editar">
-                      <IconButton edge="end" onClick={() => handleOpenDialog(evento)} sx={{ mr: 1 }} color="info">
-                        <EditIcon />
+                      <IconButton edge="end" onClick={() => handleOpenDialog(evento)} sx={{ mr: 1 }}>
+                        <EditIcon fontSize="small" />
                       </IconButton>
                     </Tooltip>
                     <Tooltip title="Excluir">
                       <IconButton edge="end" onClick={() => handleOpenDeleteDialog(evento)} color="error">
-                        <DeleteIcon />
+                        <DeleteIcon fontSize="small" />
                       </IconButton>
                     </Tooltip>
                   </ListItemSecondaryAction>
@@ -325,56 +360,46 @@ function EventosManutencao() {
           )}
         </Paper>
 
-        <Dialog open={openDialog} onClose={handleCloseDialog} fullWidth maxWidth="sm">
-          <DialogTitle>{eventoParaEditar ? 'Editar Evento' : 'Novo Evento'}</DialogTitle>
-          <DialogContent dividers>
-            <Grid container spacing={2} sx={{ mt: 0.5 }}>
+        {/* Dialog de Adicionar/Editar */}
+        <Dialog open={openDialog} onClose={handleCloseDialog} maxWidth="sm" fullWidth>
+          <DialogTitle>{eventoParaEditar ? 'Editar Evento' : 'Novo Evento / Bloqueio'}</DialogTitle>
+          <DialogContent>
+            <Grid container spacing={2} sx={{ mt: 1 }}>
               <Grid item xs={12}>
-                <TextField 
-                  autoFocus 
-                  label="Título do Evento *" 
-                  fullWidth 
-                  variant="outlined" 
-                  value={formData.titulo} 
-                  onChange={(e) => setFormData({...formData, titulo: e.target.value})} 
-                  error={!!errors.titulo}
+                <TextField
+                  fullWidth
+                  label="Título do Evento *"
+                  value={formData.titulo}
+                  onChange={(e) => setFormData({ ...formData, titulo: e.target.value })}
+                  error={Boolean(errors.titulo)}
                   helperText={errors.titulo}
-                  required 
                 />
               </Grid>
-              <Grid item xs={12}>
-                <TextField 
-                  label="Descrição (Opcional)" 
-                  fullWidth 
-                  variant="outlined" 
-                  multiline 
-                  rows={2} 
-                  value={formData.descricao} 
-                  onChange={(e) => setFormData({...formData, descricao: e.target.value})} 
-                />
-              </Grid>
+
               <Grid item xs={12} sm={6}>
-                <FormControl sx={{ minWidth: 120 }}>
-                  <InputLabel shrink>Tipo</InputLabel>
-                  <Select 
-                    value={formData.tipo} 
-                    label="Tipo" 
-                    onChange={(e) => setFormData({...formData, tipo: e.target.value})}
+                <FormControl fullWidth>
+                  <InputLabel>Tipo de Evento</InputLabel>
+                  <Select
+                    value={formData.tipo}
+                    label="Tipo de Evento"
+                    onChange={(e) => setFormData({ ...formData, tipo: e.target.value })}
                   >
-                    {EVENT_TYPES.map(t => <MenuItem key={t} value={t}>{t}</MenuItem>)}
+                    {EVENT_TYPES.map(t => (
+                      <MenuItem key={t} value={t}>{t}</MenuItem>
+                    ))}
                   </Select>
                 </FormControl>
               </Grid>
-              
+
               <Grid item xs={12} sm={6}>
-                <FormControl sx={{ minWidth: 160 }}>
-                  <InputLabel shrink>Área do Laboratório</InputLabel>
-                  <Select 
-                    value={formData.tipoLaboratorio} 
-                    label="Área do Laboratório" 
-                    onChange={(e) => setFormData({...formData, tipoLaboratorio: e.target.value, laboratorio: 'Todos'})}
+                <FormControl fullWidth>
+                  <InputLabel>Tipo de Laboratório</InputLabel>
+                  <Select
+                    value={formData.tipoLaboratorio}
+                    label="Tipo de Laboratório"
+                    onChange={(e) => setFormData({ ...formData, tipoLaboratorio: e.target.value, laboratorio: 'Todos' })}
                   >
-                    <MenuItem value="Todos">Todas as Áreas</MenuItem>
+                    <MenuItem value="Todos">Todos os Tipos</MenuItem>
                     {TIPOS_LABORATORIO.map(t => (
                       <MenuItem key={t.id} value={t.id}>{t.name}</MenuItem>
                     ))}
@@ -383,79 +408,103 @@ function EventosManutencao() {
               </Grid>
 
               <Grid item xs={12}>
-                <FormControl sx={{ minWidth: 160 }} disabled={formData.tipoLaboratorio === 'Todos'}>
-                  <InputLabel shrink>Laboratório Específico</InputLabel>
-                  <Select 
-                    value={formData.laboratorio} 
-                    label="Laboratório Específico" 
-                    onChange={(e) => setFormData({...formData, laboratorio: e.target.value})}
+                <FormControl fullWidth>
+                  <InputLabel>Laboratório Afetado</InputLabel>
+                  <Select
+                    value={formData.laboratorio}
+                    label="Laboratório Afetado"
+                    onChange={(e) => setFormData({ ...formData, laboratorio: e.target.value })}
                   >
-                    <MenuItem value="Todos">Todos desta Área</MenuItem>
-                    {LISTA_LABORATORIOS.filter(l => l.tipo === formData.tipoLaboratorio).map(lab => (
-                      <MenuItem key={lab.id} value={lab.name}>{lab.name}</MenuItem>
-                    ))}
+                    <MenuItem value="Todos">Todos os Laboratórios</MenuItem>
+                    {LISTA_LABORATORIOS
+                      .filter(l => formData.tipoLaboratorio === 'Todos' || l.tipo === formData.tipoLaboratorio)
+                      .map(l => (
+                        <MenuItem key={l.id} value={l.name}>{l.name}</MenuItem>
+                      ))
+                    }
                   </Select>
                 </FormControl>
               </Grid>
 
               <Grid item xs={12} sm={6}>
-                <DatePicker 
-                  label="Data *" 
-                  value={formData.dataInicio} 
-                  onChange={(newValue) => setFormData({...formData, dataInicio: newValue})} 
-                  format="DD/MM/YYYY" 
-                  slotProps={{ textField: { fullWidth: true, error: !!errors.dataInicio, helperText: errors.dataInicio } }} 
+                <DatePicker
+                  label="Data *"
+                  value={formData.dataInicio}
+                  onChange={(val) => setFormData({ ...formData, dataInicio: val })}
+                  slotProps={{
+                    textField: {
+                      fullWidth: true,
+                      error: Boolean(errors.dataInicio),
+                      helperText: errors.dataInicio
+                    }
+                  }}
                 />
               </Grid>
 
               <Grid item xs={12} sm={6}>
-                <FormControl sx={{ minWidth: 150 }} error={!!errors.horarios}>
-                  <InputLabel shrink>Horário(s) *</InputLabel>
+                <FormControl fullWidth error={Boolean(errors.horarios)}>
+                  <InputLabel>Horários Afetados *</InputLabel>
                   <Select
                     multiple
                     value={formData.horarios}
-                    onChange={(e) => setFormData({...formData, horarios: e.target.value})}
-                    label="Horário(s) *"
-                    renderValue={(selected) => (
-                      <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
-                        {selected.map((value) => (
-                          <Chip key={value} label={value} size="small" />
-                        ))}
-                      </Box>
-                    )}
+                    label="Horários Afetados *"
+                    onChange={(e) => setFormData({ ...formData, horarios: e.target.value })}
+                    renderValue={(selected) => selected.join(', ')}
                   >
-                    {BLOCOS_HORARIO.map((bloco) => (
-                      <MenuItem key={bloco.value} value={bloco.value}>
-                        {bloco.label} ({bloco.turno})
+                    {BLOCOS_HORARIO.map(b => (
+                      <MenuItem key={b.value} value={b.value}>
+                        <Checkbox checked={formData.horarios.includes(b.value)} />
+                        <ListItemText primary={`${b.label} (${b.turno})`} />
                       </MenuItem>
                     ))}
                   </Select>
                   {errors.horarios && <FormHelperText>{errors.horarios}</FormHelperText>}
                 </FormControl>
               </Grid>
+
+              <Grid item xs={12}>
+                <TextField
+                  fullWidth
+                  multiline
+                  rows={3}
+                  label="Descrição / Observações"
+                  value={formData.descricao}
+                  onChange={(e) => setFormData({ ...formData, descricao: e.target.value })}
+                />
+              </Grid>
             </Grid>
           </DialogContent>
           <DialogActions>
             <Button onClick={handleCloseDialog}>Cancelar</Button>
-            <Button onClick={handleSubmit} variant="contained" disabled={actionLoading}>
-              {actionLoading ? <CircularProgress size={24} /> : (eventoParaEditar ? 'Salvar Alterações' : 'Adicionar Evento')}
+            <Button
+              onClick={handleSubmit}
+              variant="contained"
+              disabled={actionLoading}
+            >
+              {actionLoading ? <CircularProgress size={24} /> : (eventoParaEditar ? 'Salvar' : 'Criar Evento')}
             </Button>
           </DialogActions>
         </Dialog>
 
+        {/* Modal de Exclusão */}
         <DialogConfirmacao
           open={openDeleteDialog}
           onClose={() => setOpenDeleteDialog(false)}
           onConfirm={handleDeleteConfirm}
-          title="Excluir Evento"
+          title="Confirmar Exclusão"
           message={`Tem certeza que deseja excluir o evento "${eventoParaExcluir?.titulo}"?`}
           confirmText="Excluir"
           confirmColor="error"
-          loading={actionLoading}
         />
 
-        <Snackbar open={feedback.open} autoHideDuration={6000} onClose={handleCloseSnackbar} anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}>
-          <Alert onClose={handleCloseSnackbar} severity={feedback.severity} sx={{ width: '100%' }}>{feedback.message}</Alert>
+        <Snackbar
+          open={feedback.open}
+          autoHideDuration={6000}
+          onClose={handleCloseSnackbar}
+        >
+          <Alert onClose={handleCloseSnackbar} severity={feedback.severity}>
+            {feedback.message}
+          </Alert>
         </Snackbar>
       </Container>
     </LocalizationProvider>

@@ -1,12 +1,11 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { db } from './firebaseConfig';
-import EmptyState from './components/EmptyState'; // O caminho deve estar correto
-    import DialogConfirmacao from './components/DialogConfirmacao'; // Componente de diálogo reutilizável
-import { collection, query, where, getDocs, doc, deleteDoc, Timestamp, orderBy, updateDoc, writeBatch, limit, startAfter, addDoc, serverTimestamp } from 'firebase/firestore';
+import { supabase } from './supabaseConfig';
+import EmptyState from './components/EmptyState';
+import DialogConfirmacao from './components/DialogConfirmacao';
 import {
-        Button, Container, Paper, Typography, Box, CircularProgress, Alert, Snackbar, FormControl, InputLabel, Select, MenuItem, TextField, Grid, OutlinedInput, Chip, Checkbox, ListItem, ListItemText, List, Tooltip, IconButton,
-        Dialog, DialogTitle, DialogContent, DialogActions // ADICIONADOS
-    } from '@mui/material';
+    Button, Container, Paper, Typography, Box, CircularProgress, Alert, Snackbar, FormControl, InputLabel, Select, MenuItem, TextField, Grid, OutlinedInput, Chip, Checkbox, ListItem, ListItemText, List, Tooltip, IconButton,
+    Dialog, DialogTitle, DialogContent, DialogActions
+} from '@mui/material';
 import { LocalizationProvider, DatePicker } from '@mui/x-date-pickers';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import dayjs from 'dayjs';
@@ -15,7 +14,6 @@ import DeleteIcon from '@mui/icons-material/Delete';
 import EditIcon from '@mui/icons-material/Edit';
 import ClearIcon from '@mui/icons-material/Clear';
 import { LISTA_LABORATORIOS } from './constants/laboratorios';
-import { LISTA_CURSOS } from './constants/cursos';
 import { registrarLogExclusao } from './services/loggerService';
 
 const BLOCOS_HORARIO = [
@@ -52,34 +50,25 @@ const ResultadosBusca = ({ aulas, selectedAulas, onToggleSelectAll, onToggleSele
 );
 
 function GerenciarAulasAvancado({ userInfo }) {
-
     const logActivity = async (type, aulaData, user) => {
         try {
-            await addDoc(collection(db, "logs"), {
+            await supabase.from('logs').insert({
                 type: type,
                 collection: 'aulas',
-                aula: {
+                payload: {
                     assunto: aulaData.assunto,
-                    disciplina: aulaData.assunto,
-                    cursos: aulaData.cursos || [],
-                    curso: aulaData.cursos?.join(', '),
-                    ano: aulaData.ano,
                     status: aulaData.status,
                     dataInicio: aulaData.dataInicio,
-                    laboratorioSelecionado: aulaData.laboratorioSelecionado,
-                    isRevisao: aulaData.isRevisao || false,
-                    tipoRevisaoLabel: aulaData.tipoRevisaoLabel || null,
+                    laboratorio: aulaData.laboratorioSelecionado,
                 },
-                timestamp: serverTimestamp(),
-                user: {
-                    uid: user.uid,
-                    nome: user.name || user.displayName || user.email,
-                }
+                user_uid: user?.uid,
+                user_nome: user?.name || user?.email,
             });
         } catch (error) {
             console.error("Erro ao registrar log:", error);
         }
     };
+
     const [aulas, setAulas] = useState([]);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
@@ -91,63 +80,57 @@ function GerenciarAulasAvancado({ userInfo }) {
     const [filtros, setFiltros] = useState({ dataInicio: dayjs().startOf('month'), dataFim: dayjs().endOf('month'), laboratorio: [], horario: [], assunto: '', status: '', cursos: [], liga: '' });
     const [feedback, setFeedback] = useState({ open: false, message: '', severity: 'info' });
 
-    const [lastVisible, setLastVisible] = useState(null);
     const [pagina, setPagina] = useState(1);
-    const [historicoLastVisible, setHistoricoLastVisible] = useState([]);
+    const [totalContagem, setTotalContagem] = useState(0);
     const AULAS_POR_PAGINA = 25;
 
-    const handleSearch = useCallback(async (direction = 'start') => {
+    const handleSearch = useCallback(async (pageTarget = 1) => {
         setLoading(true);
         setError(null);
         try {
-            let q = query(collection(db, 'aulas'), orderBy('dataInicio', 'asc'));
+            let query = supabase
+                .from('aulas')
+                .select('*', { count: 'exact' })
+                .order('data_inicio', { ascending: true });
 
-            if (filtros.dataInicio) q = query(q, where('dataInicio', '>=', Timestamp.fromDate(filtros.dataInicio.startOf('day').toDate())));
-            if (filtros.dataFim) q = query(q, where('dataInicio', '<=', Timestamp.fromDate(filtros.dataFim.endOf('day').toDate())));
-            if (filtros.status) q = query(q, where('status', '==', filtros.status));
-            if (filtros.laboratorio.length > 0) q = query(q, where('laboratorioSelecionado', 'in', filtros.laboratorio));
-            if (filtros.horario.length > 0) q = query(q, where('horarioSlotString', 'in', filtros.horario));
-            // O filtro de cursos será aplicado localmente para evitar problemas com array-contains-any e outros filtros de query.
-            // if (filtros.cursos.length > 0) q = query(q, where('cursos', 'array-contains-any', filtros.cursos));
-            
-            // Aplica a paginação
-            if (direction === 'next' && lastVisible) {
-                setHistoricoLastVisible(prev => [...prev, lastVisible]);
-                q = query(q, startAfter(lastVisible), limit(AULAS_POR_PAGINA));
-            } else if (direction === 'prev') {
-                const prevLastVisible = historicoLastVisible[historicoLastVisible.length - 2] || null;
-                setHistoricoLastVisible(prev => prev.slice(0, -1));
-                q = query(q, startAfter(prevLastVisible), limit(AULAS_POR_PAGINA));
-            } else {
-                setHistoricoLastVisible([]);
-                setPagina(1);
-                q = query(q, limit(AULAS_POR_PAGINA));
-            }
+            if (filtros.dataInicio) query = query.gte('data_inicio', filtros.dataInicio.startOf('day').toISOString());
+            if (filtros.dataFim) query = query.lte('data_inicio', filtros.dataFim.endOf('day').toISOString());
+            if (filtros.status) query = query.eq('status', filtros.status);
+            if (filtros.laboratorio.length > 0) query = query.in('laboratorio', filtros.laboratorio);
+            if (filtros.horario.length > 0) query = query.in('horario_slot', filtros.horario);
 
-            const querySnapshot = await getDocs(q);
-            let aulasList = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data(), dataInicio: doc.data().dataInicio.toDate() }));
+            const offset = (pageTarget - 1) * AULAS_POR_PAGINA;
+            query = query.range(offset, offset + AULAS_POR_PAGINA - 1);
+
+            const { data, count, error: sbError } = await query;
+            if (sbError) throw sbError;
+
+            let aulasList = (data || []).map(aula => ({
+                ...aula,
+                laboratorioSelecionado: aula.laboratorio,
+                horarioSlotString: aula.horario_slot,
+                dataInicio: aula.data_inicio,
+                propostoPorNome: aula.proposto_por_nome,
+            }));
 
             // Filtros locais (assunto, liga e cursos)
-            if (filtros.assunto) aulasList = aulasList.filter(aula => aula.assunto.toLowerCase().includes(filtros.assunto.toLowerCase()));
+            if (filtros.assunto) aulasList = aulasList.filter(aula => aula.assunto?.toLowerCase().includes(filtros.assunto.toLowerCase()));
             if (filtros.liga) aulasList = aulasList.filter(aula => aula.liga === filtros.liga);
             if (filtros.cursos.length > 0) aulasList = aulasList.filter(a => a.cursos?.some(c => filtros.cursos.includes(c)));
 
-            if (querySnapshot.docs.length > 0) {
-                setLastVisible(querySnapshot.docs[querySnapshot.docs.length - 1]);
-            } else {
-                setLastVisible(null);
-            }
-            
             setAulas(aulasList);
+            setTotalContagem(count || 0);
+            setPagina(pageTarget);
             setSelectedAulas([]);
         } catch (err) {
+            console.error(err);
             setError("Não foi possível carregar as aulas. Verifique os filtros e tente novamente.");
         } finally {
             setLoading(false);
         }
-    }, [filtros, lastVisible, historicoLastVisible]);
+    }, [filtros]);
 
-    useEffect(() => { handleSearch('start'); }, []);
+    useEffect(() => { handleSearch(1); }, []);
 
     const handleFiltroChange = (field) => (event) => setFiltros(prev => ({ ...prev, [field]: event.target.value }));
     const handleDateChange = (field) => (date) => setFiltros(prev => ({ ...prev, [field]: date }));
@@ -155,8 +138,6 @@ function GerenciarAulasAvancado({ userInfo }) {
     const handleClearFilters = () => {
         setFiltros({ dataInicio: null, dataFim: null, laboratorio: [], horario: [], assunto: '', status: '', cursos: [], liga: '' });
         setAulas([]);
-        setLastVisible(null);
-        setHistoricoLastVisible([]);
         setPagina(1);
     };
 
@@ -167,22 +148,23 @@ function GerenciarAulasAvancado({ userInfo }) {
         setOpenDeleteDialog(false);
         setLoading(true);
         try {
-            const batch = writeBatch(db);
             const logs = [];
             const aulasParaLog = aulas.filter(a => selectedAulas.includes(a.id));
             
-            selectedAulas.forEach(id => {
-                batch.delete(doc(db, 'aulas', id));
-            });
+            const { error: deleteError } = await supabase
+                .from('aulas')
+                .delete()
+                .in('id', selectedAulas);
+
+            if (deleteError) throw deleteError;
 
             aulasParaLog.forEach(aula => {
                 logs.push(registrarLogExclusao(aula, userInfo));
             });
 
-            await batch.commit();
             await Promise.all(logs);
             setFeedback({ open: true, message: `${selectedAulas.length} aula(s) excluída(s) com sucesso!`, severity: 'success' });
-            handleSearch('start'); // Re-executa a busca para atualizar a página
+            handleSearch(1);
         } catch (err) {
             setFeedback({ open: true, message: `Erro ao excluir aulas: ${err.message}`, severity: 'error' });
         } finally {
@@ -203,20 +185,26 @@ function GerenciarAulasAvancado({ userInfo }) {
         try {
             const updates = {};
             if (editFields.assunto) updates.assunto = editFields.assunto;
-            if (editFields.laboratorioSelecionado) updates.laboratorioSelecionado = editFields.laboratorioSelecionado;
-            if (editFields.cursos.length > 0) updates.cursos = editFields.cursos;
-            if (editFields.liga) updates.liga = editFields.liga;
+            if (editFields.laboratorioSelecionado) updates.laboratorio = editFields.laboratorioSelecionado;
             if (editFields.status) updates.status = editFields.status;
-            if (Object.keys(updates).length === 0) {
+            if (editFields.liga) updates.liga = editFields.liga;
+            updates.updated_at = new Date().toISOString();
+
+            if (Object.keys(updates).length === 1) {
                 setFeedback({ open: true, message: 'Nenhum campo foi alterado.', severity: 'info' });
                 setLoading(false);
                 return;
             }
-            const batch = writeBatch(db);
-            selectedAulas.forEach(id => batch.update(doc(db, 'aulas', id), updates));
-            await batch.commit();
+
+            const { error: updateError } = await supabase
+                .from('aulas')
+                .update(updates)
+                .in('id', selectedAulas);
+
+            if (updateError) throw updateError;
+
             setFeedback({ open: true, message: `${selectedAulas.length} aula(s) atualizada(s) com sucesso!`, severity: 'success' });
-            handleSearch('start');
+            handleSearch(pagina);
             setSelectedAulas([]);
         } catch (err) {
             setFeedback({ open: true, message: `Erro ao atualizar aulas: ${err.message}`, severity: 'error' });
@@ -276,7 +264,7 @@ function GerenciarAulasAvancado({ userInfo }) {
                             <TextField fullWidth size="small" label="Assunto" value={filtros.assunto} onChange={handleFiltroChange('assunto')} />
                         </Grid>
                         <Grid item xs={12} md={6} sx={{ display: 'flex', gap: 2, mt: 1 }}>
-                            <Button variant="contained" onClick={() => handleSearch('start')} disabled={loading} sx={{ flexGrow: 1 }}>{loading ? <CircularProgress size={24} /> : 'Buscar Aulas'}</Button>
+                            <Button variant="contained" onClick={() => handleSearch(1)} disabled={loading} sx={{ flexGrow: 1 }}>{loading ? <CircularProgress size={24} /> : 'Buscar Aulas'}</Button>
                             <Tooltip title="Limpar todos os filtros"><IconButton onClick={handleClearFilters} disabled={loading}><ClearIcon /></IconButton></Tooltip>
                         </Grid>
                     </Grid>
@@ -297,9 +285,9 @@ function GerenciarAulasAvancado({ userInfo }) {
                         <>
                             <ResultadosBusca aulas={aulas} selectedAulas={selectedAulas} onToggleSelectAll={handleToggleSelectAll} onToggleSelectAula={handleToggleSelectAula} />
                             <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mt: 3, pt: 2, borderTop: 1, borderColor: 'divider' }}>
-                                <Button variant="outlined" onClick={() => { setPagina(p => p - 1); handleSearch('prev'); }} disabled={pagina <= 1 || loading}>Anterior</Button>
+                                <Button variant="outlined" onClick={() => handleSearch(pagina - 1)} disabled={pagina <= 1 || loading}>Anterior</Button>
                                 <Typography color="text.secondary">Página {pagina}</Typography>
-                                <Button variant="outlined" onClick={() => { setPagina(p => p + 1); handleSearch('next'); }} disabled={!lastVisible || aulas.length < AULAS_POR_PAGINA || loading}>Próxima</Button>
+                                <Button variant="outlined" onClick={() => handleSearch(pagina + 1)} disabled={aulas.length < AULAS_POR_PAGINA || loading}>Próxima</Button>
                             </Box>
                         </>
                     )}
