@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo, useCallback, lazy, Suspense } from 'react';
-import { BrowserRouter as Router, Routes, Route, Link, Navigate, Outlet } from 'react-router-dom';
+import { HashRouter as Router, Routes, Route, Link, Navigate, Outlet } from 'react-router-dom';
 import { supabase } from './supabaseConfig';
 import { userService } from './services/userService';
 import getAppTheme from './theme';
