@@ -426,8 +426,9 @@ function App() {
         setCoordenadorMenuAnchorEl(event.currentTarget);
     };
     
-    const role = userProfileData?.role || (userProfileData?.status === 'aprovado' ? 'coordenador' : 'coordenador');
-    const approvalPending = userProfileData?.approval_pending ?? userProfileData?.approvalPending ?? false;
+    const role = userProfileData?.role || 'coordenador';
+    const isApproved = userProfileData?.status === 'aprovado' || userProfileData?.approval_pending === false || userProfileData?.approvalPending === false;
+    const approvalPending = !isApproved;
     const isCoordenadorOrTecnico = role === 'coordenador' || role === 'tecnico';
     
     if (loading) return <LoadingFallback />;
