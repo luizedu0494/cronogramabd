@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '../../supabaseConfig';
-import UsageMonitor from '../../components/UsageMonitor';
 
 import {
     Container,
@@ -403,7 +402,6 @@ function AnaliseAulas() {
             <Typography variant="h4" component="h1" gutterBottom align="center" sx={{ fontWeight: 'bold' }}>
                 Dashboard de Análise de Aulas
             </Typography>
-            <UsageMonitor />
 
             {/* Painel Semana em Risco */}
             {(() => {

@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { db } from '../../firebaseConfig';
-import { collection, query, where, getDocs, Timestamp } from 'firebase/firestore';
+import { supabase } from '../../supabaseConfig';
 import {
     Container, Typography, Box, Paper, Grid, CircularProgress, Alert,
     FormControl, InputLabel, Select, MenuItem, Chip, OutlinedInput, Divider
@@ -44,27 +43,22 @@ function AnaliseEventos() {
         setLoading(true);
         setError(null);
         try {
-            let q = collection(db, 'eventosManutencao');
-            
-            const startOfYear = dayjs().year(anoFiltro).startOf('year').toDate();
-            const endOfYear = dayjs().year(anoFiltro).endOf('year').toDate();
-            
-            // Usando query com filtros de data
-            const qFiltered = query(q, 
-                where('dataInicio', '>=', Timestamp.fromDate(startOfYear)), 
-                where('dataInicio', '<=', Timestamp.fromDate(endOfYear))
-            );
+            const startOfYear = dayjs().year(anoFiltro).startOf('year').toISOString();
+            const endOfYear = dayjs().year(anoFiltro).endOf('year').toISOString();
 
-            const querySnapshot = await getDocs(qFiltered);
-            let listaCompleta = querySnapshot.docs.map(doc => {
-                const data = doc.data();
-                return {
-                    id: doc.id,
-                    ...data,
-                    // Garantir que dataInicio seja um objeto Date para o dayjs
-                    dataInicio: data.dataInicio instanceof Timestamp ? data.dataInicio.toDate() : new Date(data.dataInicio)
-                };
-            });
+            let { data, error } = await supabase
+                .from('eventos_manutencao')
+                .select('*')
+                .gte('data_inicio', startOfYear)
+                .lte('data_inicio', endOfYear);
+
+            if (error) throw error;
+
+            let listaCompleta = (data || []).map(item => ({
+                id: item.id,
+                ...item,
+                dataInicio: item.data_inicio ? new Date(item.data_inicio) : new Date()
+            }));
 
             if (laboratoriosFiltro.length > 0) {
                 listaCompleta = listaCompleta.filter(e => 
