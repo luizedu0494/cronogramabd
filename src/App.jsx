@@ -559,7 +559,7 @@ function App() {
     
     const navMenuItems = role === 'visualizador' ? [
         <MenuItem key="cal" component={Link} to="/calendario" onClick={handleMenuClose}><ListItemIcon><Calendar size={18} /></ListItemIcon><ListItemText primary="Calendário" primaryTypographyProps={{ noWrap: true }} /></MenuItem>,
-        <MenuItem key="ia" component={Link} to="/assistente-ia" onClick={handleMenuClose}><ListItemIcon><Bot size={18} /></ListItemIcon><ListItemText primary="Assistente IA" primaryTypographyProps={{ noWrap: true }} /></MenuItem>,
+        <MenuItem key="download-cronograma" component={Link} to="/download-cronograma" onClick={handleMenuClose}><ListItemIcon><Download size={18} /></ListItemIcon><ListItemText primary="Baixar Cronograma" primaryTypographyProps={{ noWrap: true }} /></MenuItem>,
         <MenuItem key="ajuda" component={Link} to="/ajuda" onClick={handleMenuClose}><ListItemIcon><HelpCircle size={18} /></ListItemIcon><ListItemText primary="Dúvidas do Visitante" primaryTypographyProps={{ noWrap: true }} /></MenuItem>,
         <Divider key="div-guest" sx={{ my: 0.5 }} />,
         <MenuItem key="sair-guest" onClick={handleLogout} sx={{ color: 'error.main' }}><ListItemIcon><LogOut size={18} color="red" /></ListItemIcon><ListItemText primary="Sair do Modo Visitante" primaryTypographyProps={{ noWrap: true }} /></MenuItem>
@@ -771,8 +771,8 @@ function App() {
                                         <Route path="/verificar-integridade" element={<VerificarIntegridadeDados />} />
                                         <Route path="/importar-cronograma-externo" element={<UploadCronogramaExterno />} />
                                     </>)}
-                                    <Route path="/assistente-ia" element={<AssistenteIA userInfo={userProfileData} currentUser={user} mode={darkMode ? 'dark' : 'light'} />} />
-                                    {isCoordenadorOrTecnico && (<Route path="/download-cronograma" element={<DownloadCronograma />} />)}
+                                    <Route path="/assistente-ia" element={role === 'visualizador' ? <Navigate to="/calendario" replace /> : <AssistenteIA userInfo={userProfileData} currentUser={user} mode={darkMode ? 'dark' : 'light'} />} />
+                                    <Route path="/download-cronograma" element={<DownloadCronograma />} />
                                     <Route path="*" element={<Navigate to={role === 'visualizador' ? "/calendario" : "/"} replace />} />
 
                                 </Route>
