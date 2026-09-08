@@ -70,8 +70,143 @@ const GerenciarEventosAvancado = lazyWithRetry(() => import('./GerenciarEventosA
 const ConsultaDisponibilidade = lazyWithRetry(() => import('./ConsultaDisponibilidade'));
 
 const LoadingFallback = () => (<Box display="flex" justifyContent="center" alignItems="center" height="80vh"><CircularProgress /></Box>);
-const MainLayout = () => (<Container maxWidth="xl" sx={{ mt: { xs: 1.5, sm: 4 }, mb: { xs: 8, sm: 4 }, px: { xs: 1.5, sm: 3 } }}><Outlet /></Container>);
+const LoginScreen = ({ emailInput, setEmailInput, passwordInput, setPasswordInput, handleDirectLogin, handleGoogleLogin, handleForgotPassword, isLoggingIn, isRegistering, setIsRegistering, nameInput, setNameInput }) => (
+    <Container sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '80vh', py: 4 }}>
+        <Paper elevation={4} sx={{ p: { xs: 3, sm: 4 }, textAlign: 'center', maxWidth: 440, width: '100%', borderRadius: 3 }}>
+            <img src={cesmacLogo} alt="Logo CESMAC" style={{ height: '55px', marginBottom: '16px' }} />
+            <Typography variant="h5" fontWeight={700} gutterBottom>Cronograma Lab</Typography>
+            <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
+                Plataforma de Gestão de Laboratórios CESMAC
+            </Typography>
 
+            <Box component="form" onSubmit={handleDirectLogin} sx={{ display: 'flex', flexDirection: 'column', gap: 1.5, mb: 2 }}>
+                <Typography variant="subtitle2" align="left" fontWeight={600}>
+                    {isRegistering ? 'Criar Nova Conta:' : 'Acessar a sua conta:'}
+                </Typography>
+
+                {isRegistering && (
+                    <input
+                        type="text"
+                        placeholder="Nome completo"
+                        value={nameInput}
+                        onChange={(e) => setNameInput(e.target.value)}
+                        required
+                        style={{
+                            padding: '12px 14px',
+                            borderRadius: '8px',
+                            border: '1px solid #CBD5E1',
+                            fontSize: '0.95rem',
+                            outline: 'none',
+                            width: '100%'
+                        }}
+                    />
+                )}
+
+                <input
+                    type="email"
+                    placeholder="E-mail (ex: usuario@cesmac.edu.br)"
+                    value={emailInput}
+                    onChange={(e) => setEmailInput(e.target.value)}
+                    required
+                    style={{
+                        padding: '12px 14px',
+                        borderRadius: '8px',
+                        border: '1px solid #CBD5E1',
+                        fontSize: '0.95rem',
+                        outline: 'none',
+                        width: '100%'
+                    }}
+                />
+
+                <input
+                    type="password"
+                    placeholder="Sua Senha"
+                    value={passwordInput}
+                    onChange={(e) => setPasswordInput(e.target.value)}
+                    required
+                    style={{
+                        padding: '12px 14px',
+                        borderRadius: '8px',
+                        border: '1px solid #CBD5E1',
+                        fontSize: '0.95rem',
+                        outline: 'none',
+                        width: '100%'
+                    }}
+                />
+
+                {!isRegistering && (
+                    <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: -0.5 }}>
+                        <Button 
+                            variant="text" 
+                            size="small" 
+                            onClick={handleForgotPassword}
+                            sx={{ fontSize: '0.8rem', textTransform: 'none', color: '#1E7EC8' }}
+                        >
+                            Esqueceu e-mail ou senha?
+                        </Button>
+                    </Box>
+                )}
+
+                <Button 
+                    type="submit" 
+                    variant="contained" 
+                    fullWidth
+                    size="large"
+                    disabled={!emailInput || !passwordInput || isLoggingIn}
+                    sx={{ background: 'linear-gradient(135deg, #1E7EC8 0%, #00C853 100%)', fontWeight: 700, py: 1.2 }}
+                >
+                    {isLoggingIn ? 'Acessando...' : isRegistering ? 'Cadastrar e Entrar' : 'Entrar no Sistema'}
+                </Button>
+            </Box>
+
+            <Box sx={{ mb: 2 }}>
+                <Button 
+                    variant="text" 
+                    size="small" 
+                    onClick={() => setIsRegistering(!isRegistering)}
+                    sx={{ fontSize: '0.85rem', textTransform: 'none', fontWeight: 600, color: '#334155' }}
+                >
+                    {isRegistering ? 'Já tem uma conta? Faça Login' : 'Ainda não tem conta? Cadastre-se'}
+                </Button>
+            </Box>
+
+            <Divider sx={{ my: 2, fontSize: '0.85rem', color: 'text.secondary' }}>ou entre com sua conta</Divider>
+
+            <Button 
+                variant="outlined" 
+                fullWidth
+                size="large"
+                onClick={handleGoogleLogin} 
+                disabled={isLoggingIn}
+                startIcon={
+                    <svg width="20" height="20" viewBox="0 0 24 24">
+                        <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+                        <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+                        <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/>
+                        <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/>
+                    </svg>
+                }
+                sx={{ 
+                    color: '#374151', 
+                    borderColor: '#CBD5E1',
+                    backgroundColor: '#FFFFFF',
+                    fontWeight: 600,
+                    textTransform: 'none',
+                    py: 1.2,
+                    borderRadius: 2,
+                    boxShadow: '0 1px 3px rgba(0,0,0,0.08)',
+                    '&:hover': {
+                        backgroundColor: '#F8FAFC',
+                        borderColor: '#94A3B8',
+                        boxShadow: '0 2px 5px rgba(0,0,0,0.12)'
+                    }
+                }}
+            >
+                Continuar com o Google
+            </Button>
+        </Paper>
+    </Container>
+);
 
 function App() {
     const [user, setUser] = useState(null);
@@ -298,144 +433,6 @@ function App() {
     if (loading) return <LoadingFallback />;
     
     const PendingApprovalScreen = () => (<Container sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '80vh' }}><Paper elevation={3} sx={{ p: 4, textAlign: 'center', maxWidth: 400 }}><Typography variant="h5" gutterBottom>Acesso Pendente</Typography><Button variant="contained" onClick={handleLogout}>Sair</Button></Paper></Container>);
-const LoginScreen = ({ emailInput, setEmailInput, passwordInput, setPasswordInput, handleDirectLogin, handleGoogleLogin, handleForgotPassword, isLoggingIn, isRegistering, setIsRegistering, nameInput, setNameInput }) => (
-    <Container sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '80vh', py: 4 }}>
-        <Paper elevation={4} sx={{ p: { xs: 3, sm: 4 }, textAlign: 'center', maxWidth: 440, width: '100%', borderRadius: 3 }}>
-            <img src={cesmacLogo} alt="Logo CESMAC" style={{ height: '55px', marginBottom: '16px' }} />
-            <Typography variant="h5" fontWeight={700} gutterBottom>Cronograma Lab</Typography>
-            <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-                Plataforma de Gestão de Laboratórios CESMAC
-            </Typography>
-
-            <Box component="form" onSubmit={handleDirectLogin} sx={{ display: 'flex', flexDirection: 'column', gap: 1.5, mb: 2 }}>
-                <Typography variant="subtitle2" align="left" fontWeight={600}>
-                    {isRegistering ? 'Criar Nova Conta:' : 'Acessar a sua conta:'}
-                </Typography>
-
-                {isRegistering && (
-                    <input
-                        type="text"
-                        placeholder="Nome completo"
-                        value={nameInput}
-                        onChange={(e) => setNameInput(e.target.value)}
-                        required
-                        style={{
-                            padding: '12px 14px',
-                            borderRadius: '8px',
-                            border: '1px solid #CBD5E1',
-                            fontSize: '0.95rem',
-                            outline: 'none',
-                            width: '100%'
-                        }}
-                    />
-                )}
-
-                <input
-                    type="email"
-                    placeholder="E-mail (ex: usuario@cesmac.edu.br)"
-                    value={emailInput}
-                    onChange={(e) => setEmailInput(e.target.value)}
-                    required
-                    style={{
-                        padding: '12px 14px',
-                        borderRadius: '8px',
-                        border: '1px solid #CBD5E1',
-                        fontSize: '0.95rem',
-                        outline: 'none',
-                        width: '100%'
-                    }}
-                />
-
-                <input
-                    type="password"
-                    placeholder="Sua Senha"
-                    value={passwordInput}
-                    onChange={(e) => setPasswordInput(e.target.value)}
-                    required
-                    style={{
-                        padding: '12px 14px',
-                        borderRadius: '8px',
-                        border: '1px solid #CBD5E1',
-                        fontSize: '0.95rem',
-                        outline: 'none',
-                        width: '100%'
-                    }}
-                />
-
-                {!isRegistering && (
-                    <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: -0.5 }}>
-                        <Button 
-                            variant="text" 
-                            size="small" 
-                            onClick={handleForgotPassword}
-                            sx={{ fontSize: '0.8rem', textTransform: 'none', color: '#1E7EC8' }}
-                        >
-                            Esqueceu e-mail ou senha?
-                        </Button>
-                    </Box>
-                )}
-
-                <Button 
-                    type="submit" 
-                    variant="contained" 
-                    fullWidth
-                    size="large"
-                    disabled={!emailInput || !passwordInput || isLoggingIn}
-                    sx={{ background: 'linear-gradient(135deg, #1E7EC8 0%, #00C853 100%)', fontWeight: 700, py: 1.2 }}
-                >
-                    {isLoggingIn ? 'Acessando...' : isRegistering ? 'Cadastrar e Entrar' : 'Entrar no Sistema'}
-                </Button>
-            </Box>
-
-            <Box sx={{ mb: 2 }}>
-                <Button 
-                    variant="text" 
-                    size="small" 
-                    onClick={() => setIsRegistering(!isRegistering)}
-                    sx={{ fontSize: '0.85rem', textTransform: 'none', fontWeight: 600, color: '#334155' }}
-                >
-                    {isRegistering ? 'Já tem uma conta? Faça Login' : 'Ainda não tem conta? Cadastre-se'}
-                </Button>
-            </Box>
-
-            <Divider sx={{ my: 2, fontSize: '0.85rem', color: 'text.secondary' }}>ou entre com sua conta</Divider>
-
-            <Button 
-                variant="outlined" 
-                fullWidth
-                size="large"
-                onClick={handleGoogleLogin} 
-                disabled={isLoggingIn}
-                startIcon={
-                    <svg width="20" height="20" viewBox="0 0 24 24">
-                        <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
-                        <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
-                        <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/>
-                        <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/>
-                    </svg>
-                }
-                sx={{ 
-                    color: '#374151', 
-                    borderColor: '#CBD5E1',
-                    backgroundColor: '#FFFFFF',
-                    fontWeight: 600,
-                    textTransform: 'none',
-                    py: 1.2,
-                    borderRadius: 2,
-                    boxShadow: '0 1px 3px rgba(0,0,0,0.08)',
-                    '&:hover': {
-                        backgroundColor: '#F8FAFC',
-                        borderColor: '#94A3B8',
-                        boxShadow: '0 2px 5px rgba(0,0,0,0.12)'
-                    }
-                }}
-            >
-                Continuar com o Google
-            </Button>
-        </Paper>
-    </Container>
-);
-
     const CoordenadorGerenciarMenu = () => (
         <Menu 
             anchorEl={coordenadorMenuAnchorEl} 
