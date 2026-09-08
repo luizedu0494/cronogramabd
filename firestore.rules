@@ -1,0 +1,137 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // =====================================================================
+    // Funções Auxiliares de Segurança
+    // =====================================================================
+    function userDoc() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
+    }
+    function isSignedIn() {
+      return request.auth != null;
+    }
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+    function isUserApproved() {
+      return isSignedIn() && (userDoc().status == 'aprovado' || userDoc().approvalPending == false);
+    }
+    function isCoordinator() {
+      return isUserApproved() && userDoc().role == 'coordenador';
+    }
+    function isTecnico() {
+      return isUserApproved() && userDoc().role == 'tecnico';
+    }
+
+    // =====================================================================
+    // Regras para a coleção 'users'
+    // =====================================================================
+    match /users/{userId} {
+      allow read: if isSignedIn() && (isOwner(userId) || isCoordinator());
+      allow create: if isSignedIn() &&
+                       isOwner(userId) &&
+                       request.resource.data.email == request.auth.token.email;
+      allow update: if isSignedIn() && (isOwner(userId) || isCoordinator());
+      allow delete: if isCoordinator();
+    }
+
+    // =====================================================================
+    // Regras para a coleção 'aulas'
+    // =====================================================================
+    match /aulas/{aulaId} {
+      allow read: if isSignedIn() && isUserApproved();
+
+      allow create: if isSignedIn() && isUserApproved() && (
+        isCoordinator() ||
+        (
+          isTecnico() &&
+          (
+            request.resource.data.propostoPorUid == request.auth.uid ||
+            request.resource.data.professorUid == request.auth.uid
+          ) &&
+          request.resource.data.status == 'pendente'
+        )
+      );
+
+      allow update: if isSignedIn() && isUserApproved() && (
+        isCoordinator() ||
+        (
+          isTecnico() &&
+          resource.data.propostoPorUid == request.auth.uid &&
+          resource.data.status == 'pendente' &&
+          request.resource.data.status == 'pendente'
+        )
+      );
+
+      allow delete: if isCoordinator();
+    }
+
+    // =====================================================================
+    // Regras para a coleção 'revisoesTecnicos'
+    // =====================================================================
+    match /revisoesTecnicos/{revisaoId} {
+      allow read: if isUserApproved();
+
+      allow create: if isTecnico() &&
+                       (request.resource.data.tecnicoUid == request.auth.uid || request.resource.data.criadoPorUid == request.auth.uid);
+
+      allow update: if isTecnico();
+
+      allow delete: if isTecnico() &&
+                       (resource.data.tecnicoUid == request.auth.uid || resource.data.criadoPorUid == request.auth.uid);
+    }
+
+    // =====================================================================
+    // Regras para a coleção 'eventosManutencao'
+    // =====================================================================
+    match /eventosManutencao/{eventoId} {
+      allow read: if isUserApproved();
+      allow write: if isCoordinator();
+    }
+
+    // =====================================================================
+    // Regras para a coleção 'logs'
+    // =====================================================================
+    match /logs/{logId} {
+      allow read: if isUserApproved();
+      allow create: if isUserApproved();
+      allow update, delete: if false; // Logs são imutáveis
+    }
+
+    // =====================================================================
+    // Regras para a coleção 'avisos' e subcoleções
+    // =====================================================================
+    match /avisos/{avisoId} {
+      allow read: if isUserApproved();
+      allow write: if isCoordinator();
+    }
+
+    match /avisos/{avisoId}/leituras/{userId} {
+      allow read: if isCoordinator() || isOwner(userId);
+      allow write: if isOwner(userId);
+    }
+
+    // =====================================================================
+    // Outras Coleções
+    // =====================================================================
+    match /config/{docId} {
+      allow read: if isUserApproved();
+      allow write: if isCoordinator();
+    }
+
+    match /laboratorios/{docId} { allow read: if isUserApproved(); allow write: if isCoordinator(); }
+    match /cursos/{docId}       { allow read: if isUserApproved(); allow write: if isCoordinator(); }
+    match /periodosSemAtividade/{docId} { allow read: if isUserApproved(); allow write: if isCoordinator(); }
+    match /grupos/{docId}       { allow read: if isUserApproved(); allow write: if isCoordinator(); }
+
+    match /userTokens/{userId}  { allow read, write: if isOwner(userId); }
+    match /pushTokens/{userId}  { allow read, write: if isOwner(userId); }
+    match /fcmTokens/{userId}   { allow read, write: if isOwner(userId); }
+
+    match /system/{docId} {
+      allow read: if isUserApproved();
+      allow write: if isCoordinator();
+    }
+  }
+}

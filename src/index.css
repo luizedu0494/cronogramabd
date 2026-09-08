@@ -1,0 +1,178 @@
+@import url('https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700&display=swap');
+
+* {
+  box-sizing: border-box;
+  font-family: 'Sora', 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto", sans-serif;
+}
+
+body {
+  margin: 0;
+  font-family: 'Sora', 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto", sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  min-height: 100vh;
+}
+
+code {
+  font-family: source-code-pro, Menlo, Monaco, Consolas, "Courier New",
+    monospace;
+}
+
+/* Animações personalizadas */
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-5px);
+  }
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.8;
+  }
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: -200px 0;
+  }
+  100% {
+    background-position: calc(200px + 100%) 0;
+  }
+}
+
+/* Classes utilitárias para animações */
+.float-animation {
+  animation: float 2s ease-in-out infinite;
+}
+
+.pulse-animation {
+  animation: pulse 1.5s ease-in-out infinite;
+}
+
+.shimmer-animation {
+  /* Usar cores mais neutras para o shimmer */
+  background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+  background-size: 200px 100%;
+  animation: shimmer 1.2s infinite;
+}
+
+/* Scrollbar personalizada - Ajustando as cores para o novo tema */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f0f0f0; /* Cinza claro */
+  border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: linear-gradient(135deg, #1976d2, #004ba0); /* Novo azul primário */
+  border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(135deg, #004ba0, #003570);
+}
+
+/* Efeitos de glassmorphism - Ajustando para um visual mais sutil */
+.glass-effect {
+  background: rgba(255, 255, 255, 0.6); /* Mais opaco */
+  backdrop-filter: blur(12px); /* Mais blur */
+  border: 1px solid rgba(255, 255, 255, 0.3); /* Borda mais visível */
+  border-radius: 12px; /* Consistente com o tema */
+}
+
+/* Transições suaves globais - Removido, pois o MUI já lida com isso na maioria dos componentes */
+/* * {
+  transition: all 0.2s ease-in-out;
+} */
+
+/* Efeitos de hover para elementos interativos - Removido, pois o MUI já lida com isso na maioria dos componentes */
+/* .interactive-element {
+  cursor: pointer;
+  transition: all 0.2s ease-in-out;
+}
+
+.interactive-element:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+} */
+
+/* Gradientes personalizados - Atualizando as cores */
+.gradient-primary {
+  background: linear-gradient(135deg, #1976d2 0%, #004ba0 100%);
+}
+
+.gradient-secondary {
+  background: linear-gradient(135deg, #009688 0%, #00675b 100%);
+}
+
+.gradient-success {
+  background: linear-gradient(135deg, #2e7d32 0%, #1b5e20 100%);
+}
+
+.gradient-text {
+  background: linear-gradient(135deg, #1976d2 0%, #004ba0 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Efeitos de loading - Atualizando as cores */
+.loading-skeleton {
+  background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+  background-size: 200px 100%;
+  animation: shimmer 1.2s infinite;
+  border-radius: 8px; /* Um pouco menor que o card */
+}
+
+/* Responsividade melhorada */
+@media (max-width: 768px) {
+  body {
+    font-size: 14px;
+  }
+  
+  /* Removido, pois o MUI já lida com isso na maioria dos componentes */
+  /* .interactive-element:hover {
+    transform: none;
+    box-shadow: none;
+  } */
+}
+
+/* Acessibilidade */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* Focus states melhorados - Atualizando a cor */
+button:focus,
+input:focus,
+textarea:focus,
+select:focus {
+  outline: 2px solid #1976d2;
+  outline-offset: 2px;
+}
+
+/* Seleção de texto personalizada - Atualizando a cor */
+::selection {
+  background: rgba(25, 118, 210, 0.3);
+  color: #ffffff;
+}
+
+::-moz-selection {
+  background: rgba(25, 118, 210, 0.3);
+  color: #ffffff;
+}
