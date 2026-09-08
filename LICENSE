@@ -1,21 +1,47 @@
-MIT License
+LICENÇA PROPRIETÁRIA
 
-Copyright (c) 2026 Luiz Eduardo Santos Lopes
+Copyright (c) 2026 Luiz Eduardo. Todos os direitos reservados.
 
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
+Este software e toda a documentação, código-fonte, design, estrutura de banco
+de dados e demais materiais associados a este repositório ("o Software") são
+propriedade exclusiva de [Seu Nome ou Nome da Empresa] ("o Titular").
 
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
+1. RESTRIÇÕES DE USO
+   É expressamente proibido, sem autorização prévia e por escrito do Titular:
+   a) Copiar, reproduzir, distribuir ou redistribuir o Software, no todo ou
+      em parte;
+   b) Modificar, adaptar, traduzir ou criar obras derivadas a partir do
+      Software;
+   c) Sublicenciar, vender, alugar, arrendar ou de qualquer forma
+      comercializar o Software ou qualquer parte dele;
+   d) Realizar engenharia reversa, descompilação ou desmontagem do Software,
+      exceto quando expressamente permitido por lei aplicável;
+   e) Utilizar o Software para fins comerciais ou não comerciais fora do
+      escopo expressamente autorizado pelo Titular.
 
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
+2. ACESSO AUTORIZADO
+   O acesso a este repositório é concedido apenas a indivíduos ou entidades
+   expressamente autorizados pelo Titular (colaboradores, clientes ou
+   parceiros), mediante os termos definidos em contrato ou acordo específico.
+   Esse acesso não implica cessão de direitos de propriedade intelectual.
+
+3. LICENCIAMENTO COMERCIAL
+   Interessados em licenciar, adquirir ou utilizar comercialmente o Software
+   devem entrar em contato diretamente com o Titular para negociação de
+   termos específicos.
+
+4. PROPRIEDADE INTELECTUAL
+   Todos os direitos de propriedade intelectual sobre o Software, incluindo
+   mas não se limitando a direitos autorais, marcas, segredos de negócio e
+   know-how, permanecem exclusivamente com o Titular.
+
+5. ISENÇÃO DE GARANTIAS
+   O SOFTWARE É FORNECIDO "COMO ESTÁ", SEM GARANTIAS DE QUALQUER TIPO,
+   EXPRESSAS OU IMPLÍCITAS. O TITULAR NÃO SE RESPONSABILIZA POR DANOS
+   DECORRENTES DO USO OU DA IMPOSSIBILIDADE DE USO DO SOFTWARE.
+
+6. VIOLAÇÕES
+   O uso não autorizado do Software poderá resultar em ações legais cabíveis,
+   incluindo, mas não se limitando a, indenização por perdas e danos.
+
+Para dúvidas sobre licenciamento, entre em contato com o Titular.
