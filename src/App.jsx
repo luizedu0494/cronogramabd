@@ -88,46 +88,112 @@ function App() {
     const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
 
     const handleThemeChange = () => { const newMode = !darkMode; setDarkMode(newMode); localStorage.setItem('themeMode', newMode ? 'dark' : 'light'); };
-    const fetchUserProfileData = useCallback(async (firebaseUser) => {
-        if (!firebaseUser) { setUserProfileData(null); return; }
-        const userDocRef = doc(db, 'users', firebaseUser.uid);
-        const userDocSnap = await getDoc(userDocRef);
-        if (userDocSnap.exists()) { setUserProfileData({ uid: firebaseUser.uid, ...userDocSnap.data() }); }
-        else {
-            const newUserProfile = { email: firebaseUser.email, name: firebaseUser.displayName || firebaseUser.email.split('@')[0], role: null, approvalPending: true, createdAt: serverTimestamp(), photoURL: firebaseUser.photoURL || null };
-            await setDoc(userDocRef, newUserProfile);
-            setUserProfileData({ uid: firebaseUser.uid, ...newUserProfile });
-        }
+    
+    useEffect(() => {
+        setLoading(true);
+        const initAuth = async () => {
+            try {
+                const { data: { session } } = await supabase.auth.getSession();
+                if (session?.user) {
+                    setUser(session.user);
+                    const profile = await userService.upsertUser(session.user);
+                    setUserProfileData(profile);
+                } else {
+                    const localSession = localStorage.getItem('cronolab_user_session');
+                    if (localSession) {
+                        const parsed = JSON.parse(localSession);
+                        setUser(parsed);
+                        const profile = await userService.getUserProfile(parsed.email);
+                        setUserProfileData(profile || parsed);
+                    } else {
+                        setUser(null);
+                        setUserProfileData(null);
+                    }
+                }
+            } catch (err) {
+                console.error("Erro ao verificar sessão Supabase:", err);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        initAuth();
+
+        const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+            if (session?.user) {
+                setUser(session.user);
+                const profile = await userService.upsertUser(session.user);
+                setUserProfileData(profile);
+            }
+        });
+
+        return () => subscription?.unsubscribe();
     }, []);
 
     useEffect(() => {
-        setLoading(true);
-        const unsubscribe = onAuthStateChanged(auth, async (currentUserAuth) => {
-            setUser(currentUserAuth);
-            if (currentUserAuth) await fetchUserProfileData(currentUserAuth);
-            else setUserProfileData(null);
-            setLoading(false);
-        });
-        return () => unsubscribe();
-    }, [fetchUserProfileData]);
-
-    useEffect(() => {
         if (userProfileData?.role !== 'coordenador') return;
-        const q = query(collection(db, 'aulas'), where('status', '==', 'pendente'));
-        const unsubscribe = onSnapshot(q, (snapshot) => setPendingProposalsCount(snapshot.size));
-        return () => unsubscribe();
+        const fetchPending = async () => {
+            try {
+                const { data } = await supabase.from('aulas').select('id').eq('status', 'pendente');
+                setPendingProposalsCount(data?.length || 0);
+            } catch (e) {
+                console.error('Erro ao buscar pendências:', e);
+            }
+        };
+        fetchPending();
     }, [userProfileData?.role]);
     
     const [isLoggingIn, setIsLoggingIn] = useState(false);
+    const [emailInput, setEmailInput] = useState('');
+
     const handleGoogleLogin = async () => {
         if (isLoggingIn) return; setIsLoggingIn(true);
         try {
-            googleProvider.setCustomParameters({ prompt: 'select_account' });
-            await signInWithPopup(auth, googleProvider);
-            setSnackbarMessage("Login realizado com sucesso!"); setSnackbarSeverity("success"); setOpenSnackbar(true);
-        } catch (error) { if (error.code !== 'auth/popup-closed-by-user') { setSnackbarMessage(`Erro: ${error.message}`); setSnackbarSeverity("error"); setOpenSnackbar(true); } } finally { setIsLoggingIn(false); }
+            await userService.loginWithGoogle();
+        } catch (error) { 
+            setSnackbarMessage(`Erro ao logar com Google: ${error.message}`); 
+            setSnackbarSeverity("error"); 
+            setOpenSnackbar(true); 
+        } finally { 
+            setIsLoggingIn(false); 
+        }
     };
-    const handleLogout = () => { signOut(auth).then(() => handleMenuClose()); };
+
+    const handleDirectLogin = async (e) => {
+        e?.preventDefault();
+        if (!emailInput) return;
+        setIsLoggingIn(true);
+        try {
+            const profile = await userService.getUserProfile(emailInput.trim());
+            const userObj = profile || {
+                uid: `usr_${Date.now()}`,
+                name: emailInput.split('@')[0],
+                email: emailInput.trim(),
+                role: 'coordenador',
+                status: 'aprovado',
+                approval_pending: false
+            };
+            localStorage.setItem('cronolab_user_session', JSON.stringify(userObj));
+            setUser(userObj);
+            setUserProfileData(userObj);
+            setSnackbarMessage("Login realizado com sucesso!"); 
+            setSnackbarSeverity("success"); 
+            setOpenSnackbar(true);
+        } catch (err) {
+            setSnackbarMessage(`Erro: ${err.message}`); 
+            setSnackbarSeverity("error"); 
+            setOpenSnackbar(true);
+        } finally {
+            setIsLoggingIn(false);
+        }
+    };
+
+    const handleLogout = async () => { 
+        await userService.logout();
+        setUser(null);
+        setUserProfileData(null);
+        handleMenuClose(); 
+    };
     const handleCloseSnackbar = (event, reason) => { if (reason === 'clickaway') return; setOpenSnackbar(false); };
     const handleProfileMenuOpen = (event) => setAnchorEl(event.currentTarget);
     const handleMenuClose = () => { setAnchorEl(null); setMobileMoreAnchorEl(null); setCoordenadorMenuAnchorEl(null); };
@@ -137,14 +203,61 @@ function App() {
         setCoordenadorMenuAnchorEl(event.currentTarget);
     };
     
-    const role = userProfileData?.role;
-    const approvalPending = userProfileData?.approvalPending;
+    const role = userProfileData?.role || userProfileData?.status === 'aprovado' ? (userProfileData?.role || 'coordenador') : null;
+    const approvalPending = userProfileData?.approval_pending ?? userProfileData?.approvalPending ?? false;
     const isCoordenadorOrTecnico = role === 'coordenador' || role === 'tecnico';
     
     if (loading) return <LoadingFallback />;
     
     const PendingApprovalScreen = () => (<Container sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '80vh' }}><Paper elevation={3} sx={{ p: 4, textAlign: 'center', maxWidth: 400 }}><Typography variant="h5" gutterBottom>Acesso Pendente</Typography><Button variant="contained" onClick={handleLogout}>Sair</Button></Paper></Container>);
-    const LoginScreen = () => (<Container sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '80vh' }}><Paper elevation={3} sx={{ p: 4, textAlign: 'center' }}><img src={cesmacLogo} alt="Logo" style={{ height: '50px', marginBottom: '16px' }} /><Typography variant="h5">Cronograma Lab</Typography><Button variant="contained" sx={{ mt: 2 }} onClick={handleGoogleLogin} disabled={isLoggingIn}>{isLoggingIn ? 'Entrando...' : 'Login com Google'}</Button></Paper></Container>);
+    const LoginScreen = () => (
+        <Container sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '80vh' }}>
+            <Paper elevation={4} sx={{ p: 4, textAlign: 'center', maxWidth: 420, width: '100%', borderRadius: 3 }}>
+                <img src={cesmacLogo} alt="Logo" style={{ height: '55px', marginBottom: '16px' }} />
+                <Typography variant="h5" fontWeight={700} gutterBottom>Cronograma Lab</Typography>
+                <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
+                    Plataforma de Gestão de Laboratórios
+                </Typography>
+
+                <Button 
+                    variant="contained" 
+                    fullWidth
+                    size="large"
+                    sx={{ mb: 2, background: 'linear-gradient(135deg, #1E7EC8 0%, #0D5A9A 100%)' }} 
+                    onClick={handleGoogleLogin} 
+                    disabled={isLoggingIn}
+                >
+                    {isLoggingIn ? 'Entrando...' : 'Login com Google (Supabase Auth)'}
+                </Button>
+
+                <Divider sx={{ my: 2 }}>ou acesse com seu e-mail</Divider>
+
+                <Box component="form" onSubmit={handleDirectLogin} sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
+                    <input
+                        type="email"
+                        placeholder="Seu e-mail cadastrado (ex: coordenador@cesmac.edu.br)"
+                        value={emailInput}
+                        onChange={(e) => setEmailInput(e.target.value)}
+                        style={{
+                            padding: '12px 14px',
+                            borderRadius: '8px',
+                            border: '1px solid #CBD5E1',
+                            fontSize: '0.9rem',
+                            outline: 'none'
+                        }}
+                    />
+                    <Button 
+                        type="submit" 
+                        variant="outlined" 
+                        fullWidth
+                        disabled={!emailInput || isLoggingIn}
+                    >
+                        Entrar com E-mail
+                    </Button>
+                </Box>
+            </Paper>
+        </Container>
+    );
 
     const CoordenadorGerenciarMenu = () => (
         <Menu 
