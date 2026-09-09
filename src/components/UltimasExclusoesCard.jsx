@@ -26,21 +26,25 @@ const UltimasExclusoesCard = () => {
                 const { data, error } = await supabase
                     .from('logs')
                     .select('*')
-                    .eq('type', 'exclusao')
+                    .in('type', ['DELETE', 'exclusao'])
                     .order('created_at', { ascending: false })
                     .limit(50);
 
                 if (error) throw error;
 
-                const todos = (data || []).map(log => ({
-                    id: log.id,
-                    ...log,
-                    aula: log.payload?.aula || log.payload || {},
-                    timestamp: new Date(log.created_at)
-                }));
+                const todos = (data || []).map(log => {
+                    const aulaObj = log.payload?.item || log.payload?.aula || log.payload || {};
+                    return {
+                        id: log.id,
+                        ...log,
+                        aula: aulaObj,
+                        user: { nome: log.user_nome || log.user?.nome || 'Usuário' },
+                        timestamp: new Date(log.created_at)
+                    };
+                });
 
-                const aulasExcluidas = todos.filter(l => l.aula && !l.aula.isRevisao && l.collection !== 'eventos').slice(0, 5);
-                const revisoesExcluidas = todos.filter(l => l.aula && l.aula.isRevisao === true).slice(0, 5);
+                const aulasExcluidas = todos.filter(l => l.aula && !l.aula.isRevisao && l.collection !== 'eventosManutencao' && l.collection !== 'eventos').slice(0, 5);
+                const revisoesExcluidas = todos.filter(l => l.aula && (l.aula.isRevisao === true || l.aula.is_revisao === true)).slice(0, 5);
 
                 setLogsAulas(aulasExcluidas);
                 setLogsRevisoes(revisoesExcluidas);
