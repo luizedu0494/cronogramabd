@@ -169,8 +169,8 @@ function ConfiguracoesPerfil() {
                     setSnackbarMessage('Notificações Web Push (VAPID) ativadas com sucesso!');
                     setSnackbarSeverity('success');
                 } else {
-                    setSnackbarMessage('Não foi possível ativar Notificações Web Push.');
-                    setSnackbarSeverity('error');
+                    setSnackbarMessage('Não foi possível ativar. Configure VITE_VAPID_PUBLIC_KEY no arquivo .env.');
+                    setSnackbarSeverity('warning');
                 }
             }
             setOpenSnackbar(true);

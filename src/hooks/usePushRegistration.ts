@@ -15,16 +15,20 @@ export function usePushRegistration(uid?: string) {
             const permission = await Notification.requestPermission();
             if (permission === 'granted') {
               const registration = await navigator.serviceWorker.ready;
-              const subscription = await registration.pushManager.subscribe({
-                userVisibleOnly: true,
-                applicationServerKey: process.env.EXPO_PUBLIC_VAPID_KEY || process.env.VITE_FIREBASE_VAPID_KEY,
-              });
+              const vapidKey = import.meta.env.VITE_VAPID_PUBLIC_KEY || process.env.EXPO_PUBLIC_VAPID_KEY;
+              if (vapidKey) {
+                const subscription = await registration.pushManager.subscribe({
+                  userVisibleOnly: true,
+                  applicationServerKey: vapidKey,
+                });
 
-              await supabase.from('push_subscriptions').upsert({
-                user_id: uid,
-                subscription: JSON.stringify(subscription),
-                updated_at: new Date().toISOString(),
-              });
+                await supabase.from('push_subscriptions').upsert({
+                  user_uid: uid,
+                  endpoint: subscription.endpoint,
+                  keys: subscription.toJSON().keys,
+                  updated_at: new Date().toISOString(),
+                });
+              }
             }
           }
         } else {
