@@ -72,7 +72,9 @@ export const gerarRelatorioExcel = async (aulasDoMes, nomeArquivo) => {
         });
 
         aulasPorLaboratorio[labNome].forEach(aula => {
-            const dataInicio = dayjs(aula.dataInicio.toDate()).locale('pt-br');
+            const dtInicioRaw = aula.dataInicio?.toDate ? aula.dataInicio.toDate() : (aula.dataInicio || aula.data_inicio);
+            const dtFimRaw = aula.dataFim?.toDate ? aula.dataFim.toDate() : (aula.dataFim || aula.data_fim);
+            const dataInicio = dayjs(dtInicioRaw).locale('pt-br');
             const tipoLabel = aula.isRevisao
                 ? (aula.tipoRevisaoLabel || 'Revisão/Reforço')
                 : (aula.tipoAtividade || 'Aula');
@@ -80,7 +82,7 @@ export const gerarRelatorioExcel = async (aulasDoMes, nomeArquivo) => {
             const row = worksheet.addRow({
                 data: dataInicio.format('DD/MM/YYYY'),
                 diaSemana: dataInicio.format('dddd'),
-                horario: `${dataInicio.format('HH:mm')} - ${dayjs(aula.dataFim.toDate()).format('HH:mm')}`,
+                horario: `${dataInicio.format('HH:mm')} - ${dtFimRaw ? dayjs(dtFimRaw).format('HH:mm') : ''}`,
                 tipo: tipoLabel,
                 cursos: (aula.cursos || []).map(c => LISTA_CURSOS.find(lc => lc.value === c)?.label || c).join(', '),
                 assunto: aula.assunto,

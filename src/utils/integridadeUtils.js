@@ -49,12 +49,15 @@ export function validarSchemaLegado(aula, periodos = []) {
     }
 
     // 5. Data fora de qualquer período letivo cadastrado (se houver períodos)
-    if (aula.dataInicio?.toDate && periodos.length > 0) {
-        const dataAula = dayjs(aula.dataInicio.toDate());
+    if ((aula.dataInicio || aula.data_inicio) && periodos.length > 0) {
+        const dtAulaRaw = aula.dataInicio?.toDate ? aula.dataInicio.toDate() : (aula.dataInicio || aula.data_inicio);
+        const dataAula = dayjs(dtAulaRaw);
         const emAlgumPeriodo = periodos.some(p => {
-            if (!p.dataInicio?.toDate || !p.dataFim?.toDate) return false;
-            const inicio = dayjs(p.dataInicio.toDate());
-            const fim = dayjs(p.dataFim.toDate());
+            const dtPInicio = p.dataInicio?.toDate ? p.dataInicio.toDate() : (p.dataInicio || p.data_inicio);
+            const dtPFim = p.dataFim?.toDate ? p.dataFim.toDate() : (p.dataFim || p.data_fim);
+            if (!dtPInicio || !dtPFim) return false;
+            const inicio = dayjs(dtPInicio);
+            const fim = dayjs(dtPFim);
             return dataAula.isAfter(inicio.subtract(1, 'day')) && dataAula.isBefore(fim.add(1, 'day'));
         });
         if (!emAlgumPeriodo) {

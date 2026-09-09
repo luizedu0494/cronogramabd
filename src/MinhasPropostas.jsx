@@ -148,11 +148,11 @@ const MinhasPropostas = () => {
                 ) : (
                     <List disablePadding>
                         {propostas.map((proposta, index) => {
-                            const dataAula = proposta.dataInicio?.toDate
-                                ? dayjs(proposta.dataInicio.toDate()).format('DD/MM/YYYY [às] HH:mm')
+                            const dataAula = proposta.dataInicio
+                                ? dayjs(proposta.dataInicio?.toDate ? proposta.dataInicio.toDate() : (proposta.dataInicio || proposta.data_inicio)).format('DD/MM/YYYY [às] HH:mm')
                                 : '—';
-                            const dataProposta = proposta.createdAt?.toDate
-                                ? dayjs(proposta.createdAt.toDate()).format('DD/MM/YYYY HH:mm')
+                            const dataProposta = (proposta.createdAt || proposta.created_at)
+                                ? dayjs(proposta.createdAt?.toDate ? proposta.createdAt.toDate() : (proposta.createdAt || proposta.created_at)).format('DD/MM/YYYY HH:mm')
                                 : '—';
 
                             return (

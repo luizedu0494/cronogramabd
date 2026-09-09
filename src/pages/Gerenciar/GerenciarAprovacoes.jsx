@@ -563,7 +563,7 @@ function GerenciarAprovacoes() {
                                     <Grid size={{ xs: 12, sm: 6 }}>
                                         <Typography variant="body2" color="text.secondary">Data e Horário</Typography>
                                         <Typography variant="body1" fontWeight="bold">
-                                            📅 {(() => { try { return dayjs(aulaSelecionada.dataInicio.toDate()).format('DD/MM/YYYY [às] HH:mm'); } catch { return '—'; } })()}
+                                            📅 {(() => { try { const dt = aulaSelecionada.dataInicio?.toDate ? aulaSelecionada.dataInicio.toDate() : (aulaSelecionada.dataInicio || aulaSelecionada.data_inicio); return dayjs(dt).format('DD/MM/YYYY [às] HH:mm'); } catch { return '—'; } })()}
                                         </Typography>
                                     </Grid>
                                     <Grid size={{ xs: 12, sm: 6 }}>

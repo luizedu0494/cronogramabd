@@ -995,7 +995,7 @@ const PaginaInicial = ({ userInfo }) => {
                                                     <ListItem>
                                                         <ListItemText
                                                             primary={<Typography variant="body2" fontWeight="medium">{ev.titulo}</Typography>}
-                                                            secondary={`${ev.tipo} • ${dayjs(ev.dataInicio.toDate()).format('DD/MM')}`} />
+                                                            secondary={`${ev.tipo} • ${dayjs(ev.dataInicio?.toDate ? ev.dataInicio.toDate() : (ev.dataInicio || ev.data_inicio)).format('DD/MM')}`} />
                                                     </ListItem>
                                                 </React.Fragment>
                                             )) : <Box p={2} textAlign="center"><Typography variant="caption">Nada recente.</Typography></Box>}
@@ -1015,7 +1015,7 @@ const PaginaInicial = ({ userInfo }) => {
                                                     <ListItem>
                                                         <ListItemText
                                                             primary={<Typography variant="body2" fontWeight="medium" color="error">{log.aula?.assunto || 'Sem nome'}</Typography>}
-                                                            secondary={`Excluído em ${dayjs(log.timestamp.toDate()).format('DD/MM HH:mm')}`} />
+                                                            secondary={`Excluído em ${dayjs(log.timestamp?.toDate ? log.timestamp.toDate() : (log.timestamp || log.created_at)).format('DD/MM HH:mm')}`} />
                                                     </ListItem>
                                                 </React.Fragment>
                                             )) : <Box p={2} textAlign="center"><Typography variant="caption">Nenhuma exclusão.</Typography></Box>}
