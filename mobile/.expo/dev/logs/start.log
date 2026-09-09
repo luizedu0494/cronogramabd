@@ -147,3 +147,50 @@
 {"_e":"devserver:start","_t":1788921291411,"mode":"development","web":true,"baseUrl":"","asyncRoutes":false,"routerRoot":"../..\\..\\app","serverComponents":false,"serverActions":false,"serverRendering":false,"apiRoutes":false,"exporting":false}
 {"_e":"metro:config","_t":1788921291912,"serverRoot":"../..\\..","projectRoot":"../..\\..","exporting":false,"flags":{"autolinkingModuleResolution":false,"serverActions":false,"serverComponents":false,"reactCompiler":false,"optimizeGraph":false,"treeshaking":false,"logbox":false}}
 {"_e":"expo:dev-tools-plugin:load","_t":1788921292303,"plugins":[]}
+{"_e":"metro:instantiate","_t":1788921301184,"atlas":false,"workers":10,"host":"::","port":8081}
+{"_e":"metro:bundling:started","_t":1788921308028,"id":"3","platform":"android","environment":null,"entry":"index.js"}
+{"_e":"metro:bundling:progress","_t":1788921308029,"id":"3","progress":0,"total":1,"current":0}
+{"_e":"metro:bundling:progress","_t":1788921308035,"id":"3","progress":0,"total":1,"current":0}
+{"_e":"metro:bundling:progress","_t":1788921308134,"id":"3","progress":0.06805293005671077,"total":46,"current":12}
+{"_e":"metro:bundling:progress","_t":1788921308235,"id":"3","progress":0.1081679012345679,"total":225,"current":74}
+{"_e":"metro:bundling:progress","_t":1788921308334,"id":"3","progress":0.2916,"total":300,"current":162}
+{"_e":"metro:bundling:progress","_t":1788921308434,"id":"3","progress":0.40005624999999995,"total":400,"current":253}
+{"_e":"metro:bundling:progress","_t":1788921308534,"id":"3","progress":0.47162142546087965,"total":498,"current":342}
+{"_e":"metro:bundling:progress","_t":1788921308634,"id":"3","progress":0.676234893967894,"total":591,"current":486}
+{"_e":"metro:bundling:progress","_t":1788921308734,"id":"3","progress":0.821636587752644,"total":652,"current":591}
+{"_e":"metro:bundling:progress","_t":1788921308835,"id":"3","progress":0.9971691450858285,"total":706,"current":705}
+{"_e":"metro:bundling:progress","_t":1788921309194,"id":"3","progress":0.999,"total":706,"current":706}
+{"_e":"metro:bundling:progress","_t":1788921309303,"id":"3","progress":0.999,"total":761,"current":760}
+{"_e":"metro:bundling:done","_t":1788921309396,"id":"3","total":761,"ms":1367.6245}
+{"_e":"metro:client_log","_t":1788921311378,"level":"warn","data":["SafeAreaView has been deprecated and will be removed in a future release. Please use 'react-native-safe-area-context' instead. See https://github.com/AppAndFlow/react-native-safe-area-context"]}
+{"_e":"metro:bundling:started","_t":1788921311769,"id":"4","platform":"android","environment":null,"entry":"node_modules\\expo-notifications\\build\\index.js"}
+{"_e":"metro:bundling:progress","_t":1788921311769,"id":"4","progress":0,"total":1,"current":0}
+{"_e":"metro:bundling:progress","_t":1788921311772,"id":"4","progress":0,"total":1,"current":0}
+{"_e":"metro:bundling:progress","_t":1788921311872,"id":"4","progress":0.30148857691294373,"total":326,"current":179}
+{"_e":"metro:bundling:progress","_t":1788921311973,"id":"4","progress":0.5085792289011286,"total":502,"current":358}
+{"_e":"metro:bundling:progress","_t":1788921312072,"id":"4","progress":0.774188603017432,"total":666,"current":586}
+{"_e":"metro:bundling:progress","_t":1788921312173,"id":"4","progress":0.8977753786348676,"total":743,"current":704}
+{"_e":"metro:bundling:done","_t":1788921312257,"id":"4","total":743,"ms":487.865}
+{"_e":"metro:client_log","_t":1788921312655,"level":"error","data":["[Error: expo-notifications: Android Push notifications (remote notifications) functionality provided by expo-notifications was removed from Expo Go with the release of SDK 53. Use a development build instead of Expo Go. Learn more at https://docs.expo.dev/develop/development-builds/introduction/.]"]}
+{"_e":"metro:client_log","_t":1788921312704,"level":"log","data":["Ambiente Expo Go ou sem suporte nativo a push remoto diretamente:","undefined is not a function"]}
+{"_e":"metro:client_log","_t":1788921354461,"level":"log","data":["Executando no Expo Go. O Realtime do Supabase está tratando notificações."]}
+{"_e":"root:init","_t":1788921633661,"format":"v0-jsonl","version":"57.0.23"}
+{"_e":"env:mode","_t":1788921633663,"nodeEnv":"development","babelEnv":"development","mode":"development"}
+{"_e":"env:load","_t":1788921633672,"mode":"development","files":[],"env":{}}
+{"_e":"devserver:start","_t":1788921634014,"mode":"development","web":true,"baseUrl":"","asyncRoutes":false,"routerRoot":"../..\\..\\app","serverComponents":false,"serverActions":false,"serverRendering":false,"apiRoutes":false,"exporting":false}
+{"_e":"metro:config","_t":1788921634550,"serverRoot":"../..\\..","projectRoot":"../..\\..","exporting":false,"flags":{"autolinkingModuleResolution":false,"serverActions":false,"serverComponents":false,"reactCompiler":false,"optimizeGraph":false,"treeshaking":false,"logbox":false}}
+{"_e":"expo:dev-tools-plugin:load","_t":1788921634939,"plugins":[]}
+{"_e":"metro:instantiate","_t":1788921643362,"atlas":false,"workers":10,"host":"::","port":8081}
+{"_e":"metro:bundling:started","_t":1788921690123,"id":"1","platform":"android","environment":null,"entry":"index.js"}
+{"_e":"metro:bundling:progress","_t":1788921690124,"id":"1","progress":0,"total":1,"current":0}
+{"_e":"metro:bundling:progress","_t":1788921690131,"id":"1","progress":0,"total":1,"current":0}
+{"_e":"metro:bundling:progress","_t":1788921690241,"id":"1","progress":0.005450204945723167,"total":149,"current":11}
+{"_e":"metro:bundling:progress","_t":1788921690341,"id":"1","progress":0.13777387921664344,"total":229,"current":85}
+{"_e":"metro:bundling:progress","_t":1788921690441,"id":"1","progress":0.3304528667216465,"total":334,"current":192}
+{"_e":"metro:bundling:progress","_t":1788921690541,"id":"1","progress":0.39726489451937247,"total":449,"current":283}
+{"_e":"metro:bundling:progress","_t":1788921690641,"id":"1","progress":0.5035539940828403,"total":520,"current":369}
+{"_e":"metro:bundling:progress","_t":1788921690746,"id":"1","progress":0.7359087494023632,"total":605,"current":519}
+{"_e":"metro:bundling:progress","_t":1788921690845,"id":"1","progress":0.7697820874846821,"total":685,"current":601}
+{"_e":"metro:bundling:progress","_t":1788921690945,"id":"1","progress":0.9269182888184698,"total":752,"current":724}
+{"_e":"metro:bundling:done","_t":1788921691053,"id":"1","total":752,"ms":929.8023}
+{"_e":"metro:client_log","_t":1788921693326,"level":"log","data":["Executando no Expo Go. O Realtime do Supabase está tratando notificações."]}

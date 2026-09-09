@@ -1,19 +1,82 @@
-import { useState, useEffect } from 'react';
-import { StyleSheet, Text, View, FlatList, TouchableOpacity, ActivityIndicator, StatusBar } from 'react-native';
+import { useState, useRef } from 'react';
+import { StyleSheet, View, Text, TouchableOpacity, StatusBar, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { WebView } from 'react-native-webview';
 import * as Device from 'expo-device';
 import Constants from 'expo-constants';
 import { supabase } from './supabase';
 
+const WEB_APP_URL = 'https://cronolab.vercel.app';
+
 export default function App() {
+  const [activeTab, setActiveTab] = useState('app'); // 'app' ou 'notificacoes'
+  const [carregandoWeb, setCarregandoWeb] = useState(true);
+  const webViewRef = useRef(null);
+
+  return (
+    <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
+      <StatusBar barStyle="light-content" backgroundColor="#1E7EC8" />
+
+      {/* Header Mobile Nativo */}
+      <View style={styles.header}>
+        <Text style={styles.headerTitle}>CronoLab CESMAC 🧪</Text>
+        
+        {/* Alternador de Abas Navegação */}
+        <View style={styles.tabsContainer}>
+          <TouchableOpacity 
+            style={[styles.tabButton, activeTab === 'app' && styles.tabButtonActive]}
+            onPress={() => setActiveTab('app')}
+          >
+            <Text style={[styles.tabText, activeTab === 'app' && styles.tabTextActive]}>
+              🌐 Sistema Completo
+            </Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity 
+            style={[styles.tabButton, activeTab === 'notificacoes' && styles.tabButtonActive]}
+            onPress={() => setActiveTab('notificacoes')}
+          >
+            <Text style={[styles.tabText, activeTab === 'notificacoes' && styles.tabTextActive]}>
+              🔔 Central Avisos
+            </Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+
+      {/* Conteúdo da Aba 1: Sistema Web Completo via Expo WebView */}
+      {activeTab === 'app' && (
+        <View style={{ flex: 1 }}>
+          {carregandoWeb && (
+            <View style={styles.loadingOverlay}>
+              <ActivityIndicator size="large" color="#1E7EC8" />
+              <Text style={styles.loadingText}>Carregando CronoLab...</Text>
+            </View>
+          )}
+          <WebView
+            ref={webViewRef}
+            source={{ uri: WEB_APP_URL }}
+            onLoadEnd={() => setCarregandoWeb(false)}
+            style={{ flex: 1 }}
+            javaScriptEnabled={true}
+            domStorageEnabled={true}
+            startInLoadingState={true}
+          />
+        </View>
+      )}
+
+      {/* Conteúdo da Aba 2: Central Nativa de Notificações */}
+      {activeTab === 'notificacoes' && <CentralNotificacoes />}
+    </SafeAreaView>
+  );
+}
+
+function CentralNotificacoes() {
   const [notificacoes, setNotificacoes] = useState([]);
   const [carregando, setCarregando] = useState(true);
-  const [statusPush, setStatusPush] = useState('Modo Expo Go (Realtime Ativo ⚡)');
 
   useEffect(() => {
     carregarNotificacoes();
 
-    // Escutar novas notificações em tempo real pelo Supabase Realtime
     const subscription = supabase
       .channel('schema-db-changes')
       .on('postgres_changes', { event: 'INSERT', table: 'notificacoes', schema: 'public' }, (payload) => {
@@ -21,61 +84,23 @@ export default function App() {
       })
       .subscribe();
 
-    // Tentar inicializar push de segundo plano se disponível no ambiente nativo
-    obterTokenPushOpcional();
-
     return () => {
       supabase.removeChannel(subscription);
     };
   }, []);
 
-  const obterTokenPushOpcional = async () => {
-    try {
-      if (Constants.appOwnership === 'expo') {
-        // No Expo Go SDK 53+, o push remoto em segundo plano foi descontinuado pela própria Expo
-        console.log('Executando no Expo Go. O Realtime do Supabase está tratando notificações.');
-        return;
-      }
-      const Notifications = await import('expo-notifications');
-      if (Device.isDevice) {
-        const { status: existingStatus } = await Notifications.getPermissionsAsync();
-        let finalStatus = existingStatus;
-        if (existingStatus !== 'granted') {
-          const { status } = await Notifications.requestPermissionsAsync();
-          finalStatus = status;
-        }
-        if (finalStatus === 'granted') {
-          const tokenData = await Notifications.getExpoPushTokenAsync();
-          if (tokenData?.data) {
-            setStatusPush('Push Nativo Ativo ✅');
-            await supabase.from('push_subscriptions').upsert({
-              user_uid: 'mobile_device',
-              token: tokenData.data,
-              dispositivo: Device.modelName || 'Mobile',
-              criado_em: new Date().toISOString()
-            }, { onConflict: 'token' });
-          }
-        }
-      }
-    } catch (e) {
-      console.log('Nativo Push desativado no modo Expo Go:', e.message);
-    }
-  };
-
   const carregarNotificacoes = async () => {
     setCarregando(true);
     try {
-      const { data, error } = await supabase
+      const { data } = await supabase
         .from('notificacoes')
         .select('*')
         .order('criada_em', { ascending: false })
         .limit(30);
 
-      if (!error && data) {
-        setNotificacoes(data);
-      }
-    } catch (err) {
-      console.error(err);
+      if (data) setNotificacoes(data);
+    } catch (e) {
+      console.error(e);
     } finally {
       setCarregando(false);
     }
@@ -85,58 +110,47 @@ export default function App() {
     try {
       await supabase.from('notificacoes').update({ lida: true }).eq('id', id);
       setNotificacoes(prev => prev.map(n => n.id === id ? { ...n, lida: true } : n));
-    } catch (err) {
-      console.error(err);
+    } catch (e) {
+      console.error(e);
     }
   };
 
   return (
-    <SafeAreaView style={styles.container}>
-      <StatusBar barStyle="light-content" backgroundColor="#1E7EC8" />
-      
-      {/* Header */}
-      <View style={styles.header}>
-        <Text style={styles.headerTitle}>CronoLab Mobile 📱</Text>
-        <Text style={styles.headerSubtitle}>{statusPush}</Text>
+    <View style={styles.content}>
+      <View style={styles.sectionHeader}>
+        <Text style={styles.sectionTitle}>Avisos e Designações</Text>
+        <TouchableOpacity onPress={carregarNotificacoes}>
+          <Text style={styles.refreshBtn}>Atualizar 🔄</Text>
+        </TouchableOpacity>
       </View>
 
-      {/* Lista de Notificações */}
-      <View style={styles.content}>
-        <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>Notificações Recentes</Text>
-          <TouchableOpacity onPress={carregarNotificacoes}>
-            <Text style={styles.refreshBtn}>Atualizar 🔄</Text>
-          </TouchableOpacity>
-        </View>
-
-        {carregando ? (
-          <ActivityIndicator size="large" color="#1E7EC8" style={{ marginTop: 40 }} />
-        ) : (
-          <FlatList
-            data={notificacoes}
-            keyExtractor={(item) => item.id.toString()}
-            renderItem={({ item }) => (
-              <TouchableOpacity 
-                style={[styles.card, !item.lida && styles.cardNaoLida]} 
-                onPress={() => marcarLida(item.id)}
-              >
-                <View style={styles.cardHeader}>
-                  <Text style={styles.cardTitle}>{item.titulo}</Text>
-                  {!item.lida && <View style={styles.badgeUnread} />}
-                </View>
-                <Text style={styles.cardCorpo}>{item.corpo}</Text>
-                <Text style={styles.cardData}>
-                  {new Date(item.criada_em).toLocaleString('pt-BR')}
-                </Text>
-              </TouchableOpacity>
-            )}
-            ListEmptyComponent={
-              <Text style={styles.emptyText}>Nenhuma notificação encontrada.</Text>
-            }
-          />
-        )}
-      </View>
-    </SafeAreaView>
+      {carregando ? (
+        <ActivityIndicator size="large" color="#1E7EC8" style={{ marginTop: 40 }} />
+      ) : (
+        <FlatList
+          data={notificacoes}
+          keyExtractor={(item) => item.id.toString()}
+          renderItem={({ item }) => (
+            <TouchableOpacity 
+              style={[styles.card, !item.lida && styles.cardNaoLida]} 
+              onPress={() => marcarLida(item.id)}
+            >
+              <View style={styles.cardHeader}>
+                <Text style={styles.cardTitle}>{item.titulo}</Text>
+                {!item.lida && <View style={styles.badgeUnread} />}
+              </View>
+              <Text style={styles.cardCorpo}>{item.corpo}</Text>
+              <Text style={styles.cardData}>
+                {new Date(item.criada_em).toLocaleString('pt-BR')}
+              </Text>
+            </TouchableOpacity>
+          )}
+          ListEmptyComponent={
+            <Text style={styles.emptyText}>Nenhuma notificação recebida.</Text>
+          }
+        />
+      )}
+    </View>
   );
 }
 
@@ -147,20 +161,52 @@ const styles = StyleSheet.create({
   },
   header: {
     backgroundColor: '#1E7EC8',
-    padding: 20,
-    paddingTop: 40,
-    borderBottomLeftRadius: 16,
-    borderBottomRightRadius: 16,
+    paddingHorizontal: 16,
+    paddingTop: 12,
+    paddingBottom: 8,
   },
   headerTitle: {
-    fontSize: 22,
+    fontSize: 20,
     fontWeight: 'bold',
     color: '#FFFFFF',
+    marginBottom: 8,
   },
-  headerSubtitle: {
-    fontSize: 12,
+  tabsContainer: {
+    flexDirection: 'row',
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    borderRadius: 8,
+    padding: 3,
+  },
+  tabButton: {
+    flex: 1,
+    paddingVertical: 8,
+    alignItems: 'center',
+    borderRadius: 6,
+  },
+  tabButtonActive: {
+    backgroundColor: '#FFFFFF',
+  },
+  tabText: {
+    fontSize: 13,
+    fontWeight: '600',
     color: '#E2E8F0',
-    marginTop: 4,
+  },
+  tabTextActive: {
+    color: '#1E7EC8',
+    fontWeight: 'bold',
+  },
+  loadingOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: '#FFFFFF',
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 10,
+  },
+  loadingText: {
+    marginTop: 12,
+    fontSize: 14,
+    color: '#64748B',
+    fontWeight: '500',
   },
   content: {
     flex: 1,
@@ -189,11 +235,6 @@ const styles = StyleSheet.create({
     marginBottom: 10,
     borderWidth: 1,
     borderColor: '#E2E8F0',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 2,
-    elevation: 1,
   },
   cardNaoLida: {
     borderColor: '#1E7EC8',
