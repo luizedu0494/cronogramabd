@@ -14,8 +14,8 @@ export function usePushRegistration(uid?: string) {
           if ('serviceWorker' in navigator && 'PushManager' in window) {
             const permission = await Notification.requestPermission();
             if (permission === 'granted') {
-              const registration = await navigator.serviceWorker.ready;
-              const vapidKey = import.meta.env.VITE_VAPID_PUBLIC_KEY || process.env.EXPO_PUBLIC_VAPID_KEY;
+              const DEFAULT_VAPID_PUBLIC_KEY = 'BLjEhLkPJrJlWbtKRvyGR2fZhFQvm9SEj-zm0aulM55fDJVkjJsZMGwe95sAVs6IGyFyFA_t0fFfhfQNijH66I4';
+              const vapidKey = import.meta.env.VITE_VAPID_PUBLIC_KEY || process.env.EXPO_PUBLIC_VAPID_KEY || DEFAULT_VAPID_PUBLIC_KEY;
               if (vapidKey) {
                 const subscription = await registration.pushManager.subscribe({
                   userVisibleOnly: true,
