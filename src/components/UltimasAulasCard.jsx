@@ -28,7 +28,7 @@ const UltimasAulasCard = () => {
                 setLoading(true);
                 const { data, error: fetchErr } = await supabase
                     .from('aulas')
-                    .select('*')
+                    .select('*, aula_cursos(curso)')
                     .order('created_at', { ascending: false })
                     .limit(30);
 
@@ -37,6 +37,7 @@ const UltimasAulasCard = () => {
                 const all = (data || []).map(item => ({
                     id: item.id,
                     ...item,
+                    cursos: item.aula_cursos?.map(ac => ac.curso) || item.cursos || [],
                     createdAt: item.created_at ? new Date(item.created_at) : new Date(),
                     dataInicio: item.data_inicio ? new Date(item.data_inicio) : null,
                     isRevisao: item.is_revisao || false,

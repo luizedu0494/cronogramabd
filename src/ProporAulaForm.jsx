@@ -716,7 +716,6 @@ function ProporAulaForm({ userInfo, currentUser, initialDate, onSuccess, onCance
                         tipo_revisao_label: aula.tipoRevisaoLabel || null,
                         liga: aula.liga || null,
                         observacoes: aula.observacoes || null,
-                        cursos: aula.cursos || (aula.curso ? [aula.curso] : []),
                     };
                     const { data: novaAula, error } = await supabase.from('aulas').insert([finalData]).select().single();
                     if (error) throw error;
