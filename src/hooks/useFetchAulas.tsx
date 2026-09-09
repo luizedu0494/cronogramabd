@@ -68,17 +68,21 @@ const useFetchAulas = (options: UseFetchAulasOptions = {}): UseFetchAulasReturn 
 
       if (sbError) throw sbError;
 
-      const aulasList: Aula[] = (data || []).map(data => ({
-        id: data.id,
-        disciplina: data.assunto || '',
-        professor: data.proposto_por_nome || '',
-        laboratorio: data.laboratorio || '',
-        status: data.status || 'aprovada',
+      const aulasList: Aula[] = (data || []).map(item => ({
+        id: item.id,
+        titulo: item.assunto || item.titulo || 'Sem título',
+        disciplina: item.assunto || '',
+        professor: item.proposto_por_nome || '',
+        autorNome: item.proposto_por_nome || item.autor_nome || '',
+        laboratorio: item.laboratorio || '',
+        status: item.status || 'aprovada',
+        curso: Array.isArray(item.cursos) ? item.cursos.join(', ') : (item.curso || ''),
+        cursos: item.cursos || [],
         turma: '',
-        dataInicio: data.data_inicio || null,
-        dataFim: data.data_fim || null,
-        criadoEm: data.created_at || null,
-        ...data,
+        dataInicio: item.data_inicio || item.start || null,
+        dataFim: item.data_fim || item.end || null,
+        criadoEm: item.created_at || null,
+        ...item,
       })) as Aula[];
 
       setAulas(aulasList);

@@ -386,7 +386,7 @@ const DayColumn = ({ day, viewMode, aulasFiltradas, eventosFiltrados, periodosBl
                                     onEdit={() => { setEventoParaAcao(evento); setIsEventModalOpen(true); }}
                                     onDelete={async () => {
                                         if(window.confirm("Excluir evento?")) {
-                                            await deleteDoc(doc(db, 'eventosManutencao', evento.id));
+                                            await supabase.from('eventos_manutencao').delete().eq('id', evento.id);
                                             fetchDados();
                                         }
                                     }}
@@ -1062,7 +1062,7 @@ function CalendarioCronograma({ userInfo }) {
                             onEditEvento={(evento) => { setEventoParaAcao(evento); setIsEventModalOpen(true); }}
                             onDeleteEvento={async (evento) => {
                                 if (window.confirm("Deseja realmente excluir este evento?")) {
-                                    await deleteDoc(doc(db, 'eventosManutencao', evento.id));
+                                    await supabase.from('eventos_manutencao').delete().eq('id', evento.id);
                                     fetchDados();
                                 }
                             }}
@@ -1169,7 +1169,7 @@ function CalendarioCronograma({ userInfo }) {
                                 tipoRevisaoLabel: aulaParaAcao.tipoRevisaoLabel || '',
                             }, 'excluir');
                             await registrarLogExclusao(aulaParaAcao, userInfo);
-                            await deleteDoc(doc(db, 'aulas', aulaParaAcao.id)); 
+                            await supabase.from('aulas').delete().eq('id', aulaParaAcao.id); 
                             setIsDeleteModalOpen(false); 
                             fetchDados(); 
                             setFeedback({ open: true, message: aulaParaAcao?.isRevisao ? 'Revisão excluída com sucesso!' : 'Aula excluída com sucesso!', severity: 'success' });

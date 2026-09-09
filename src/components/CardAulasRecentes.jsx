@@ -156,8 +156,13 @@ const CardAulasRecentes = ({ limite = 5 }) => {
                             <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 1 }}>
                                 <Box sx={{ flex: 1, minWidth: 0 }}>
                                     <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 0.5, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                                        {aula.titulo || 'Sem título'}
+                                        {aula.titulo || aula.assunto || 'Sem título'}
                                     </Typography>
+                                    {(aula.curso || (Array.isArray(aula.cursos) && aula.cursos.length > 0)) && (
+                                        <Typography variant="caption" sx={{ color: theme.palette.primary.main, fontWeight: 500, display: 'block', mb: 0.5 }}>
+                                            Curso: {aula.curso || aula.cursos.join(', ')}
+                                        </Typography>
+                                    )}
                                     <Typography variant="caption" sx={{ color: theme.palette.text.secondary }}>
                                         {aula.laboratorio || 'Laboratório não especificado'}
                                     </Typography>
