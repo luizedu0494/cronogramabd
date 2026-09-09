@@ -721,11 +721,45 @@ function DownloadCronograma() {
                                     value={filtros.laboratorioFiltro}
                                     onChange={(e) => handleFiltroChange('laboratorioFiltro', e.target.value)}
                                     input={<OutlinedInput notched label="Laboratório(s)" />}
-                                    renderValue={(sel) => (
-                                        <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
-                                            {sel.map(v => <Chip key={v} label={v} size="small" />)}
-                                        </Box>
-                                    )}
+                                    renderValue={(sel) => {
+                                        if (!sel || sel.length === 0) return <em>Todos os laboratórios</em>;
+                                        if (sel.length > 2) {
+                                            return (
+                                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                                                    <Chip size="small" label={`${sel.length} selecionados`} color="primary" sx={{ height: 20, fontSize: '0.7rem', fontWeight: 700 }} />
+                                                    <Typography variant="caption" noWrap color="text.secondary" sx={{ maxWidth: { xs: 120, sm: 180 } }}>
+                                                        {sel.slice(0, 2).join(', ')}...
+                                                    </Typography>
+                                                </Box>
+                                            );
+                                        }
+                                        return (
+                                            <Box sx={{ display: 'flex', flexWrap: 'nowrap', gap: 0.5, overflow: 'hidden' }}>
+                                                {sel.map(v => (
+                                                    <Chip 
+                                                        key={v} 
+                                                        label={v} 
+                                                        size="small" 
+                                                        sx={{ 
+                                                            maxWidth: { xs: 130, sm: 180 }, 
+                                                            height: 22,
+                                                            fontSize: '0.72rem',
+                                                            '& .MuiChip-label': { overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', px: 1 } 
+                                                        }} 
+                                                    />
+                                                ))}
+                                            </Box>
+                                        );
+                                    }}
+                                    MenuProps={{
+                                        PaperProps: {
+                                            sx: {
+                                                maxHeight: 320,
+                                                maxWidth: { xs: '90vw', sm: 400 },
+                                                '& .MuiMenuItem-root': { fontSize: '0.875rem', py: 1, whiteSpace: 'normal', wordBreak: 'break-word' }
+                                            }
+                                        }
+                                    }}
                                 >
                                     {LISTA_LABORATORIOS.map(l => (
                                         <MenuItem key={l.id} value={l.name}>{l.name}</MenuItem>
@@ -742,11 +776,45 @@ function DownloadCronograma() {
                                     value={filtros.horarioFiltro}
                                     onChange={(e) => handleFiltroChange('horarioFiltro', e.target.value)}
                                     input={<OutlinedInput notched label="Horário(s)" />}
-                                    renderValue={(sel) => (
-                                        <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
-                                            {sel.map(v => <Chip key={v} label={v} size="small" />)}
-                                        </Box>
-                                    )}
+                                    renderValue={(sel) => {
+                                        if (!sel || sel.length === 0) return <em>Todos os horários</em>;
+                                        if (sel.length > 2) {
+                                            return (
+                                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                                                    <Chip size="small" label={`${sel.length} selecionados`} color="primary" sx={{ height: 20, fontSize: '0.7rem', fontWeight: 700 }} />
+                                                    <Typography variant="caption" noWrap color="text.secondary" sx={{ maxWidth: { xs: 120, sm: 180 } }}>
+                                                        {sel.slice(0, 2).join(', ')}...
+                                                    </Typography>
+                                                </Box>
+                                            );
+                                        }
+                                        return (
+                                            <Box sx={{ display: 'flex', flexWrap: 'nowrap', gap: 0.5, overflow: 'hidden' }}>
+                                                {sel.map(v => (
+                                                    <Chip 
+                                                        key={v} 
+                                                        label={v} 
+                                                        size="small" 
+                                                        sx={{ 
+                                                            maxWidth: { xs: 130, sm: 180 }, 
+                                                            height: 22,
+                                                            fontSize: '0.72rem',
+                                                            '& .MuiChip-label': { overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', px: 1 } 
+                                                        }} 
+                                                    />
+                                                ))}
+                                            </Box>
+                                        );
+                                    }}
+                                    MenuProps={{
+                                        PaperProps: {
+                                            sx: {
+                                                maxHeight: 320,
+                                                maxWidth: { xs: '90vw', sm: 400 },
+                                                '& .MuiMenuItem-root': { fontSize: '0.875rem', py: 1, whiteSpace: 'normal', wordBreak: 'break-word' }
+                                            }
+                                        }
+                                    }}
                                 >
                                     {BLOCOS_HORARIO.map(b => (
                                         <MenuItem key={b.value} value={b.value}>{b.label}</MenuItem>

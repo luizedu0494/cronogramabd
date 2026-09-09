@@ -866,58 +866,148 @@ function CalendarioCronograma({ userInfo }) {
                     </Fade>
 
                     <Collapse in={filtrosVisiveis}>
-                        <Box sx={{ mt: 2, pt: 2, borderTop: '1px solid', borderColor: 'divider' }}>
-                            <Box sx={{ mb: 2, display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap' }}>
-                                <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600 }}>
-                                    Perspectiva de visão:
-                                </Typography>
+                        <Paper 
+                            elevation={4} 
+                            sx={{ 
+                                mt: 2, 
+                                p: { xs: 2.5, sm: 3 }, 
+                                borderRadius: 3, 
+                                background: theme.palette.mode === 'dark' ? 'rgba(30, 41, 59, 0.95)' : '#ffffff',
+                                border: '1px solid',
+                                borderColor: theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.08)',
+                                boxShadow: '0 10px 30px rgba(0,0,0,0.08)'
+                            }}
+                        >
+                            <Box sx={{ mb: 2.5, display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 1.5 }}>
+                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                    <FilterListIcon color="primary" />
+                                    <Typography variant="subtitle2" sx={{ fontWeight: 700, textTransform: 'uppercase', letterSpacing: 0.5 }}>
+                                        Filtros Avançados & Perspectiva
+                                    </Typography>
+                                </Box>
                                 <ToggleButtonGroup
                                     value={perspectiva}
                                     exclusive
                                     onChange={(_, novoValor) => novoValor && setPerspectiva(novoValor)}
                                     size="small"
+                                    sx={{ width: { xs: '100%', sm: 'auto' } }}
                                 >
-                                    <ToggleButton value="ocupados" color="error">
+                                    <ToggleButton value="ocupados" color="error" sx={{ flex: 1, py: 0.75, fontWeight: 700 }}>
                                         🔴 Ocupados
                                     </ToggleButton>
-                                    <ToggleButton value="livres" color="success">
+                                    <ToggleButton value="livres" color="success" sx={{ flex: 1, py: 0.75, fontWeight: 700 }}>
                                         🟢 Livres
                                     </ToggleButton>
-                                    <ToggleButton value="todos">
+                                    <ToggleButton value="todos" sx={{ flex: 1, py: 0.75, fontWeight: 700 }}>
                                         Todos
                                     </ToggleButton>
                                 </ToggleButtonGroup>
                             </Box>
 
                             <Grid container spacing={2}>
-                                <Grid item xs={12} md={3}>
+                                <Grid item xs={12} sm={6} md={3}>
                                     <Tooltip title={abaCalendario === 'grade' ? "Filtro de Assunto não se aplica à Grade de Disponibilidade" : ""}>
                                         <TextField fullWidth size="small" label="Buscar Assunto" disabled={abaCalendario === 'grade'} value={filtros.assunto} onChange={(e) => setFiltros({...filtros, assunto: e.target.value})} InputProps={{ startAdornment: <InputAdornment position="start"><SearchIcon fontSize="small" /></InputAdornment> }} />
                                     </Tooltip>
                                 </Grid>
-                                <Grid item xs={12} md={3}>
+                                <Grid item xs={12} sm={6} md={3}>
                                     <FormControl fullWidth size="small">
                                         <InputLabel>Laboratórios</InputLabel>
-                                        <Select multiple value={filtros.laboratorio} onChange={(e) => setFiltros({...filtros, laboratorio: e.target.value})} input={<OutlinedInput label="Laboratórios" />} renderValue={(selected) => <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>{selected.map(v => <Chip key={v} label={v} size="small" />)}</Box>}>
+                                        <Select 
+                                            multiple 
+                                            value={filtros.laboratorio} 
+                                            onChange={(e) => setFiltros({...filtros, laboratorio: e.target.value})} 
+                                            input={<OutlinedInput label="Laboratórios" />} 
+                                            renderValue={(selected) => {
+                                                if (!selected || selected.length === 0) return <em>Todos os Laboratórios</em>;
+                                                return (
+                                                    <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
+                                                        {selected.map(v => (
+                                                            <Chip 
+                                                                key={v} 
+                                                                label={v} 
+                                                                size="small" 
+                                                                color="primary"
+                                                                sx={{ height: 24, fontWeight: 600 }} 
+                                                            />
+                                                        ))}
+                                                    </Box>
+                                                );
+                                            }}
+                                            MenuProps={{
+                                                PaperProps: {
+                                                    sx: {
+                                                        maxHeight: 320,
+                                                        maxWidth: { xs: '90vw', sm: 400 },
+                                                        '& .MuiMenuItem-root': { fontSize: '0.875rem', py: 1, whiteSpace: 'normal', wordBreak: 'break-word' }
+                                                    }
+                                                }
+                                            }}
+                                        >
                                             {LISTA_LABORATORIOS.map(l => <MenuItem key={l.id} value={l.name}>{l.name}</MenuItem>)}
                                         </Select>
                                     </FormControl>
                                 </Grid>
-                                <Grid item xs={12} md={3}>
+                                <Grid item xs={12} sm={6} md={3}>
                                     <Tooltip title={abaCalendario === 'grade' ? "Filtro de Cursos não se aplica à Grade de Disponibilidade" : ""}>
                                         <FormControl fullWidth size="small" disabled={abaCalendario === 'grade'}>
                                             <InputLabel>Cursos</InputLabel>
-                                            <Select multiple value={filtros.cursos} onChange={(e) => setFiltros({...filtros, cursos: e.target.value})} input={<OutlinedInput label="Cursos" />} renderValue={(selected) => <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>{selected.map(v => <Chip key={v} label={LISTA_CURSOS.find(lc => lc.value === v)?.label || v} size="small" />)}</Box>}>
+                                            <Select 
+                                                multiple 
+                                                value={filtros.cursos} 
+                                                onChange={(e) => setFiltros({...filtros, cursos: e.target.value})} 
+                                                input={<OutlinedInput label="Cursos" />} 
+                                                renderValue={(selected) => {
+                                                    if (!selected || selected.length === 0) return <em>Todos os Cursos</em>;
+                                                    return (
+                                                        <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
+                                                            {selected.map(v => (
+                                                                <Chip 
+                                                                    key={v} 
+                                                                    label={LISTA_CURSOS.find(lc => lc.value === v)?.label || v} 
+                                                                    size="small" 
+                                                                    color="secondary"
+                                                                    sx={{ height: 24, fontWeight: 600 }} 
+                                                                />
+                                                            ))}
+                                                        </Box>
+                                                    );
+                                                }}
+                                                MenuProps={{
+                                                    PaperProps: {
+                                                        sx: {
+                                                            maxHeight: 320,
+                                                            maxWidth: { xs: '90vw', sm: 400 },
+                                                            '& .MuiMenuItem-root': { fontSize: '0.875rem', py: 1, whiteSpace: 'normal', wordBreak: 'break-word' }
+                                                        }
+                                                    }
+                                                }}
+                                            >
                                                 {LISTA_CURSOS.map(c => <MenuItem key={c.value} value={c.value}>{c.label}</MenuItem>)}
                                             </Select>
                                         </FormControl>
                                     </Tooltip>
                                 </Grid>
-                                <Grid item xs={12} md={2}>
+                                <Grid item xs={12} sm={6} md={1.5}>
                                     <Tooltip title={abaCalendario === 'grade' ? "Filtro de Turno não se aplica à Grade de Disponibilidade" : ""}>
                                         <FormControl fullWidth size="small" disabled={abaCalendario === 'grade'}>
                                             <InputLabel>Turno</InputLabel>
-                                            <Select multiple value={filtros.turno} onChange={(e) => setFiltros({...filtros, turno: e.target.value})} input={<OutlinedInput label="Turno" />} renderValue={(selected) => <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>{selected.map(v => <Chip key={v} label={v} size="small" />)}</Box>}>
+                                            <Select 
+                                                multiple 
+                                                value={filtros.turno} 
+                                                onChange={(e) => setFiltros({...filtros, turno: e.target.value})} 
+                                                input={<OutlinedInput label="Turno" />} 
+                                                renderValue={(selected) => {
+                                                    if (!selected || selected.length === 0) return <em>Todos</em>;
+                                                    return (
+                                                        <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
+                                                            {selected.map(v => (
+                                                                <Chip key={v} label={v} size="small" sx={{ height: 22, fontWeight: 600 }} />
+                                                            ))}
+                                                        </Box>
+                                                    );
+                                                }}
+                                            >
                                                 <MenuItem value="Manhã">🌅 Manhã</MenuItem>
                                                 <MenuItem value="Tarde">☀️ Tarde</MenuItem>
                                                 <MenuItem value="Noite">🌙 Noite</MenuItem>
@@ -925,59 +1015,36 @@ function CalendarioCronograma({ userInfo }) {
                                         </FormControl>
                                     </Tooltip>
                                 </Grid>
-                                <Grid item xs={12} md={2}>
-                                     <Tooltip title={abaCalendario === 'grade' ? "Filtra quais tipos de agendamento (Aulas, Provas, Revisões, Eventos) contam como ocupação na Grade" : ""}>
-                                         <FormControl fullWidth size="small">
-                                            <InputLabel>Tipo</InputLabel>
-                                            <Select
-                                                value={filtros.tipoConteudo || 'todos'}
-                                                onChange={(e) => setFiltros({...filtros, tipoConteudo: e.target.value})}
-                                                label="Tipo"
-                                            >
-                                                <MenuItem value="todos">📅 Todos</MenuItem>
-                                                <MenuItem value="aula">🎓 Só Aulas</MenuItem>
-                                                <MenuItem value="revisao">📖 Só Revisões</MenuItem>
-                                                <MenuItem value="prova">📝 Só Provas</MenuItem>
-                                                <MenuItem value="evento">🛠️ Só Eventos / Manutenção</MenuItem>
-                                            </Select>
-                                        </FormControl>
-                                    </Tooltip>
-                                </Grid>
-                                <Grid item xs={12} md={1}>
-                                    <Button fullWidth variant="outlined" color="inherit" onClick={limparFiltros} startIcon={<ClearAllIcon />}>Limpar</Button>
+                                <Grid item xs={12} sm={6} md={1.5}>
+                                    <Button fullWidth variant="outlined" color="error" onClick={limparFiltros} startIcon={<ClearAllIcon />} sx={{ height: '40px', fontWeight: 700 }}>
+                                        Limpar
+                                    </Button>
                                 </Grid>
                             </Grid>
-                        </Box>
+                        </Paper>
                     </Collapse>
                 </Paper>
 
-                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 1, mb: 2 }}>
+                <Box sx={{ display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, justifyContent: 'space-between', alignItems: { xs: 'stretch', sm: 'center' }, gap: 2, mb: 3 }}>
                     <Tabs
                         value={abaCalendario}
                         onChange={(_, v) => setAbaCalendario(v)}
+                        variant="fullWidth"
+                        sx={{
+                            bgcolor: theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.05)' : '#f1f5f9',
+                            p: 0.5,
+                            borderRadius: 2,
+                            '& .MuiTab-root': { fontWeight: 700, borderRadius: 1.5, minHeight: 44 }
+                        }}
                     >
                         <Tab value="semana" label="Visão Cronograma" />
-                        <Tab value="grade" label="🟢 Grade de Disponibilidade" />
+                        <Tab value="grade" label="🟢 Grade Disponibilidade" />
                     </Tabs>
 
-                    <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap', alignItems: 'center', px: 1 }}>
-                        <Typography variant="caption" color="text.secondary" fontWeight="bold">Legenda:</Typography>
-                        <Box display="flex" alignItems="center" gap={0.5}>
-                            <Box sx={{ width: 12, height: 12, bgcolor: '#4caf50', borderRadius: 0.5 }} />
-                            <Typography variant="caption">Aprovada</Typography>
-                        </Box>
-                        <Box display="flex" alignItems="center" gap={0.5}>
-                            <Box sx={{ width: 12, height: 12, border: '2px dashed #ed6c02', bgcolor: 'rgba(255,152,0,0.15)', borderRadius: 0.5 }} />
-                            <Typography variant="caption">Pendente (Aguardando Aprovação)</Typography>
-                        </Box>
-                        <Box display="flex" alignItems="center" gap={0.5}>
-                            <Box sx={{ width: 12, height: 12, bgcolor: '#f44336', borderRadius: 0.5 }} />
-                            <Typography variant="caption">Prova</Typography>
-                        </Box>
-                        <Box display="flex" alignItems="center" gap={0.5}>
-                            <Box sx={{ width: 12, height: 12, bgcolor: '#9c27b0', borderRadius: 0.5 }} />
-                            <Typography variant="caption">Revisão</Typography>
-                        </Box>
+                    <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', alignItems: 'center', justifyContent: { xs: 'center', sm: 'flex-end' }, p: 1.5, bgcolor: theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.03)' : '#f8fafc', borderRadius: 2, border: '1px solid', borderColor: 'divider' }}>
+                        <Chip label="🎓 Aula Aprovada" size="small" sx={{ bgcolor: 'rgba(76, 175, 80, 0.15)', color: '#2e7d32', fontWeight: 700, border: '1px solid #4caf50' }} />
+                        <Chip label="⏳ Pendente" size="small" sx={{ bgcolor: 'rgba(237, 108, 2, 0.15)', color: '#d32f2f', fontWeight: 700, border: '1px dashed #ed6c02' }} />
+                        <Chip label="📝 Prova" size="small" sx={{ bgcolor: 'rgba(244, 67, 54, 0.15)', color: '#c62828', fontWeight: 700, border: '1px solid #f44336' }} />
                     </Box>
                 </Box>
 

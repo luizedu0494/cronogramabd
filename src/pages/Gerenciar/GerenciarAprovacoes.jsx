@@ -42,53 +42,65 @@ function AulaCard({ aula, onAction, processando, isSelected, onClick, temConflit
     }, [aula.data_inicio, aula.dataInicio]);
 
     const borderLeftColor = 
-        temConflito ? '#d32f2f' :
-        aula.isRevisao || aula.is_revisao ? '#9c27b0' :
-        aula.isProva || aula.is_prova   ? '#ff9800' :
-        aula.status === 'aprovada'  ? '#2e7d32' :
-        aula.status === 'rejeitada' ? '#c62828' : '#1E7EC8';
-
-    const isProcessando = processando === aula.id;
+        temConflito ? '#ef4444' :
+        aula.isRevisao || aula.is_revisao ? '#a855f7' :
+        aula.isProva || aula.is_prova   ? '#f59e0b' :
+        aula.status === 'aprovada'  ? '#22c55e' :
+        aula.status === 'rejeitada' ? '#dc2626' : '#1E7EC8';
 
     return (
-        <Card variant="outlined" 
+        <Paper 
+            elevation={isSelected ? 4 : 1}
             onClick={onClick}
             sx={{
-                mb: 1.5, cursor: 'pointer', borderLeft: `5px solid ${borderLeftColor}`,
+                mb: 2, 
+                p: 2.5,
+                cursor: 'pointer', 
+                borderLeft: `6px solid ${borderLeftColor}`,
+                borderRadius: 2.5,
                 bgcolor: isSelected ? 'action.selected' : 'background.paper',
-                transition: 'all 0.2s',
-                '&:hover': { boxShadow: 2 }
+                transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+                border: '1px solid',
+                borderColor: isSelected ? 'primary.main' : 'divider',
+                boxShadow: isSelected ? '0 8px 24px rgba(30,126,200,0.18)' : '0 2px 8px rgba(0,0,0,0.04)',
+                '&:hover': { 
+                    transform: 'translateY(-2px)',
+                    boxShadow: '0 8px 24px rgba(0,0,0,0.08)'
+                }
             }}
         >
-            <CardContent sx={{ p: 2, '&:last-child': { pb: 2 } }}>
-                <Box display="flex" justifyContent="space-between" alignItems="flex-start" mb={0.5}>
-                    <Box display="flex" alignItems="center" gap={1}>
-                        {isCheckable && (
-                            <Checkbox
-                                size="small"
-                                checked={isChecked}
-                                onChange={(e) => { e.stopPropagation(); onToggleCheck(aula.id); }}
-                                onClick={(e) => e.stopPropagation()}
-                            />
-                        )}
-                        <Typography variant="subtitle1" fontWeight="bold" lineHeight={1.2}>
-                            {aula.assunto || 'Sem Assunto'}
-                        </Typography>
-                    </Box>
-                    <Chip
-                        label={aula.status === 'pendente' ? 'Pendente' : aula.status === 'aprovada' ? 'Aprovada' : 'Rejeitada'}
-                        color={aula.status === 'pendente' ? (temConflito ? 'error' : 'warning') : aula.status === 'aprovada' ? 'success' : 'error'}
-                        size="small"
-                    />
+            <Box display="flex" justifyContent="space-between" alignItems="flex-start" mb={1.5} flexWrap="wrap" gap={1}>
+                <Box display="flex" alignItems="center" gap={1.5}>
+                    {isCheckable && (
+                        <Checkbox
+                            size="medium"
+                            checked={isChecked}
+                            onChange={(e) => { e.stopPropagation(); onToggleCheck(aula.id); }}
+                            onClick={(e) => e.stopPropagation()}
+                            inputProps={{ 'aria-label': `Selecionar solicitação ${aula.assunto}` }}
+                            sx={{ p: 0.5 }}
+                        />
+                    )}
+                    <Typography variant="h6" fontWeight="bold" lineHeight={1.2} color="text.primary">
+                        {aula.assunto || 'Sem Assunto'}
+                    </Typography>
                 </Box>
-                <Typography color="text.secondary" variant="body2">
-                    🏛️ {aula.laboratorio || aula.laboratorioSelecionado || '—'} &nbsp;|&nbsp; 🎓 {cursosLabel}
+                <Chip
+                    label={aula.status === 'pendente' ? (temConflito ? '⚠️ Conflito de Horário' : '⏳ Pendente') : aula.status === 'aprovada' ? '✅ Aprovada' : '❌ Rejeitada'}
+                    color={aula.status === 'pendente' ? (temConflito ? 'error' : 'warning') : aula.status === 'aprovada' ? 'success' : 'error'}
+                    size="small"
+                    sx={{ fontWeight: 700, px: 1, py: 0.5, borderRadius: 1.5, height: 28 }}
+                />
+            </Box>
+            <Typography color="text.secondary" variant="body2" sx={{ fontWeight: 500, mb: 1 }}>
+                🏛️ <strong>{aula.laboratorio || aula.laboratorioSelecionado || '—'}</strong> &nbsp;|&nbsp; 🎓 {cursosLabel}
+            </Typography>
+            <Box display="flex" justifyContent="space-between" alignItems="center" flexWrap="wrap" gap={1}>
+                <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600 }}>
+                    📅 {dataFormatada} &nbsp;•&nbsp; 👤 {aula.proposto_por_nome || aula.propostoPorNome || 'N/A'}
                 </Typography>
-                <Typography variant="caption" color="text.secondary" sx={{ mt: 0.5, display: 'block' }}>
-                    📅 {dataFormatada} | 👤 {aula.proposto_por_nome || aula.propostoPorNome || 'N/A'}
-                </Typography>
-            </CardContent>
-        </Card>
+            </Box>
+        </Paper>
     );
 }
 

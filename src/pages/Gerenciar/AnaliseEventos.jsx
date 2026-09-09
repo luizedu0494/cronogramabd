@@ -32,8 +32,9 @@ function AnaliseEventos() {
     const [error, setError] = useState(null);
 
     const [laboratoriosFiltro, setLaboratoriosFiltro] = useState([]);
-    const [anoFiltro, setAnoFiltro] = useState(dayjs().year());
-    const [anosDisponiveis, setAnosDisponiveis] = useState([]);
+    const currentYear = dayjs().year();
+    const [anoFiltro, setAnoFiltro] = useState(currentYear);
+    const [anosDisponiveis, setAnosDisponiveis] = useState([currentYear - 1, currentYear, currentYear + 1]);
 
     const [chartDataPorTipo, setChartDataPorTipo] = useState(null);
     const [chartDataPorLaboratorio, setChartDataPorLaboratorio] = useState(null);
@@ -153,18 +154,29 @@ function AnaliseEventos() {
                 <Typography variant="body1" color="text.secondary">Visualize estatísticas de manutenções, feriados e eventos agendados.</Typography>
             </Box>
             
-            <Paper sx={{ p: 3, mb: 4, borderRadius: 2 }}>
-                <Grid container spacing={3} alignItems="center">
-                    <Grid item xs={12} md={3}>
-                        <FormControl sx={{ minWidth: 140 }} size="small">
+            <Paper 
+                elevation={3} 
+                sx={{ 
+                    p: { xs: 2.5, sm: 3 }, 
+                    mb: 4, 
+                    borderRadius: 3,
+                    bgcolor: 'background.paper',
+                    border: '1px solid',
+                    borderColor: 'divider',
+                    boxShadow: '0 8px 24px rgba(0,0,0,0.06)'
+                }}
+            >
+                <Grid container spacing={2} alignItems="center">
+                    <Grid item xs={12} sm={4} md={3}>
+                        <FormControl fullWidth size="small">
                             <InputLabel shrink>Ano de Referência</InputLabel>
                             <Select value={anoFiltro} label="Ano de Referência" onChange={(e) => setAnoFiltro(e.target.value)}>
                                 {anosDisponiveis.map(year => <MenuItem key={year} value={year}>{year}</MenuItem>)}
                             </Select>
                         </FormControl>
                     </Grid>
-                    <Grid item xs={12} md={9}>
-                        <FormControl sx={{ minWidth: 160 }} size="small">
+                    <Grid item xs={12} sm={8} md={9}>
+                        <FormControl fullWidth size="small">
                             <InputLabel shrink>Filtrar por Laboratórios</InputLabel>
                             <Select
                                 multiple
@@ -173,7 +185,7 @@ function AnaliseEventos() {
                                 input={<OutlinedInput notched label="Filtrar por Laboratórios" />}
                                 renderValue={(selected) => (
                                     <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
-                                        {selected.map((value) => <Chip key={value} label={value} size="small" />)}
+                                        {selected.map((value) => <Chip key={value} label={value} size="small" color="primary" sx={{ fontWeight: 600 }} />)}
                                     </Box>
                                 )}
                             >

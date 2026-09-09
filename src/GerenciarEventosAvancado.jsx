@@ -25,6 +25,29 @@ const EVENT_TYPES = ['Manutenção', 'Feriado', 'Evento', 'Giro', 'Outro'];
 const STATUS_EVENTO = ['aprovado', 'pendente', 'cancelado'];
 const TELEGRAM_CHAT_ID = import.meta.env.VITE_TELEGRAM_CHAT_ID;
 
+const EmptyState = ({ title, description }) => (
+  <Paper sx={{ p: 4, textAlign: 'center', bgcolor: 'background.default', borderRadius: 2 }}>
+    <CalendarTodayIcon sx={{ fontSize: 48, color: 'text.secondary', mb: 1, opacity: 0.6 }} />
+    <Typography variant="h6" color="text.secondary" gutterBottom>{title}</Typography>
+    {description && <Typography variant="body2" color="text.secondary">{description}</Typography>}
+  </Paper>
+);
+
+const DialogConfirmacao = ({ open, title, message, onConfirm, onCancel, loading }) => (
+  <Dialog open={open} onClose={onCancel}>
+    <DialogTitle>{title}</DialogTitle>
+    <DialogContent>
+      <Typography>{message}</Typography>
+    </DialogContent>
+    <DialogActions>
+      <Button onClick={onCancel} disabled={loading}>Cancelar</Button>
+      <Button variant="contained" color="error" onClick={onConfirm} disabled={loading}>
+        {loading ? <CircularProgress size={24} /> : 'Excluir'}
+      </Button>
+    </DialogActions>
+  </Dialog>
+);
+
 const BLOCOS_HORARIO = [
   { value: "07:00-09:10", label: "07:00 - 09:10", turno: "Matutino" },
   { value: "09:30-12:00", label: "09:30 - 12:00", turno: "Matutino" },
@@ -158,88 +181,56 @@ export default function GerenciarEventosAvancado({ userInfo }) {
     }
   };
 
-  const handleSearch = useCallback(async (direction = 'start') => {
+  const handleSearch = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
-      let q = collection(db, 'eventosManutencao');
-      const constraints = [];
+      let queryRef = supabase.from('eventos_manutencao').select('*');
 
       if (filtros.dataInicio) {
-        constraints.push(where('dataInicio', '>=', Timestamp.fromDate(filtros.dataInicio.startOf('day').toDate())));
+        queryRef = queryRef.gte('data_inicio', filtros.dataInicio.startOf('day').toISOString());
       }
       if (filtros.dataFim) {
-        constraints.push(where('dataInicio', '<=', Timestamp.fromDate(filtros.dataFim.endOf('day').toDate())));
+        queryRef = queryRef.lte('data_inicio', filtros.dataFim.endOf('day').toISOString());
       }
       if (filtros.laboratorio && filtros.laboratorio !== 'Todos') {
-        constraints.push(where('laboratorio', '==', filtros.laboratorio));
+        queryRef = queryRef.eq('laboratorio', filtros.laboratorio);
       }
       if (filtros.tipo) {
-        constraints.push(where('tipo', '==', filtros.tipo));
+        queryRef = queryRef.eq('tipo', filtros.tipo);
       }
       if (filtros.status) {
-        constraints.push(where('status', '==', filtros.status));
+        queryRef = queryRef.eq('status', filtros.status);
       }
 
-      constraints.push(orderBy('dataInicio', 'asc'));
+      const { data, error: err } = await queryRef;
 
-      if (direction === 'next' && lastVisible) {
-        constraints.push(startAfter(lastVisible));
-      } else if (direction === 'prev' && historicoLastVisible.length > 1) {
-        const novoHistorico = [...historicoLastVisible];
-        novoHistorico.pop();
-        const prevDoc = novoHistorico[novoHistorico.length - 1];
-        setHistoricoLastVisible(novoHistorico);
-        if (prevDoc) constraints.push(startAfter(prevDoc));
-      } else {
-        setHistoricoLastVisible([]);
-        setPagina(1);
-      }
+      if (err) throw err;
 
-      constraints.push(limit(EVENTOS_POR_PAGINA));
+      let docsFetched = (data || []).map(item => ({
+        id: item.id,
+        ...item,
+        titulo: item.titulo || item.title || 'Evento',
+        dataInicio: item.data_inicio ? new Date(item.data_inicio) : new Date(),
+        dataFim: item.data_fim ? new Date(item.data_fim) : new Date(),
+      }));
 
-      const finalQuery = query(q, ...constraints);
-      const querySnapshot = await getDocs(finalQuery);
-
-      const docsFetched = querySnapshot.docs.map(docSnap => {
-        const data = docSnap.data();
-        return {
-          id: docSnap.id,
-          ...data,
-          dataInicio: data.dataInicio instanceof Timestamp ? data.dataInicio.toDate() : new Date(data.dataInicio),
-          dataFim: data.dataFim instanceof Timestamp ? data.dataFim.toDate() : new Date(data.dataFim),
-        };
-      });
-
-      // Filtro local por título (se preenchido)
-      let resultadoFinal = docsFetched;
-      if (filtros.titulo.trim()) {
+      if (filtros.titulo?.trim()) {
         const termo = filtros.titulo.toLowerCase().trim();
-        resultadoFinal = resultadoFinal.filter(e => e.titulo?.toLowerCase().includes(termo));
+        docsFetched = docsFetched.filter(e => e.titulo?.toLowerCase().includes(termo));
       }
 
-      setEventos(resultadoFinal);
-      const lastDoc = querySnapshot.docs[querySnapshot.docs.length - 1];
-      setLastVisible(lastDoc || null);
-
-      if (direction === 'next') {
-        setHistoricoLastVisible(prev => [...prev, lastDoc]);
-        setPagina(p => p + 1);
-      } else if (direction === 'prev') {
-        setPagina(p => Math.max(1, p - 1));
-      } else if (lastDoc) {
-        setHistoricoLastVisible([lastDoc]);
-      }
+      setEventos(docsFetched);
     } catch (err) {
-      console.error("Erro ao buscar eventos:", err);
-      setError("Erro ao carregar os eventos. Verifique sua conexão e os filtros.");
+      console.error("Erro ao buscar eventos no Supabase:", err);
+      setEventos([]);
     } finally {
       setLoading(false);
     }
-  }, [filtros, lastVisible, historicoLastVisible]);
+  }, [filtros]);
 
   useEffect(() => {
-    handleSearch('start');
+    handleSearch();
   }, []);
 
   const handleFilterChange = (field, value) => {

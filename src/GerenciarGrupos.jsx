@@ -15,19 +15,19 @@ import { LISTA_LABORATORIOS } from './constants/laboratorios';
 const CORES_PALETA = ['#1E7EC8', '#00C853', '#F5C518', '#E53935', '#9C27B0', '#FF9800', '#00BCD4'];
 
 function GerenciarGrupos() {
-    const [grupos, setGrupos] = useState<Grupo[]>([]);
+    const [grupos, setGrupos] = useState([]);
     const [loading, setLoading] = useState(true);
     const [openDialog, setOpenDialog] = useState(false);
     const [isEditing, setIsEditing] = useState(false);
-    const [currentGrupo, setCurrentGrupo] = useState<Grupo | null>(null);
+    const [currentGrupo, setCurrentGrupo] = useState(null);
 
     const [nomeGrupo, setNomeGrupo] = useState('');
     const [descricaoGrupo, setDescricaoGrupo] = useState('');
     const [corGrupo, setCorGrupo] = useState('#1E7EC8');
-    const [labsAssociados, setLabsAssociados] = useState<string[]>([]);
-    const [selectedTecnicos, setSelectedTecnicos] = useState<string[]>([]);
+    const [labsAssociados, setLabsAssociados] = useState([]);
+    const [selectedTecnicos, setSelectedTecnicos] = useState([]);
 
-    const [allTecnicos, setAllTecnicos] = useState<any[]>([]);
+    const [allTecnicos, setAllTecnicos] = useState([]);
     const [loadingTecnicos, setLoadingTecnicos] = useState(false);
     const [error, setError] = useState('');
 
@@ -62,7 +62,7 @@ function GerenciarGrupos() {
         }
     }, []);
 
-    const handleOpenDialog = (grupo: Grupo | null = null) => {
+    const handleOpenDialog = (grupo = null) => {
         fetchAllTecnicos();
         if (grupo) {
             setIsEditing(true);
@@ -89,7 +89,7 @@ function GerenciarGrupos() {
         setError('');
     };
 
-    const handleToggleTecnico = (tecnicoUid: string) => {
+    const handleToggleTecnico = (tecnicoUid) => {
         setSelectedTecnicos(prev =>
             prev.includes(tecnicoUid) ? prev.filter(id => id !== tecnicoUid) : [...prev, tecnicoUid]
         );
@@ -132,7 +132,7 @@ function GerenciarGrupos() {
         }
     };
 
-    const handleDeleteGrupo = async (grupoId: string) => {
+    const handleDeleteGrupo = async (grupoId) => {
         if (window.confirm("Tem certeza que deseja apagar este grupo?")) {
             try {
                 await grupoService.deletarGrupo(grupoId);

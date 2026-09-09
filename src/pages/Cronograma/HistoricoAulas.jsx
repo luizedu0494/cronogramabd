@@ -322,7 +322,7 @@ const HistoricoAulas = () => {
                     </Grid>
 
                     <Grid item xs={12} sm={6} md={3}>
-                        <FormControl sx={{ minWidth: 140 }} size="small" variant="outlined">
+                        <FormControl fullWidth size="small" variant="outlined">
                             <InputLabel shrink>Curso/Tipo</InputLabel>
                             <Select
                                 value={filtroCurso}
@@ -338,7 +338,7 @@ const HistoricoAulas = () => {
                     </Grid>
 
                     <Grid item xs={12} sm={6} md={3}>
-                        <FormControl sx={{ minWidth: 140 }} size="small" variant="outlined">
+                        <FormControl fullWidth size="small" variant="outlined">
                             <InputLabel shrink>Ano</InputLabel>
                             <Select
                                 value={filtroAno}
@@ -354,7 +354,7 @@ const HistoricoAulas = () => {
                     </Grid>
 
                     <Grid item xs={12} sm={6} md={3}>
-                        <FormControl sx={{ minWidth: 130 }} size="small" variant="outlined">
+                        <FormControl fullWidth size="small" variant="outlined">
                             <InputLabel shrink>Status</InputLabel>
                             <Select
                                 value={filtroStatus}
@@ -372,7 +372,7 @@ const HistoricoAulas = () => {
                     </Grid>
 
                     <Grid item xs={12} sm={6} md={3}>
-                        <FormControl sx={{ minWidth: 150 }} size="small" variant="outlined">
+                        <FormControl fullWidth size="small" variant="outlined">
                             <InputLabel shrink>Tipo de Conteúdo</InputLabel>
                             <Select
                                 value={filtroTipo}

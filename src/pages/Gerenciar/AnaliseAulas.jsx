@@ -453,7 +453,51 @@ function AnaliseAulas() {
                     <Grid item xs={12} sm={4}>
                         <FormControl fullWidth size="small">
                             <InputLabel>Laboratório(s)</InputLabel>
-                            <Select multiple value={laboratoriosFiltro} onChange={(e) => setLaboratoriosFiltro(e.target.value)} input={<OutlinedInput label="Laboratório(s)" />} renderValue={(selected) => <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>{selected.map((value) => <Chip key={value} label={value} size="small" />)}</Box>}>
+                            <Select 
+                                multiple 
+                                value={laboratoriosFiltro} 
+                                onChange={(e) => setLaboratoriosFiltro(e.target.value)} 
+                                input={<OutlinedInput label="Laboratório(s)" />} 
+                                renderValue={(selected) => {
+                                    if (!selected || selected.length === 0) return <em>Todos os laboratórios</em>;
+                                    if (selected.length > 2) {
+                                        return (
+                                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                                                <Chip size="small" label={`${selected.length} selecionados`} color="primary" sx={{ height: 20, fontSize: '0.7rem', fontWeight: 700 }} />
+                                                <Typography variant="caption" noWrap color="text.secondary" sx={{ maxWidth: { xs: 120, sm: 180 } }}>
+                                                    {selected.slice(0, 2).join(', ')}...
+                                                </Typography>
+                                            </Box>
+                                        );
+                                    }
+                                    return (
+                                        <Box sx={{ display: 'flex', flexWrap: 'nowrap', gap: 0.5, overflow: 'hidden' }}>
+                                            {selected.map((value) => (
+                                                <Chip 
+                                                    key={value} 
+                                                    label={value} 
+                                                    size="small" 
+                                                    sx={{ 
+                                                        maxWidth: { xs: 130, sm: 180 }, 
+                                                        height: 22,
+                                                        fontSize: '0.72rem',
+                                                        '& .MuiChip-label': { overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', px: 1 } 
+                                                    }} 
+                                                />
+                                            ))}
+                                        </Box>
+                                    );
+                                }}
+                                MenuProps={{
+                                    PaperProps: {
+                                        sx: {
+                                            maxHeight: 320,
+                                            maxWidth: { xs: '90vw', sm: 400 },
+                                            '& .MuiMenuItem-root': { fontSize: '0.875rem', py: 1, whiteSpace: 'normal', wordBreak: 'break-word' }
+                                        }
+                                    }
+                                }}
+                            >
                                 {LISTA_LABORATORIOS.map(l => <MenuItem key={l.id} value={l.name}>{l.name}</MenuItem>)}
                             </Select>
                         </FormControl>
@@ -461,7 +505,51 @@ function AnaliseAulas() {
                     <Grid item xs={12} sm={4}>
                         <FormControl fullWidth size="small">
                             <InputLabel>Curso(s)</InputLabel>
-                            <Select multiple value={cursosFiltro} onChange={(e) => setCursosFiltro(e.target.value)} input={<OutlinedInput label="Curso(s)" />} renderValue={(selected) => (<Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>{selected.map(value => <Chip key={value} label={LISTA_CURSOS.find(c => c.value === value)?.label || value} size="small" />)}</Box>)}>
+                            <Select 
+                                multiple 
+                                value={cursosFiltro} 
+                                onChange={(e) => setCursosFiltro(e.target.value)} 
+                                input={<OutlinedInput label="Curso(s)" />} 
+                                renderValue={(selected) => {
+                                    if (!selected || selected.length === 0) return <em>Todos os cursos</em>;
+                                    if (selected.length > 2) {
+                                        return (
+                                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                                                <Chip size="small" label={`${selected.length} selecionados`} color="primary" sx={{ height: 20, fontSize: '0.7rem', fontWeight: 700 }} />
+                                                <Typography variant="caption" noWrap color="text.secondary" sx={{ maxWidth: { xs: 120, sm: 180 } }}>
+                                                    {selected.map(value => LISTA_CURSOS.find(c => c.value === value)?.label || value).slice(0, 2).join(', ')}...
+                                                </Typography>
+                                            </Box>
+                                        );
+                                    }
+                                    return (
+                                        <Box sx={{ display: 'flex', flexWrap: 'nowrap', gap: 0.5, overflow: 'hidden' }}>
+                                            {selected.map(value => (
+                                                <Chip 
+                                                    key={value} 
+                                                    label={LISTA_CURSOS.find(c => c.value === value)?.label || value} 
+                                                    size="small" 
+                                                    sx={{ 
+                                                        maxWidth: { xs: 130, sm: 180 }, 
+                                                        height: 22,
+                                                        fontSize: '0.72rem',
+                                                        '& .MuiChip-label': { overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', px: 1 } 
+                                                    }} 
+                                                />
+                                            ))}
+                                        </Box>
+                                    );
+                                }}
+                                MenuProps={{
+                                    PaperProps: {
+                                        sx: {
+                                            maxHeight: 320,
+                                            maxWidth: { xs: '90vw', sm: 400 },
+                                            '& .MuiMenuItem-root': { fontSize: '0.875rem', py: 1, whiteSpace: 'normal', wordBreak: 'break-word' }
+                                        }
+                                    }
+                                }}
+                            >
                                 {LISTA_CURSOS.map(c => <MenuItem key={c.value} value={c.value}>{c.label}</MenuItem>)}
                             </Select>
                         </FormControl>

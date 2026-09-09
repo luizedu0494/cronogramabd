@@ -219,19 +219,46 @@ export default function GradeDisponibilidade({
               }
               label={<Typography variant="caption" fontWeight={600}>Só labs com vaga</Typography>}
             />
-            <ToggleButtonGroup
-              value={dataSelecionada}
-              exclusive
-              onChange={(_, novaData) => novaData && setDataSelecionada(novaData)}
-              size="small"
-              color="primary"
+            <Box 
+              sx={{ 
+                width: '100%', 
+                overflowX: 'auto', 
+                pb: 0.5, 
+                pt: 0.5,
+                '&::-webkit-scrollbar': { height: 4 },
+                '&::-webkit-scrollbar-thumb': { bgcolor: 'rgba(0,0,0,0.15)', borderRadius: 2 }
+              }}
             >
-              {diasDaSemana.map(d => (
-                <ToggleButton key={d.iso} value={d.iso} sx={{ px: 1.5, py: 0.5, fontSize: '0.75rem', fontWeight: 600 }}>
-                  {d.label}
-                </ToggleButton>
-              ))}
-            </ToggleButtonGroup>
+              <ToggleButtonGroup
+                value={dataSelecionada}
+                exclusive
+                onChange={(_, novaData) => novaData && setDataSelecionada(novaData)}
+                size="small"
+                color="primary"
+                sx={{
+                  display: 'flex',
+                  flexWrap: 'nowrap',
+                  gap: 0.75,
+                  '& .MuiToggleButton-root': {
+                    flexShrink: 0,
+                    borderRadius: '20px !important',
+                    border: '1px solid !important',
+                    borderColor: 'divider',
+                    px: 2,
+                    py: 0.75,
+                    fontSize: '0.8rem',
+                    fontWeight: 700,
+                    whiteSpace: 'nowrap'
+                  }
+                }}
+              >
+                {diasDaSemana.map(d => (
+                  <ToggleButton key={d.iso} value={d.iso}>
+                    {d.label}
+                  </ToggleButton>
+                ))}
+              </ToggleButtonGroup>
+            </Box>
           </Box>
         </Box>
       </Paper>

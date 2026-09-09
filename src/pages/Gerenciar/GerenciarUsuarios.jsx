@@ -124,7 +124,8 @@ function GerenciarUsuarios() {
                             <ListItem key={user.id} divider>
                                 <ListItemText
                                     primary={`${user.name} (${user.email})`}
-                                    secondary={<>
+                                    secondaryTypographyProps={{ component: 'div' }}
+                                    secondary={<Box component="div" sx={{ mt: 0.5 }}>
                                         {user.role ? (
                                             <Chip 
                                                 label={user.role === 'coordenador' ? 'Coordenador' : user.role === 'tecnico' ? 'Técnico' : 'Visualizador (Aluno/Prof)'} 
@@ -142,7 +143,7 @@ function GerenciarUsuarios() {
                                         ) : (
                                             <Chip label="Aprovado" size="small" color="success" variant="outlined" />
                                         )}
-                                    </>}
+                                    </Box>}
                                 />
                                 <ListItemSecondaryAction>
                                     {loadingStates[user.id] ? (

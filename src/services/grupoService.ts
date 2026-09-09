@@ -17,16 +17,10 @@ export class GrupoService {
     try {
       const { data, error } = await supabase
         .from('grupos')
-        .select(`
-          *,
-          grupo_membros (
-            user_uid
-          )
-        `)
+        .select('*')
         .order('nome', { ascending: true });
 
       if (error) {
-        console.error('Erro ao buscar grupos no Supabase:', error);
         return [];
       }
 
@@ -38,11 +32,10 @@ export class GrupoService {
         labs_associados: g.labs_associados || [],
         criado_por_uid: g.criado_por_uid,
         criado_em: g.criado_em,
-        membros_count: g.grupo_membros?.length || 0,
-        membros_uids: g.grupo_membros?.map((m: any) => m.user_uid) || [],
+        membros_count: (g.membros_uids || g.grupo_membros || []).length,
+        membros_uids: g.membros_uids || (g.grupo_membros?.map((m: any) => m.user_uid || m.usuario_id) || []),
       }));
     } catch (err) {
-      console.error('Erro no grupoService.listarGrupos:', err);
       return [];
     }
   }

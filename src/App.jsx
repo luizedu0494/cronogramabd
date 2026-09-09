@@ -248,7 +248,18 @@ const LoginScreen = ({ emailInput, setEmailInput, passwordInput, setPasswordInpu
 const NotificacoesIconHeader = ({ uid, onOpen }) => {
     const { naoLidas } = useNotificacoes(uid || undefined);
     return (
-        <IconButton onClick={onOpen} color="inherit" aria-label="Notificações">
+        <IconButton 
+            onClick={onOpen} 
+            color="inherit" 
+            aria-label="Notificações"
+            sx={{ 
+                minWidth: 44, 
+                minHeight: 44, 
+                p: 1, 
+                borderRadius: '12px',
+                '&:hover': { bgcolor: 'action.hover' } 
+            }}
+        >
             <Badge badgeContent={naoLidas || 0} color="error">
                 <Bell size={20} />
             </Badge>
@@ -281,8 +292,17 @@ function App() {
     const [snackbarSeverity, setSnackbarSeverity] = useState('success');
     const [anchorEl, setAnchorEl] = useState(null);
     const [mobileMoreAnchorEl, setMobileMoreAnchorEl] = useState(null);
+    const [mobileDrawerOpen, setMobileDrawerOpen] = useState(false);
+    const [gerenciarExpandedMobile, setGerenciarExpandedMobile] = useState(false);
     const [coordenadorMenuAnchorEl, setCoordenadorMenuAnchorEl] = useState(null);
     const [darkMode, setDarkMode] = useState(() => localStorage.getItem('themeMode') === 'dark');
+    const [drawerNotificacoesAberto, setDrawerNotificacoesAberto] = useState(false);
+
+    const [isLoggingIn, setIsLoggingIn] = useState(false);
+    const [emailInput, setEmailInput] = useState('');
+    const [passwordInput, setPasswordInput] = useState('');
+    const [nameInput, setNameInput] = useState('');
+    const [isRegistering, setIsRegistering] = useState(false);
 
     const theme = useMemo(() => getAppTheme(darkMode ? 'dark' : 'light'), [darkMode]);
     const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
@@ -343,12 +363,6 @@ function App() {
         fetchPending();
     }, [userProfileData?.role]);
     
-    const [isLoggingIn, setIsLoggingIn] = useState(false);
-    const [emailInput, setEmailInput] = useState('');
-    const [passwordInput, setPasswordInput] = useState('');
-    const [nameInput, setNameInput] = useState('');
-    const [isRegistering, setIsRegistering] = useState(false);
-
     const handleGoogleLogin = async () => {
         if (isLoggingIn) return; 
         setIsLoggingIn(true);
@@ -482,10 +496,17 @@ function App() {
     };
     const handleCloseSnackbar = (event, reason) => { if (reason === 'clickaway') return; setOpenSnackbar(false); };
     const handleProfileMenuOpen = (event) => setAnchorEl(event.currentTarget);
-    const handleMenuClose = () => { setAnchorEl(null); setMobileMoreAnchorEl(null); setCoordenadorMenuAnchorEl(null); };
-    const handleMobileMenuOpen = (event) => setMobileMoreAnchorEl(event.currentTarget);
+    const handleMenuClose = () => { setAnchorEl(null); setMobileMoreAnchorEl(null); setCoordenadorMenuAnchorEl(null); setMobileDrawerOpen(false); };
+    const handleMobileMenuOpen = (event) => {
+        if (isMobile) {
+            setMobileDrawerOpen(true);
+        } else {
+            setMobileMoreAnchorEl(event.currentTarget);
+        }
+    };
     const handleCoordenadorMenuOpen = (event) => {
         setMobileMoreAnchorEl(null);
+        setMobileDrawerOpen(false);
         setCoordenadorMenuAnchorEl(event.currentTarget);
     };
     
@@ -512,80 +533,8 @@ function App() {
     const approvalPending = !isApproved;
     const isCoordenadorOrTecnico = role === 'coordenador' || role === 'tecnico';
     
-    if (loading) return <LoadingFallback />;
-    
-    const PendingApprovalScreen = () => {
-        const isRejeitado = userProfileData?.status === 'rejeitado';
-        return (
-            <Container sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '80vh', py: 4 }}>
-                <Paper elevation={4} sx={{ p: { xs: 3, sm: 4 }, textAlign: 'center', maxWidth: 460, width: '100%', borderRadius: 3 }}>
-                    <img src={cesmacLogo} alt="Logo CESMAC" style={{ height: '55px', marginBottom: '16px' }} />
-                    
-                    {isRejeitado ? (
-                        <>
-                            <Typography variant="h5" fontWeight={700} color="error" gutterBottom>
-                                Acesso Não Autorizado
-                            </Typography>
-                            <Alert severity="error" sx={{ my: 2, textAlign: 'left' }}>
-                                Seu cadastro neste e-mail (<strong>{userProfileData?.email}</strong>) foi analisado e <strong>recusado/desativado</strong> pela coordenação dos laboratórios.
-                            </Alert>
-                            <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-                                Se você acredita que isto é um engano, entre em contato diretamente com a coordenação para solicitar a liberação do seu perfil.
-                            </Typography>
-                        </>
-                    ) : (
-                        <>
-                            <Typography variant="h5" fontWeight={700} color="warning.main" gutterBottom>
-                                Cadastro em Análise
-                            </Typography>
-                            <Alert severity="warning" sx={{ my: 2, textAlign: 'left' }}>
-                                Seu cadastro (<strong>{userProfileData?.email}</strong>) está pendente de aprovação pela coordenação.
-                            </Alert>
-                            <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-                                Assim que o seu perfil for aprovado e o cargo (Coordenador ou Técnico) for atribuído, você terá acesso total às funcionalidades da plataforma.
-                            </Typography>
-                        </>
-                    )}
+    const isRejeitado = userProfileData?.status === 'rejeitado';
 
-                    <Button variant="contained" color="primary" fullWidth onClick={handleLogout} sx={{ py: 1.2, fontWeight: 700 }}>
-                        Sair / Voltar à Tela Inicial
-                    </Button>
-                </Paper>
-            </Container>
-        );
-    };
-    const CoordenadorGerenciarMenu = () => (
-        <Menu 
-            anchorEl={coordenadorMenuAnchorEl} 
-            open={Boolean(coordenadorMenuAnchorEl)} 
-            onClose={handleMenuClose}
-            anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
-            transformOrigin={{ vertical: 'top', horizontal: 'right' }}
-        >
-            <MenuItem component={Link} to="/gerenciar-aprovacoes" onClick={handleMenuClose}>
-                <ListItemIcon>
-                    <Badge badgeContent={pendingProposalsCount} color="error">
-                        <ThumbsUp size={18} />
-                    </Badge>
-                </ListItemIcon>
-                <ListItemText primary="Aprovações" primaryTypographyProps={{ noWrap: true }} />
-            </MenuItem>
-            <MenuItem component={Link} to="/analise-aulas" onClick={handleMenuClose}>
-                <ListItemIcon><BarChart size={18} /></ListItemIcon>
-                <ListItemText primary="Análise de Aulas" primaryTypographyProps={{ noWrap: true }} />
-            </MenuItem>
-            <MenuItem component={Link} to="/analise-eventos" onClick={handleMenuClose}>
-                <ListItemIcon><BarChart size={18} /></ListItemIcon>
-                <ListItemText primary="Análise de Eventos" primaryTypographyProps={{ noWrap: true }} />
-            </MenuItem>
-            <Divider sx={{ my: 0.5 }} />
-            <MenuItem component={Link} to="/verificar-integridade" onClick={handleMenuClose}>
-                <ListItemIcon><Bug size={18} /></ListItemIcon>
-                <ListItemText primary="Integridade" primaryTypographyProps={{ noWrap: true }} />
-            </MenuItem>
-        </Menu>
-    );
-    
     const navMenuItems = role === 'visualizador' ? [
         <MenuItem key="cal" component={Link} to="/calendario" onClick={handleMenuClose}><ListItemIcon><Calendar size={18} /></ListItemIcon><ListItemText primary="Calendário" primaryTypographyProps={{ noWrap: true }} /></MenuItem>,
         <MenuItem key="download-cronograma" component={Link} to="/download-cronograma" onClick={handleMenuClose}><ListItemIcon><Download size={18} /></ListItemIcon><ListItemText primary="Baixar Cronograma" primaryTypographyProps={{ noWrap: true }} /></MenuItem>,
@@ -633,50 +582,7 @@ function App() {
         });
     };
 
-    const renderMobileMenu = (
-        <Menu 
-            anchorEl={mobileMoreAnchorEl} 
-            open={Boolean(mobileMoreAnchorEl)} 
-            onClose={handleMenuClose}
-            anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
-            transformOrigin={{ vertical: 'top', horizontal: 'right' }}
-        >
-            {cleanMenuItems(navMenuItems)}
-            {role !== 'visualizador' && [
-                <Divider key="div-prof" sx={{ my: 0.5 }} />,
-                <MenuItem key="perfil" component={Link} to="/perfil" onClick={handleMenuClose}>
-                    <ListItemIcon><User size={18} /></ListItemIcon>
-                    <ListItemText primary="Perfil" primaryTypographyProps={{ noWrap: true }} />
-                </MenuItem>,
-                <MenuItem key="logout" onClick={handleLogout}>
-                    <ListItemIcon><LogOut size={18} /></ListItemIcon>
-                    <ListItemText primary="Sair" primaryTypographyProps={{ noWrap: true }} />
-                </MenuItem>
-            ]}
-        </Menu>
-    );
-    const renderProfileMenu = (
-        <Menu 
-            anchorEl={anchorEl} 
-            open={Boolean(anchorEl)} 
-            onClose={handleMenuClose}
-            anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
-            transformOrigin={{ vertical: 'top', horizontal: 'right' }}
-        >
-            {role !== 'visualizador' && (
-                <MenuItem component={Link} to="/perfil" onClick={handleMenuClose}>
-                    <ListItemIcon><User size={18} /></ListItemIcon>
-                    <ListItemText primary="Perfil" primaryTypographyProps={{ noWrap: true }} />
-                </MenuItem>
-            )}
-            <MenuItem onClick={handleLogout}>
-                <ListItemIcon><LogOut size={18} /></ListItemIcon>
-                <ListItemText primary={role === 'visualizador' ? "Sair do Modo Visitante" : "Sair"} primaryTypographyProps={{ noWrap: true }} />
-            </MenuItem>
-        </Menu>
-    );
-
-    const [drawerNotificacoesAberto, setDrawerNotificacoesAberto] = useState(false);
+    if (loading) return <LoadingFallback />;
 
     return (
         <ThemeProvider theme={theme}>
@@ -717,8 +623,19 @@ function App() {
                                         </Box>
                                     )}
                                 </Box>
-                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                                    <IconButton onClick={handleThemeChange} color="inherit" aria-label="Alternar tema">
+                                <Box sx={{ display: 'flex', alignItems: 'center', gap: { xs: 1.25, sm: 1.5 } }}>
+                                    <IconButton 
+                                        onClick={handleThemeChange} 
+                                        color="inherit" 
+                                        aria-label="Alternar tema"
+                                        sx={{ 
+                                            minWidth: 44, 
+                                            minHeight: 44, 
+                                            p: 1, 
+                                            borderRadius: '12px',
+                                            '&:hover': { bgcolor: darkMode ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.04)' } 
+                                        }}
+                                    >
                                         {darkMode ? <Sun size={20}/> : <Moon size={20}/>}
                                     </IconButton>
                                     {role !== 'visualizador' && (
@@ -737,30 +654,268 @@ function App() {
                                                 textTransform: 'none',
                                                 fontWeight: 600,
                                                 fontSize: '0.8rem',
-                                                ml: 1,
+                                                ml: 0.5,
+                                                px: 1.5,
+                                                py: 0.8,
                                                 borderRadius: 2,
-                                                borderColor: 'rgba(0,0,0,0.2)'
+                                                borderColor: 'rgba(0,0,0,0.2)',
+                                                minHeight: 40
                                             }}
                                         >
                                             Sair
                                         </Button>
                                     ) : (
-                                        <IconButton onClick={handleProfileMenuOpen} color="inherit" aria-label="Menu de perfil">
+                                        <IconButton 
+                                            onClick={handleProfileMenuOpen} 
+                                            color="inherit" 
+                                            aria-label="Menu de perfil"
+                                            sx={{ 
+                                                minWidth: 44, 
+                                                minHeight: 44, 
+                                                p: 0.5, 
+                                                borderRadius: '12px',
+                                                '&:hover': { bgcolor: darkMode ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.04)' } 
+                                            }}
+                                        >
                                             {(userProfileData?.photo_url || userProfileData?.photoURL) ? (
-                                                <Avatar src={userProfileData.photo_url || userProfileData.photoURL} sx={{ width: 28, height: 28 }} />
+                                                <Avatar src={userProfileData.photo_url || userProfileData.photoURL} sx={{ width: 30, height: 30 }} />
                                             ) : (
-                                                <AccountCircle sx={{ fontSize: 28 }} />
+                                                <AccountCircle sx={{ fontSize: 30 }} />
                                             )}
                                         </IconButton>
                                     )}
-                                    <IconButton edge="end" onClick={handleMobileMenuOpen} color="inherit" aria-label="Menu principal">
+                                    <IconButton 
+                                        edge="end" 
+                                        onClick={handleMobileMenuOpen} 
+                                        color="inherit" 
+                                        aria-label="Menu principal"
+                                        sx={{ 
+                                            minWidth: 44, 
+                                            minHeight: 44, 
+                                            p: 1, 
+                                            borderRadius: '12px',
+                                            bgcolor: darkMode ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.04)',
+                                            '&:hover': { bgcolor: darkMode ? 'rgba(255,255,255,0.16)' : 'rgba(0,0,0,0.08)' } 
+                                        }}
+                                    >
                                         <MenuIcon size={22} />
                                     </IconButton>
                                 </Box>
                             </Toolbar>
                         </AppBar>
                     )}
-                    {renderMobileMenu} {renderProfileMenu} {role === 'coordenador' && <CoordenadorGerenciarMenu />}
+                    
+                    {/* Drawer Mobile Responsivo e Ergonômico (Thumb Zone) */}
+                    <Drawer
+                        anchor="bottom"
+                        open={mobileDrawerOpen}
+                        onClose={handleMenuClose}
+                        PaperProps={{
+                            sx: {
+                                borderTopLeftRadius: 20,
+                                borderTopRightRadius: 20,
+                                maxHeight: '85vh',
+                                bgcolor: darkMode ? '#0B132B' : '#ffffff',
+                                color: darkMode ? '#ffffff' : '#1A202C',
+                                pb: 3,
+                                pt: 1,
+                                px: 1
+                            }
+                        }}
+                    >
+                        <Box sx={{ width: 40, height: 4, bgcolor: darkMode ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.2)', borderRadius: 2, mx: 'auto', my: 1 }} />
+                        <Box sx={{ px: 2, py: 1.5, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                                <Avatar 
+                                    src={userProfileData?.photo_url || userProfileData?.photoURL} 
+                                    sx={{ width: 42, height: 42, border: '2px solid #1E7EC8' }}
+                                />
+                                <Box>
+                                    <Typography variant="subtitle1" fontWeight={700} lineHeight={1.2}>
+                                        {userProfileData?.name || userProfileData?.nome || 'Usuário'}
+                                    </Typography>
+                                    <Typography variant="caption" color="text.secondary" lineHeight={1}>
+                                        {role === 'visualizador' ? 'Modo Visitante' : role === 'coordenador' ? 'Coordenador' : role === 'tecnico' ? 'Técnico de Laboratório' : 'Usuário'}
+                                    </Typography>
+                                </Box>
+                            </Box>
+                            <Chip 
+                                label={darkMode ? "Escuro" : "Claro"} 
+                                size="small"
+                                icon={darkMode ? <Sun size={14}/> : <Moon size={14}/>}
+                                onClick={handleThemeChange}
+                                sx={{ borderRadius: '8px', cursor: 'pointer', fontWeight: 600 }}
+                            />
+                        </Box>
+                        <Divider sx={{ my: 1 }} />
+                        <List sx={{ px: 1 }}>
+                            {navMenuItems.filter(Boolean).map((item, idx) => {
+                                if (item.type === Divider) {
+                                    return <Divider key={`drawer-div-${idx}`} sx={{ my: 1 }} />;
+                                }
+
+                                if (item.key === 'gerenciar-menu') {
+                                    return (
+                                        <React.Fragment key="gerenciar-menu-fragment">
+                                            <MenuItem
+                                                onClick={() => setGerenciarExpandedMobile(prev => !prev)}
+                                                sx={{
+                                                    minHeight: 48,
+                                                    borderRadius: 2,
+                                                    my: 0.5,
+                                                    px: 2,
+                                                    display: 'flex',
+                                                    justify: 'space-between',
+                                                    '&:hover': { bgcolor: darkMode ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)' }
+                                                }}
+                                            >
+                                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                                                    <ListItemIcon><ListTodo size={20} /></ListItemIcon>
+                                                    <ListItemText primary="Gerenciar" primaryTypographyProps={{ fontWeight: 600 }} />
+                                                </Box>
+                                                {gerenciarExpandedMobile ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
+                                            </MenuItem>
+                                            <Collapse in={gerenciarExpandedMobile} timeout="auto" unmountOnExit sx={{ pl: 2 }}>
+                                                <MenuItem component={Link} to="/gerenciar-aprovacoes" onClick={handleMenuClose} sx={{ minHeight: 44, borderRadius: 2, my: 0.2 }}>
+                                                    <ListItemIcon>
+                                                        <Badge badgeContent={pendingProposalsCount} color="error">
+                                                            <ThumbsUp size={18} />
+                                                        </Badge>
+                                                    </ListItemIcon>
+                                                    <ListItemText primary="Aprovações" primaryTypographyProps={{ fontSize: '0.9rem' }} />
+                                                </MenuItem>
+                                                <MenuItem component={Link} to="/analise-aulas" onClick={handleMenuClose} sx={{ minHeight: 44, borderRadius: 2, my: 0.2 }}>
+                                                    <ListItemIcon><BarChart size={18} /></ListItemIcon>
+                                                    <ListItemText primary="Análise de Aulas" primaryTypographyProps={{ fontSize: '0.9rem' }} />
+                                                </MenuItem>
+                                                <MenuItem component={Link} to="/analise-eventos" onClick={handleMenuClose} sx={{ minHeight: 44, borderRadius: 2, my: 0.2 }}>
+                                                    <ListItemIcon><BarChart size={18} /></ListItemIcon>
+                                                    <ListItemText primary="Análise de Eventos" primaryTypographyProps={{ fontSize: '0.9rem' }} />
+                                                </MenuItem>
+                                                <MenuItem component={Link} to="/verificar-integridade" onClick={handleMenuClose} sx={{ minHeight: 44, borderRadius: 2, my: 0.2 }}>
+                                                    <ListItemIcon><Bug size={18} /></ListItemIcon>
+                                                    <ListItemText primary="Integridade" primaryTypographyProps={{ fontSize: '0.9rem' }} />
+                                                </MenuItem>
+                                            </Collapse>
+                                        </React.Fragment>
+                                    );
+                                }
+
+                                return React.cloneElement(item, {
+                                    key: item.key || `drawer-item-${idx}`,
+                                    onClick: (e) => {
+                                        if (item.props.onClick) item.props.onClick(e);
+                                        handleMenuClose();
+                                    },
+                                    sx: {
+                                        minHeight: 48,
+                                        borderRadius: 2,
+                                        my: 0.5,
+                                        px: 2,
+                                        '&:hover': { bgcolor: darkMode ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)' },
+                                        ...item.props.sx
+                                    }
+                                });
+                            })}
+                            {role !== 'visualizador' && (
+                                <>
+                                    <Divider sx={{ my: 1 }} />
+                                    <MenuItem 
+                                        component={Link} 
+                                        to="/perfil" 
+                                        onClick={handleMenuClose}
+                                        sx={{ minHeight: 48, borderRadius: 2, my: 0.5, px: 2 }}
+                                    >
+                                        <ListItemIcon><User size={20} /></ListItemIcon>
+                                        <ListItemText primary="Meu Perfil" primaryTypographyProps={{ fontWeight: 600 }} />
+                                    </MenuItem>
+                                    <MenuItem 
+                                        onClick={handleLogout}
+                                        sx={{ minHeight: 48, borderRadius: 2, my: 0.5, px: 2, color: 'error.main' }}
+                                    >
+                                        <ListItemIcon><LogOut size={20} color="#ef4444" /></ListItemIcon>
+                                        <ListItemText primary="Sair da Conta" primaryTypographyProps={{ fontWeight: 600 }} />
+                                    </MenuItem>
+                                </>
+                            )}
+                        </List>
+                    </Drawer>
+
+                    {/* Menu Desktop Mobile Fallback (telas médias) */}
+                    <Menu 
+                        anchorEl={mobileMoreAnchorEl} 
+                        open={Boolean(mobileMoreAnchorEl) && !isMobile} 
+                        onClose={handleMenuClose}
+                        anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+                        transformOrigin={{ vertical: 'top', horizontal: 'right' }}
+                    >
+                        {cleanMenuItems(navMenuItems)}
+                        {role !== 'visualizador' && [
+                            <Divider key="div-prof" sx={{ my: 0.5 }} />,
+                            <MenuItem key="perfil" component={Link} to="/perfil" onClick={handleMenuClose}>
+                                <ListItemIcon><User size={18} /></ListItemIcon>
+                                <ListItemText primary="Perfil" primaryTypographyProps={{ noWrap: true }} />
+                            </MenuItem>,
+                            <MenuItem key="logout" onClick={handleLogout}>
+                                <ListItemIcon><LogOut size={18} /></ListItemIcon>
+                                <ListItemText primary="Sair" primaryTypographyProps={{ noWrap: true }} />
+                            </MenuItem>
+                        ]}
+                    </Menu>
+
+                    {/* Menu Perfil */}
+                    <Menu 
+                        anchorEl={anchorEl} 
+                        open={Boolean(anchorEl)} 
+                        onClose={handleMenuClose}
+                        anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+                        transformOrigin={{ vertical: 'top', horizontal: 'right' }}
+                    >
+                        {role !== 'visualizador' && (
+                            <MenuItem component={Link} to="/perfil" onClick={handleMenuClose}>
+                                <ListItemIcon><User size={18} /></ListItemIcon>
+                                <ListItemText primary="Perfil" primaryTypographyProps={{ noWrap: true }} />
+                            </MenuItem>
+                        )}
+                        <MenuItem onClick={handleLogout}>
+                            <ListItemIcon><LogOut size={18} /></ListItemIcon>
+                            <ListItemText primary={role === 'visualizador' ? "Sair do Modo Visitante" : "Sair"} primaryTypographyProps={{ noWrap: true }} />
+                        </MenuItem>
+                    </Menu>
+
+                    {/* Menu Coordenador Gerenciar */}
+                    {role === 'coordenador' && (
+                        <Menu 
+                            anchorEl={coordenadorMenuAnchorEl} 
+                            open={Boolean(coordenadorMenuAnchorEl)} 
+                            onClose={handleMenuClose}
+                            anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+                            transformOrigin={{ vertical: 'top', horizontal: 'right' }}
+                        >
+                            <MenuItem component={Link} to="/gerenciar-aprovacoes" onClick={handleMenuClose}>
+                                <ListItemIcon>
+                                    <Badge badgeContent={pendingProposalsCount} color="error">
+                                        <ThumbsUp size={18} />
+                                    </Badge>
+                                </ListItemIcon>
+                                <ListItemText primary="Aprovações" primaryTypographyProps={{ noWrap: true }} />
+                            </MenuItem>
+                            <MenuItem component={Link} to="/analise-aulas" onClick={handleMenuClose}>
+                                <ListItemIcon><BarChart size={18} /></ListItemIcon>
+                                <ListItemText primary="Análise de Aulas" primaryTypographyProps={{ noWrap: true }} />
+                            </MenuItem>
+                            <MenuItem component={Link} to="/analise-eventos" onClick={handleMenuClose}>
+                                <ListItemIcon><BarChart size={18} /></ListItemIcon>
+                                <ListItemText primary="Análise de Eventos" primaryTypographyProps={{ noWrap: true }} />
+                            </MenuItem>
+                            <Divider sx={{ my: 0.5 }} />
+                            <MenuItem component={Link} to="/verificar-integridade" onClick={handleMenuClose}>
+                                <ListItemIcon><Bug size={18} /></ListItemIcon>
+                                <ListItemText primary="Integridade" primaryTypographyProps={{ noWrap: true }} />
+                            </MenuItem>
+                        </Menu>
+                    )}
+
                     {user && !approvalPending && (
                         <NotificacoesMenuArea
                             uid={userProfileData?.uid}
@@ -791,7 +946,46 @@ function App() {
                                         />
                                     } 
                                 />
-                             ) : approvalPending ? (<Route path="*" element={<PendingApprovalScreen />} />) : (
+                             ) : approvalPending ? (
+                                <Route 
+                                    path="*" 
+                                    element={
+                                        <Container sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '80vh', py: 4 }}>
+                                            <Paper elevation={4} sx={{ p: { xs: 3, sm: 4 }, textAlign: 'center', maxWidth: 460, width: '100%', borderRadius: 3 }}>
+                                                <img src={cesmacLogo} alt="Logo CESMAC" style={{ height: '55px', marginBottom: '16px' }} />
+                                                {isRejeitado ? (
+                                                    <>
+                                                        <Typography variant="h5" fontWeight={700} color="error" gutterBottom>
+                                                            Acesso Não Autorizado
+                                                        </Typography>
+                                                        <Alert severity="error" sx={{ my: 2, textAlign: 'left' }}>
+                                                            Seu cadastro neste e-mail (<strong>{userProfileData?.email}</strong>) foi analisado e <strong>recusado/desativado</strong> pela coordenação dos laboratórios.
+                                                        </Alert>
+                                                        <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
+                                                            Se você acredita que isto é um engano, entre em contato diretamente com a coordenação para solicitar a liberação do seu perfil.
+                                                        </Typography>
+                                                    </>
+                                                ) : (
+                                                    <>
+                                                        <Typography variant="h5" fontWeight={700} color="warning.main" gutterBottom>
+                                                            Cadastro em Análise
+                                                        </Typography>
+                                                        <Alert severity="warning" sx={{ my: 2, textAlign: 'left' }}>
+                                                            Seu cadastro (<strong>{userProfileData?.email}</strong>) está pendente de aprovação pela coordenação.
+                                                        </Alert>
+                                                        <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
+                                                            Assim que o seu perfil for aprovado e o cargo (Coordenador ou Técnico) for atribuído, você terá acesso total às funcionalidades da plataforma.
+                                                        </Typography>
+                                                    </>
+                                                )}
+                                                <Button variant="contained" color="primary" fullWidth onClick={handleLogout} sx={{ py: 1.2, fontWeight: 700 }}>
+                                                    Sair / Voltar à Tela Inicial
+                                                </Button>
+                                            </Paper>
+                                        </Container>
+                                    } 
+                                />
+                             ) : (
                                 <Route element={<MainLayout />}>
                                     <Route path="/" element={role === 'visualizador' ? <Navigate to="/calendario" replace /> : <PaginaInicial userInfo={userProfileData}/>} />
                                     <Route path="/calendario" element={<CalendarioCronograma userInfo={userProfileData} />} />

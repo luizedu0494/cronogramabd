@@ -130,6 +130,10 @@ const getAppTheme = (mode) => {
                         WebkitFontSmoothing: 'antialiased',
                         MozOsxFontSmoothing: 'grayscale',
                     },
+                    '*:focus-visible': {
+                        outline: mode === 'light' ? '3px solid #1E7EC8' : '3px solid #7EC8F0',
+                        outlineOffset: '2px',
+                    },
                     '::-webkit-scrollbar': { width: 6, height: 6 },
                     '::-webkit-scrollbar-track': {
                         background: mode === 'light' ? '#E8ECF2' : '#131826',

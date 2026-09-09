@@ -17,9 +17,9 @@ export async function registrarWebPush(userUid: string): Promise<boolean> {
     return false;
   }
 
-  const vapidPublicKey = import.meta.env.VITE_VAPID_PUBLIC_KEY;
+  const vapidPublicKey = import.meta.env.VITE_VAPID_PUBLIC_KEY || import.meta.env.VITE_FIREBASE_VAPID_KEY;
   if (!vapidPublicKey) {
-    console.warn('VITE_VAPID_PUBLIC_KEY não foi configurada nas variáveis de ambiente.');
+    console.warn('Chave VAPID pública não foi configurada nas variáveis de ambiente.');
     return false;
   }
 
@@ -59,8 +59,40 @@ export async function registrarWebPush(userUid: string): Promise<boolean> {
     );
 
     return true;
-  } catch (err) {
-    console.error('Erro ao registrar Web Push:', err);
+  } catch (err: any) {
+    if (err?.name === 'AbortError') {
+      console.warn('O serviço de Push do navegador não está ativo ou foi bloqueado pelo ambiente local.');
+    } else {
+      console.error('Erro ao registrar Web Push:', err);
+    }
     return false;
   }
 }
+
+export async function revogarWebPush(userUid: string): Promise<boolean> {
+  if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
+    return false;
+  }
+
+  try {
+    const registration = await navigator.serviceWorker.ready;
+    const subscription = await registration.pushManager.getSubscription();
+
+    if (subscription) {
+      const subJson = subscription.toJSON();
+      if (subJson.endpoint) {
+        await supabase
+          .from('push_subscriptions')
+          .update({ ativo: false, atualizado_em: new Date().toISOString() })
+          .eq('endpoint', subJson.endpoint);
+      }
+      await subscription.unsubscribe();
+    }
+
+    return true;
+  } catch (err) {
+    console.error('Erro ao revogar Web Push:', err);
+    return false;
+  }
+}
+

@@ -470,11 +470,49 @@ const PaginaInicial = ({ userInfo }) => {
     const canUseAI = userInfo?.role === 'coordenador' || userInfo?.role === 'tecnico';
 
     const MiniStatCard = ({ icon, value, label, onClick, color }) => (
-        <Paper elevation={2} sx={{ p: 2, display: 'flex', alignItems: 'center', cursor: onClick ? 'pointer' : 'default', transition: 'transform 0.2s', '&:hover': onClick ? { transform: 'translateY(-2px)', boxShadow: 4 } : {} }} onClick={onClick}>
-            <Box sx={{ mr: 2, p: 1, borderRadius: '50%', bgcolor: `${color}20`, color: color, display: 'flex' }}>{icon}</Box>
+        <Paper 
+            elevation={2} 
+            onClick={onClick}
+            sx={{ 
+                p: 2.5, 
+                display: 'flex', 
+                alignItems: 'center', 
+                cursor: onClick ? 'pointer' : 'default', 
+                transition: 'all 0.25s cubic-bezier(0.4, 0, 0.2, 1)',
+                borderRadius: 3,
+                border: '1px solid',
+                borderColor: mode === 'dark' ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)',
+                bgcolor: mode === 'dark' ? 'rgba(30, 41, 59, 0.7)' : '#ffffff',
+                boxShadow: mode === 'dark' ? '0 4px 20px rgba(0,0,0,0.3)' : '0 4px 16px rgba(30,126,200,0.06)',
+                '&:hover': onClick ? { 
+                    transform: 'translateY(-3px)', 
+                    boxShadow: mode === 'dark' ? '0 8px 25px rgba(0,0,0,0.45)' : '0 8px 24px rgba(30,126,200,0.15)',
+                    borderColor: color 
+                } : {} 
+            }} 
+        >
+            <Box 
+                sx={{ 
+                    mr: 2, 
+                    p: 1.5, 
+                    borderRadius: 2.5, 
+                    bgcolor: `${color}15`, 
+                    color: color, 
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    border: `1px solid ${color}30`
+                }}
+            >
+                {icon}
+            </Box>
             <Box>
-                <Typography variant="h5" fontWeight="bold" lineHeight={1}>{value}</Typography>
-                <Typography variant="caption" color="text.secondary" fontWeight="medium">{label}</Typography>
+                <Typography variant="h4" fontWeight="800" lineHeight={1} color="text.primary" sx={{ letterSpacing: '-0.5px' }}>
+                    {value}
+                </Typography>
+                <Typography variant="caption" color="text.secondary" fontWeight="700" sx={{ textTransform: 'uppercase', letterSpacing: '0.5px', mt: 0.5, display: 'block' }}>
+                    {label}
+                </Typography>
             </Box>
         </Paper>
     );

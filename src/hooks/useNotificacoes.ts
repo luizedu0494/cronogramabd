@@ -36,9 +36,12 @@ export function useNotificacoes(uid?: string) {
 
       if (!error && data) {
         setNotificacoes(data);
+      } else if (error) {
+        // Tratar 404 (Tabela não existe ainda) graciosamente sem estourar exceção
+        setNotificacoes([]);
       }
     } catch (err) {
-      console.error('Erro ao carregar notificações:', err);
+      setNotificacoes([]);
     } finally {
       setCarregando(false);
     }
@@ -49,9 +52,16 @@ export function useNotificacoes(uid?: string) {
 
     if (!uid) return;
 
-    // Escutar novos registros in-app via Supabase Realtime
+    const channelName = `notificacoes_${uid}`;
+    
+    // Remover qualquer canal residual antes de instanciar novo
+    const existingChannel = supabase.getChannels().find(c => c.topic === `realtime:${channelName}`);
+    if (existingChannel) {
+      supabase.removeChannel(existingChannel);
+    }
+
     const channel = supabase
-      .channel(`notificacoes-${uid}`)
+      .channel(channelName)
       .on(
         'postgres_changes',
         {
@@ -64,8 +74,9 @@ export function useNotificacoes(uid?: string) {
           const novaNotificacao = payload.new as NotificacaoItem;
           setNotificacoes(prev => [novaNotificacao, ...prev]);
         }
-      )
-      .subscribe();
+      );
+
+    channel.subscribe();
 
     return () => {
       supabase.removeChannel(channel);
