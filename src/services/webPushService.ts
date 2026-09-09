@@ -60,9 +60,7 @@ export async function registrarWebPush(userUid: string): Promise<boolean> {
 
     return true;
   } catch (err: any) {
-    if (err?.name === 'AbortError') {
-      console.warn('O serviço de Push do navegador não está ativo ou foi bloqueado pelo ambiente local.');
-    } else {
+    if (err?.name !== 'AbortError' && err?.name !== 'NotAllowedError') {
       console.error('Erro ao registrar Web Push:', err);
     }
     return false;
