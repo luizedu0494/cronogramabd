@@ -194,3 +194,9 @@
 {"_e":"metro:bundling:progress","_t":1788921690945,"id":"1","progress":0.9269182888184698,"total":752,"current":724}
 {"_e":"metro:bundling:done","_t":1788921691053,"id":"1","total":752,"ms":929.8023}
 {"_e":"metro:client_log","_t":1788921693326,"level":"log","data":["Executando no Expo Go. O Realtime do Supabase está tratando notificações."]}
+{"_e":"root:init","_t":1788922322501,"format":"v0-jsonl","version":"57.0.23"}
+{"_e":"env:mode","_t":1788922322503,"nodeEnv":"development","babelEnv":"development","mode":"development"}
+{"_e":"env:load","_t":1788922322508,"mode":"development","files":[],"env":{}}
+{"_e":"devserver:start","_t":1788922322863,"mode":"development","web":true,"baseUrl":"","asyncRoutes":false,"routerRoot":"../..\\..\\app","serverComponents":false,"serverActions":false,"serverRendering":false,"apiRoutes":false,"exporting":false}
+{"_e":"metro:config","_t":1788922323368,"serverRoot":"../..\\..","projectRoot":"../..\\..","exporting":false,"flags":{"autolinkingModuleResolution":false,"serverActions":false,"serverComponents":false,"reactCompiler":false,"optimizeGraph":false,"treeshaking":false,"logbox":false}}
+{"_e":"expo:dev-tools-plugin:load","_t":1788922323807,"plugins":[]}

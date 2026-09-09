@@ -5,6 +5,7 @@
   "version": "57.0.23",
   "main": "index.js",
   "dependencies": {
+    "@react-native-async-storage/async-storage": "2.2.0",
     "@react-navigation/bottom-tabs": "^7.18.18",
     "@react-navigation/native": "^7.3.18",
     "@supabase/supabase-js": "^2.116.0",

@@ -1,23 +1,42 @@
 import React, { useState } from 'react';
 import { StyleSheet, Text, View, Switch, TouchableOpacity, Alert } from 'react-native';
 import { User, Bell, Moon, LogOut, Shield } from 'lucide-react-native';
+import { useAuth } from '../AuthContext';
 
 export function PerfilScreen() {
+  const { userProfile, user, logout } = useAuth();
   const [notificacoesAtivas, setNotificacoesAtivas] = useState(true);
   const [darkMode, setDarkMode] = useState(false);
 
+  const handleLogout = () => {
+    Alert.alert(
+      'Confirmar Saída',
+      'Deseja realmente encerrar a sua sessão no CronoLab?',
+      [
+        { text: 'Cancelar', style: 'cancel' },
+        { text: 'Sair', style: 'destructive', onPress: logout }
+      ]
+    );
+  };
+
+  const roleName = userProfile?.role === 'coordenador' 
+    ? 'Coordenador de Laboratórios' 
+    : userProfile?.role === 'tecnico' 
+    ? 'Técnico de Laboratório' 
+    : 'Visitante (Visualizador)';
+
   return (
     <View style={styles.container}>
-      {/* Card do Perfil */}
+      {/* Card do Perfil Conectado */}
       <View style={styles.userCard}>
         <View style={styles.avatarContainer}>
           <User size={36} color="#1E7EC8" />
         </View>
         <View style={styles.userInfo}>
-          <Text style={styles.userName}>Usuário CronoLab</Text>
-          <Text style={styles.userEmail}>equipe.laboratorio@cesmac.edu.br</Text>
+          <Text style={styles.userName}>{userProfile?.name || user?.name || 'Usuário CronoLab'}</Text>
+          <Text style={styles.userEmail}>{userProfile?.email || user?.email}</Text>
           <View style={styles.roleChip}>
-            <Text style={styles.roleText}>Técnico / Coordenador</Text>
+            <Text style={styles.roleText}>{roleName}</Text>
           </View>
         </View>
       </View>
@@ -49,12 +68,9 @@ export function PerfilScreen() {
         />
       </View>
 
-      <TouchableOpacity 
-        style={styles.logoutBtn} 
-        onPress={() => Alert.alert('Sessão', 'Você saiu da sua conta CronoLab.')}
-      >
+      <TouchableOpacity style={styles.logoutBtn} onPress={handleLogout}>
         <LogOut size={20} color="#EF4444" />
-        <Text style={styles.logoutText}>Sair da Conta</Text>
+        <Text style={styles.logoutText}>Encerrar Sessão</Text>
       </TouchableOpacity>
     </View>
   );
@@ -83,7 +99,7 @@ const styles = StyleSheet.create({
     borderRadius: 30,
     backgroundColor: '#E0F2FE',
     alignItems: 'center',
-    justifyContent: 'center',
+    justify.content: 'center',
   },
   userInfo: {
     flex: 1,
