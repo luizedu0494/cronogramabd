@@ -1,445 +1,70 @@
-import { LISTA_LABORATORIOS } from '../constants/laboratorios';
-import { supabase } from '../supabaseConfig';
+import { notificationService } from './notificationService';
+import { DadosNotificacaoTelegram } from './NotificadorTelegram';
 
-export interface DadosNotificacaoTelegram {
-  assunto?: string;
-  laboratorio?: string | string[];
-  data?: string;
-  dataISO?: string | null;
-  horario?: string | string[];
-  cursos?: string | string[];
-  observacoes?: string;
-  propostoPorNome?: string;
-  isProva?: boolean;
-  isRevisao?: boolean;
-  tipoRevisaoLabel?: string | null;
-  titulo?: string;
-  tipoEvento?: string;
-  dataInicio?: string;
-  dataFim?: string;
-  descricao?: string;
-}
-
-class NotificadorTelegram {
-  private botToken: string | undefined;
-  private apiUrl: string;
-  private idsDosTopicos: Record<string, number>;
-  private topicosFluxo: Record<string, number>;
-
-  constructor() {
-    this.botToken = import.meta.env.VITE_TELEGRAM_BOT_TOKEN;
-    this.apiUrl = 'https://api.telegram.org';
-
-    this.idsDosTopicos = {
-      ANATOMIA: 2,
-      HABILIDADES: 3,
-      TECNICA_DIETETICA: 4,
-      QUIMICA: 5,
-      PATOLOGIA: 6,
-    };
-
-    this.topicosFluxo = {
-      PENDENTES: 1253,
-    };
-  }
-
-  async enviarParaUsuario(uid: string, dados: DadosNotificacaoTelegram, tipoNotificacao: string): Promise<boolean> {
-    try {
-      const { data: usuario } = await supabase
-        .from('users')
-        .select('telegram_chat_id, status')
-        .eq('uid', uid)
-        .single();
-
-      if (!usuario || usuario.status !== 'aprovado' || !usuario.telegram_chat_id) {
-        return false;
-      }
-
-      const { data: pref } = await supabase
-        .from('notificacao_preferencias')
-        .select('telegram_ativo')
-        .eq('user_uid', uid)
-        .single();
-
-      if (pref && !pref.telegram_ativo) {
-        return false;
-      }
-
-      return this.enviarNotificacao(usuario.telegram_chat_id, dados, tipoNotificacao);
-    } catch (err) {
-      console.error(`Erro ao enviar Telegram para usuário ${uid}:`, err);
-      return false;
-    }
-  }
-
-  escaparHtml(texto?: string | null): string {
-    if (!texto) return '';
-    return String(texto)
-      .replace(/&/g, '&amp;')
-      .replace(/</g, '&lt;')
-      .replace(/>/g, '&gt;')
-      .replace(/"/g, '&quot;');
-  }
-
-  obterIdsDosTopicos(dadosLab?: string | string[]): number[] {
-    if (!dadosLab || dadosLab === 'Todos') return [];
-
-    const labParaVerificar = Array.isArray(dadosLab) ? dadosLab[0] : dadosLab;
-    const infoLab = LISTA_LABORATORIOS.find(
-      l => l.name === labParaVerificar || l.id === labParaVerificar
-    );
-
-    if (!infoLab) {
-      console.warn(`⚠️ [Notificador] Lab "${labParaVerificar}" não mapeado. Enviando para Geral.`);
-      return [];
-    }
-
-    const tipo = infoLab.tipo;
-
-    if (tipo === 'anatomia') return [this.idsDosTopicos.ANATOMIA];
-    if (tipo.startsWith('habilidade_') || tipo === 'uda') return [this.idsDosTopicos.HABILIDADES];
-    if (tipo === 'tecdietetica') return [this.idsDosTopicos.TECNICA_DIETETICA];
-    if (tipo === 'microscopia_normal' || tipo === 'microscopia_galeria')
-      return [this.idsDosTopicos.PATOLOGIA];
-    if (tipo === 'multidisciplinar' || tipo === 'farmaceutico') {
-      return [this.idsDosTopicos.QUIMICA, this.idsDosTopicos.PATOLOGIA];
-    }
-
-    return [];
-  }
-
-  async _enviarParaTopico(
-    chatId: string,
-    mensagem: string,
-    threadId?: number | null
-  ): Promise<boolean> {
-    console.log(`📡 [Telegram] Iniciando envio para Chat ID: "${chatId}" (Thread: ${threadId || 'Sem tópico/Geral'})...`);
-    console.log(`🔑 [Telegram] Bot Token presente: ${this.botToken ? 'SIM (' + this.botToken.substring(0, 8) + '...)' : 'NÃO (indefinido)'}`);
-
-    const url = `${this.apiUrl}/bot${this.botToken}/sendMessage`;
-    const payload: Record<string, any> = {
-      chat_id: chatId,
-      text: mensagem,
-      disable_web_page_preview: true,
-      parse_mode: 'HTML',
-    };
-    if (threadId) payload.message_thread_id = Number(threadId);
-
-    console.log(`📤 [Telegram Payload]:`, JSON.stringify(payload, null, 2));
-
-    try {
-      const response = await fetch(url, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
-      });
-      const resData = await response.json();
-
-      console.log(`📥 [Telegram Response Status]: ${response.status}`, resData);
-
-      if (!resData.ok) {
-        console.warn(`⚠️ [Telegram Warning]: Falha ao enviar para tópico ${threadId || 'Geral'}: "${resData.description}" (Code: ${resData.error_code}). Tentando fallback para Chat Geral...`);
-        if (threadId) {
-          const fallbackPayload = { ...payload };
-          delete fallbackPayload.message_thread_id;
-          console.log(`📤 [Telegram Fallback Payload]:`, JSON.stringify(fallbackPayload, null, 2));
-
-          const fallbackRes = await fetch(url, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(fallbackPayload),
-          });
-          const fallbackData = await fallbackRes.json();
-          console.log(`📥 [Telegram Fallback Response Status]: ${fallbackRes.status}`, fallbackData);
-
-          if (fallbackData.ok) {
-            console.log(`✅ [Telegram Success]: Entregue com sucesso via Fallback (Chat Geral)!`);
-            return true;
-          }
-          console.error(`❌ [Telegram Error Fallback]:`, fallbackData);
-        }
-        return false;
-      } else {
-        console.log(`✅ [Telegram Success]: Entregue no tópico ${threadId || 'Geral'}! Message ID: ${resData.result?.message_id}`);
-        return true;
-      }
-    } catch (err) {
-      console.error(`❌ [Telegram Network Error]: Falha na requisição HTTP:`, err);
-      return false;
-    }
-  }
-
+/**
+ * NotificadorUnificado - Substitui a dependência direta do Telegram
+ * Gravando notificações na tabela `notificacoes` do Supabase.
+ * A inserção dispara automaticamente os push notifications via Database Webhook.
+ */
+class NotificadorUnificado {
   async enviarNotificacao(
-    chatId: string,
+    destinatarioUid: string,
     dados: DadosNotificacaoTelegram,
     tipoNotificacao: string
   ): Promise<boolean> {
-    console.log(`🚀 [NotificadorTelegram] Chamado enviarNotificacao. Tipo: "${tipoNotificacao}", ChatId: "${chatId}"`);
-    console.log(`📦 [NotificadorTelegram] Dados:`, dados);
-
-    if (!this.botToken) {
-      console.error('❌ [NotificadorTelegram Error]: Token do Bot (VITE_TELEGRAM_BOT_TOKEN) não encontrado no .env!');
-      return false;
-    }
-    if (!chatId) {
-      console.error('❌ [NotificadorTelegram Error]: Chat ID (VITE_TELEGRAM_CHAT_ID) não fornecido ou indefinido!');
-      return false;
-    }
+    if (!destinatarioUid) return false;
 
     try {
-      const mensagem = this.gerarMensagemTexto(dados, tipoNotificacao);
+      const titulo = this.gerarTitulo(dados, tipoNotificacao);
+      const corpo = this.gerarCorpo(dados);
 
-      if (tipoNotificacao === 'pendente') {
-        await this._enviarParaTopico(chatId, mensagem, this.topicosFluxo.PENDENTES);
-        return true;
-      }
+      await notificationService.criarNotificacao({
+        destinatario_uid: destinatarioUid,
+        tipo: this.mapearTipo(tipoNotificacao),
+        titulo,
+        corpo,
+      });
 
-      if (tipoNotificacao === 'rejeitada') {
-        await this._enviarParaTopico(chatId, mensagem, this.topicosFluxo.PENDENTES);
-        return true;
-      }
-
-      if (tipoNotificacao.startsWith('evento_')) {
-        await this._enviarParaTopico(chatId, mensagem, null);
-        return true;
-      }
-
-      const listaDeTopicos = this.obterIdsDosTopicos(dados.laboratorio);
-      if (listaDeTopicos.length === 0) {
-        await this._enviarParaTopico(chatId, mensagem, null);
-      } else {
-        for (const idTopico of listaDeTopicos) {
-          if (idTopico) await this._enviarParaTopico(chatId, mensagem, idTopico);
-        }
-      }
       return true;
-    } catch (error) {
-      console.error('❌ Erro de Rede:', error);
+    } catch (err) {
+      console.error(`Erro ao enviar notificação in-app/push para ${destinatarioUid}:`, err);
       return false;
     }
   }
 
-  gerarMensagemTexto(dados: DadosNotificacaoTelegram, tipo: string): string {
-    if (tipo.startsWith('evento_')) return this.gerarMensagemEvento(dados, tipo);
-    if (tipo === 'pendente') return this.gerarMensagemPendente(dados);
-    if (tipo === 'rejeitada') return this.gerarMensagemRejeitada(dados);
-
-    const assunto = this.escaparHtml(dados.assunto || 'Sem assunto');
-    const laboratorio = this.escaparHtml(
-      Array.isArray(dados.laboratorio)
-        ? dados.laboratorio.join(', ')
-        : dados.laboratorio || 'Lab n/a'
-    );
-    const dataFormatada = this.escaparHtml(dados.data || 'Data n/a');
-    const obs = this.escaparHtml(dados.observacoes || '');
-    const propostoPor = this.escaparHtml(dados.propostoPorNome || '');
-
-    let horario = 'Horário n/a';
-    if (Array.isArray(dados.horario)) horario = dados.horario.join(', ');
-    else if (dados.horario) horario = dados.horario;
-
-    let cursos = 'Cursos n/a';
-    if (Array.isArray(dados.cursos)) cursos = dados.cursos.join(', ');
-    else if (dados.cursos) cursos = dados.cursos;
-    cursos = this.escaparHtml(cursos);
-
-    let textoLink = '';
-    if (tipo !== 'excluir') {
-      const baseUrl = import.meta.env.VITE_SITE_URL || window.location.origin;
-      let dateQuery = '';
-      if (dados.dataISO) dateQuery = dados.dataISO;
-      else if (dados.data && dados.data.includes('/')) {
-        const parts = dados.data.split('/');
-        if (parts.length === 3) dateQuery = `${parts[2]}-${parts[1]}-${parts[0]}`;
-      }
-      const linkFinal = `${baseUrl}/calendario${dateQuery ? `?date=${dateQuery}` : ''}`;
-      textoLink = `\n🔗 <a href="${linkFinal}"><b>Ver no Cronograma</b></a>`;
-    }
-
-    const tagTipo = dados.isProva
-      ? `\n📝 <b>Tipo:</b> Prova`
-      : dados.isRevisao
-        ? `\n📖 <b>Tipo:</b> ${this.escaparHtml(dados.tipoRevisaoLabel || 'Revisão')}`
-        : '';
-
-    let titulo = '';
-    let emoji = '';
-
+  private mapearTipo(tipo: string): any {
     switch (tipo) {
       case 'adicionar':
-        titulo = dados.isProva
-          ? 'NOVA PROVA ADICIONADA'
-          : dados.isRevisao
-            ? 'NOVA REVISÃO ADICIONADA'
-            : 'NOVA AULA ADICIONADA';
-        emoji = dados.isProva ? '📝' : '✅';
-        break;
       case 'aprovada':
-        titulo = dados.isProva
-          ? 'PROVA APROVADA E ADICIONADA'
-          : dados.isRevisao
-            ? 'REVISÃO APROVADA E ADICIONADA'
-            : 'AULA APROVADA E ADICIONADA';
-        emoji = dados.isProva ? '📝' : '✅';
-        break;
+        return 'aula_adicionada';
       case 'editar':
-        titulo = dados.isProva
-          ? 'PROVA EDITADA'
-          : dados.isRevisao
-            ? 'REVISÃO EDITADA'
-            : 'AULA EDITADA';
-        emoji = '✏️';
-        break;
+        return 'aula_editada';
       case 'excluir':
-        titulo = dados.isProva
-          ? 'PROVA EXCLUÍDA'
-          : dados.isRevisao
-            ? 'REVISÃO EXCLUÍDA'
-            : 'AULA EXCLUÍDA';
-        emoji = '🗑️';
-        break;
+        return 'aula_excluida';
+      case 'pendente':
+      case 'rejeitada':
+        return 'aprovacao_proposta';
       default:
-        titulo = 'NOTIFICAÇÃO';
-        emoji = '📢';
+        return tipo.startsWith('evento_') ? 'evento_manutencao' : 'aviso_normal';
     }
-
-    return `
-${emoji} <b>${titulo}</b>
-
-📖 <b>Assunto:</b> ${assunto}${tagTipo}
-📅 <b>Data:</b> ${dataFormatada}
-🕐 <b>Horário:</b> ${horario}
-🏢 <b>Laboratório:</b> ${laboratorio}
-👥 <b>Cursos:</b> ${cursos}
-${propostoPor ? `👤 <b>Proposto por:</b> ${propostoPor}` : ''}
-${obs ? `\n📝 <b>Obs:</b> ${obs}` : ''}
-${textoLink}
-    `.trim();
   }
 
-  gerarMensagemPendente(dados: DadosNotificacaoTelegram): string {
-    const assunto = this.escaparHtml(dados.assunto || 'Sem assunto');
-    const laboratorio = this.escaparHtml(
-      Array.isArray(dados.laboratorio) ? dados.laboratorio.join(', ') : dados.laboratorio || 'N/A'
-    );
-    const dataFormatada = this.escaparHtml(dados.data || 'N/A');
-    const propostoPor = this.escaparHtml(dados.propostoPorNome || 'Técnico');
-    const tagRevisao = dados.isProva
-      ? ' <b>[PROVA]</b>'
-      : dados.isRevisao
-        ? ' <b>[REVISÃO]</b>'
-        : '';
-
-    let horario = 'N/A';
-    if (Array.isArray(dados.horario)) horario = dados.horario.join(', ');
-    else if (dados.horario) horario = dados.horario;
-
-    const baseUrl = import.meta.env.VITE_SITE_URL || window.location.origin;
-    const link = `${baseUrl}/gerenciar-aprovacoes`;
-
-    return `
-⏳ <b>NOVA PROPOSTA PENDENTE${tagRevisao}</b>
-
-📖 <b>Assunto:</b> ${assunto}
-📅 <b>Data:</b> ${dataFormatada}
-🕐 <b>Horário:</b> ${horario}
-🏢 <b>Laboratório:</b> ${laboratorio}
-👤 <b>Proposto por:</b> ${propostoPor}
-
-🔗 <a href="${link}"><b>Aprovar ou Rejeitar</b></a>
-    `.trim();
+  private gerarTitulo(dados: DadosNotificacaoTelegram, tipo: string): string {
+    if (tipo === 'adicionar' || tipo === 'aprovada') return `Nova Aula: ${dados.assunto || 'Agendada'}`;
+    if (tipo === 'editar') return `Aula Atualizada: ${dados.assunto || 'Alteração'}`;
+    if (tipo === 'excluir') return `Aula Cancelada: ${dados.assunto || 'Removida'}`;
+    if (tipo === 'pendente') return `Nova Proposta Pendente: ${dados.assunto}`;
+    if (tipo === 'rejeitada') return `Proposta Rejeitada: ${dados.assunto}`;
+    if (tipo.startsWith('evento_')) return `Evento/Manutenção: ${dados.titulo || 'Aviso'}`;
+    return dados.titulo || 'Notificação CronoLab';
   }
 
-  gerarMensagemRejeitada(dados: DadosNotificacaoTelegram): string {
-    const assunto = this.escaparHtml(dados.assunto || 'Sem assunto');
-    const laboratorio = this.escaparHtml(
-      Array.isArray(dados.laboratorio) ? dados.laboratorio.join(', ') : dados.laboratorio || 'N/A'
-    );
-    const dataFormatada = this.escaparHtml(dados.data || 'N/A');
-    const propostoPor = this.escaparHtml(dados.propostoPorNome || 'Técnico');
-    const tagRevisao = dados.isProva ? ' [PROVA]' : dados.isRevisao ? ' [REVISÃO]' : '';
-
-    return `
-❌ <b>PROPOSTA NEGADA${tagRevisao}</b>
-
-📖 <b>Assunto:</b> ${assunto}
-📅 <b>Data:</b> ${dataFormatada}
-🏢 <b>Laboratório:</b> ${laboratorio}
-👤 <b>Proposto por:</b> ${propostoPor}
-    `.trim();
-  }
-
-  gerarMensagemEvento(dados: DadosNotificacaoTelegram, tipo: string): string {
-    const tituloEvento = this.escaparHtml(dados.titulo || 'Sem título');
-    const tipoEvento = this.escaparHtml(dados.tipoEvento || 'Evento');
-    const laboratorio = this.escaparHtml(
-      dados.laboratorio === 'Todos'
-        ? 'Todos os Laboratórios'
-        : Array.isArray(dados.laboratorio)
-          ? dados.laboratorio.join(', ')
-          : dados.laboratorio || 'N/A'
-    );
-    const dataInicio = this.escaparHtml(dados.dataInicio || 'N/A');
-    const dataFim = this.escaparHtml(dados.dataFim || 'N/A');
-    const desc = this.escaparHtml(dados.descricao || '');
-
-    let acao = '';
-    let emoji = '📅';
-    if (tipo === 'evento_adicionar') {
-      acao = 'NOVO EVENTO';
-      emoji = '🆕';
-    } else if (tipo === 'evento_editar') {
-      acao = 'EVENTO ATUALIZADO';
-      emoji = '🔄';
-    } else if (tipo === 'evento_excluir') {
-      acao = 'EVENTO REMOVIDO';
-      emoji = '❌';
-    }
-
-    let textoLink = '';
-    if (tipo !== 'evento_excluir') {
-      const baseUrl = import.meta.env.VITE_SITE_URL || window.location.origin;
-      textoLink = `\n🔗 <a href="${baseUrl}/calendario"><b>Ver no Cronograma</b></a>`;
-    }
-
-    return `
-${emoji} <b>${acao}</b>
-
-📌 <b>Título:</b> ${tituloEvento}
-🏷️ <b>Tipo:</b> ${tipoEvento}
-🏢 <b>Local:</b> ${laboratorio}
-📅 <b>Início:</b> ${dataInicio}
-📅 <b>Fim:</b> ${dataFim}
-${desc ? `\n📝 <b>Descrição:</b> ${desc}` : ''}
-${textoLink}
-    `.trim();
-  }
-  async enviarResumoDiario(chatId: string, aulasDoDiaSeguinte: any[]): Promise<boolean> {
-    if (!this.botToken || !chatId) return false;
-    if (aulasDoDiaSeguinte.length === 0) {
-      const mensagemVazia = `📅 <b>RESUMO DIÁRIO — CRONOLAB</b>\n\nNenhuma aula aprovada agendada para amanhã.`;
-      return this._enviarParaTopico(chatId, mensagemVazia, null);
-    }
-
-    const lista = aulasDoDiaSeguinte.map((a, i) => {
-      const ass = this.escaparHtml(a.assunto || 'Sem assunto');
-      const lab = this.escaparHtml(a.laboratorioSelecionado || 'Lab N/A');
-      const hor = this.escaparHtml(Array.isArray(a.horarioSlotString) ? a.horarioSlotString.join(', ') : a.horarioSlotString || 'Slot N/A');
-      return `<b>${i + 1}. ${ass}</b>\n   🏢 ${lab} | 🕐 ${hor}`;
-    }).join('\n\n');
-
-    const mensagem = `
-📅 <b>RESUMO DIÁRIO DE AULAS — CRONOLAB</b>
-<i>Aulas agendadas para amanhã (${aulasDoDiaSeguinte.length}):</i>
-
-${lista}
-
-🔗 <a href="${import.meta.env.VITE_SITE_URL || window.location.origin}/calendario">Ver Cronograma Completo</a>
-    `.trim();
-
-    return this._enviarParaTopico(chatId, mensagem, null);
+  private gerarCorpo(dados: DadosNotificacaoTelegram): string {
+    const lab = Array.isArray(dados.laboratorio) ? dados.laboratorio.join(', ') : dados.laboratorio || '';
+    const hor = Array.isArray(dados.horario) ? dados.horario.join(', ') : dados.horario || '';
+    return `${dados.data ? `Data: ${dados.data} ` : ''}${hor ? `| Horário: ${hor} ` : ''}${lab ? `| Lab: ${lab}` : ''}`.trim();
   }
 }
 
-export const notificadorTelegram = new NotificadorTelegram();
-export default NotificadorTelegram;
+export const notificadorTelegram = new NotificadorUnificado();
+export default NotificadorUnificado;

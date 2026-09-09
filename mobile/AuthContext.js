@@ -22,24 +22,32 @@ export function AuthProvider({ children }) {
       const savedUser = await AsyncStorage.getItem('@cronolab_user');
       if (savedUser) {
         const parsed = JSON.parse(savedUser);
+        const profile = await fetchProfile(parsed.email || parsed.id);
+        if (profile?.status === 'pendente') {
+          await logout();
+          return;
+        }
         setUser(parsed);
-        await fetchProfile(parsed.email || parsed.id);
       } else {
         const { data: { session } } = await supabase.auth.getSession();
         if (session?.user) {
+          const profile = await fetchProfile(session.user.email);
+          if (profile?.status === 'pendente') {
+            await logout();
+            return;
+          }
           setUser(session.user);
-          await fetchProfile(session.user.email);
         }
       }
     } catch (e) {
-      console.error(e);
+      console.error('Erro na sessão de auth:', e);
     } finally {
       setLoading(false);
     }
   };
 
   const fetchProfile = async (emailOrUid) => {
-    if (!emailOrUid) return;
+    if (!emailOrUid) return null;
     try {
       const isEmail = emailOrUid.includes('@');
       const query = isEmail
@@ -49,10 +57,12 @@ export function AuthProvider({ children }) {
       const { data } = await query;
       if (data) {
         setUserProfile(data);
+        return data;
       }
     } catch (e) {
-      console.error(e);
+      console.error('Erro ao buscar perfil do usuário:', e);
     }
+    return null;
   };
 
   const login = async (email, password) => {
@@ -62,9 +72,17 @@ export function AuthProvider({ children }) {
       if (error) throw error;
 
       if (data.user) {
+        const profile = await fetchProfile(data.user.email);
+        if (profile?.status === 'pendente') {
+          await supabase.auth.signOut();
+          return {
+            success: false,
+            message: 'Sua conta ainda aguarda aprovação da coordenação.',
+          };
+        }
+
         setUser(data.user);
         await AsyncStorage.setItem('@cronolab_user', JSON.stringify(data.user));
-        await fetchProfile(data.user.email);
       }
       return { success: true };
     } catch (e) {
@@ -87,7 +105,11 @@ export function AuthProvider({ children }) {
   };
 
   const logout = async () => {
-    await supabase.auth.signOut();
+    try {
+      await supabase.auth.signOut();
+    } catch (e) {
+      console.error('Erro ao fazer logout do Supabase:', e);
+    }
     await AsyncStorage.removeItem('@cronolab_user');
     setUser(null);
     setUserProfile(null);

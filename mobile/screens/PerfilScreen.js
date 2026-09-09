@@ -1,12 +1,13 @@
 import React, { useState } from 'react';
-import { StyleSheet, Text, View, Switch, TouchableOpacity, Alert } from 'react-native';
-import { User, Bell, Moon, LogOut, Shield } from 'lucide-react-native';
+import { StyleSheet, Text, View, Switch, TouchableOpacity, Alert, ActivityIndicator } from 'react-native';
+import { User, Bell, LogOut, ShieldCheck, Smartphone } from 'lucide-react-native';
 import { useAuth } from '../AuthContext';
+import { registrarTokenPushNativo } from '../services/pushService';
 
 export function PerfilScreen() {
   const { userProfile, user, logout } = useAuth();
   const [notificacoesAtivas, setNotificacoesAtivas] = useState(true);
-  const [darkMode, setDarkMode] = useState(false);
+  const [registrandoPush, setRegistrandoPush] = useState(false);
 
   const handleLogout = () => {
     Alert.alert(
@@ -14,16 +15,28 @@ export function PerfilScreen() {
       'Deseja realmente encerrar a sua sessão no CronoLab?',
       [
         { text: 'Cancelar', style: 'cancel' },
-        { text: 'Sair', style: 'destructive', onPress: logout }
+        { text: 'Sair', style: 'destructive', onPress: logout },
       ]
     );
   };
 
-  const roleName = userProfile?.role === 'coordenador' 
-    ? 'Coordenador de Laboratórios' 
-    : userProfile?.role === 'tecnico' 
-    ? 'Técnico de Laboratório' 
-    : 'Visitante (Visualizador)';
+  const handleTogglePush = async (val) => {
+    setNotificacoesAtivas(val);
+    if (val && (userProfile?.uid || user?.id)) {
+      setRegistrandoPush(true);
+      const token = await registrarTokenPushNativo(userProfile?.uid || user?.id);
+      setRegistrandoPush(false);
+      if (token) {
+        Alert.alert('Notificações Ativas 🎉', 'Seu dispositivo foi registrado com sucesso para receber alertas push!');
+      } else {
+        Alert.alert('Aviso', 'Não foi possível registrar o token neste dispositivo.');
+      }
+    }
+  };
+
+  const cargoFormatado = userProfile?.cargo
+    ? userProfile.cargo.charAt(0).toUpperCase() + userProfile.cargo.slice(1)
+    : userProfile?.role || 'Visualizador';
 
   return (
     <View style={styles.container}>
@@ -33,39 +46,46 @@ export function PerfilScreen() {
           <User size={36} color="#1E7EC8" />
         </View>
         <View style={styles.userInfo}>
-          <Text style={styles.userName}>{userProfile?.name || user?.name || 'Usuário CronoLab'}</Text>
+          <Text style={styles.userName}>{userProfile?.nome || userProfile?.name || user?.email || 'Usuário CronoLab'}</Text>
           <Text style={styles.userEmail}>{userProfile?.email || user?.email}</Text>
           <View style={styles.roleChip}>
-            <Text style={styles.roleText}>{roleName}</Text>
+            <ShieldCheck size={12} color="#166534" />
+            <Text style={styles.roleText}>{cargoFormatado}</Text>
           </View>
         </View>
       </View>
 
       {/* Opções de Configuração */}
-      <Text style={styles.sectionTitle}>Preferências do App</Text>
+      <Text style={styles.sectionTitle}>Preferências & Dispositivos</Text>
 
       <View style={styles.optionRow}>
         <View style={styles.optionInfo}>
           <Bell size={20} color="#64748B" />
-          <Text style={styles.optionLabel}>Notificações Push</Text>
+          <View>
+            <Text style={styles.optionLabel}>Notificações Push Nativas</Text>
+            <Text style={styles.optionSubLabel}>Receba alertas de aulas e novos comunicados</Text>
+          </View>
         </View>
-        <Switch 
-          value={notificacoesAtivas} 
-          onValueChange={setNotificacoesAtivas}
-          trackColor={{ false: '#CBD5E1', true: '#1E7EC8' }}
-        />
+        {registrandoPush ? (
+          <ActivityIndicator size="small" color="#1E7EC8" />
+        ) : (
+          <Switch
+            value={notificacoesAtivas}
+            onValueChange={handleTogglePush}
+            trackColor={{ false: '#CBD5E1', true: '#1E7EC8' }}
+          />
+        )}
       </View>
 
       <View style={styles.optionRow}>
         <View style={styles.optionInfo}>
-          <Moon size={20} color="#64748B" />
-          <Text style={styles.optionLabel}>Modo Escuro (Dark Theme)</Text>
+          <Smartphone size={20} color="#64748B" />
+          <View>
+            <Text style={styles.optionLabel}>Status do Dispositivo</Text>
+            <Text style={styles.optionSubLabel}>Vinculado ao Expo Push Notification</Text>
+          </View>
         </View>
-        <Switch 
-          value={darkMode} 
-          onValueChange={setDarkMode}
-          trackColor={{ false: '#CBD5E1', true: '#1E7EC8' }}
-        />
+        <View style={styles.statusDot} />
       </View>
 
       <TouchableOpacity style={styles.logoutBtn} onPress={handleLogout}>
@@ -115,12 +135,15 @@ const styles = StyleSheet.create({
     marginTop: 2,
   },
   roleChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
     backgroundColor: '#DCFCE7',
     paddingHorizontal: 8,
-    paddingVertical: 2,
-    borderRadius: 4,
+    paddingVertical: 3,
+    borderRadius: 6,
     alignSelf: 'flex-start',
-    marginTop: 6,
+    marginTop: 8,
   },
   roleText: {
     fontSize: 11,
@@ -148,11 +171,23 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,
+    flex: 1,
   },
   optionLabel: {
-    fontSize: 15,
+    fontSize: 14,
     color: '#1E293B',
-    fontWeight: '500',
+    fontWeight: '600',
+  },
+  optionSubLabel: {
+    fontSize: 11,
+    color: '#64748B',
+    marginTop: 2,
+  },
+  statusDot: {
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+    backgroundColor: '#22C55E',
   },
   logoutBtn: {
     flexDirection: 'row',

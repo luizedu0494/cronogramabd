@@ -1,91 +1,61 @@
-import React, { useState, useEffect } from 'react';
-import { StyleSheet, Text, View, FlatList, ActivityIndicator, TouchableOpacity } from 'react-native';
-import { supabase } from '../supabase';
-import { Bell, CheckCircle, Clock } from 'lucide-react-native';
+import React from 'react';
+import { StyleSheet, Text, View, FlatList, ActivityIndicator, TouchableOpacity, RefreshControl } from 'react-native';
+import { Bell, CheckCheck } from 'lucide-react-native';
+import { useAuth } from '../AuthContext';
+import { useNotificacoesMobile as useNotificacoes } from '../hooks/useNotificacoes';
 
 export function NotificacoesScreen() {
-  const [notificacoes, setNotificacoes] = useState([]);
-  const [carregando, setCarregando] = useState(true);
-
-  const carregarNotificacoes = async () => {
-    setCarregando(true);
-    try {
-      const { data } = await supabase
-        .from('notificacoes')
-        .select('*')
-        .order('criada_em', { ascending: false })
-        .limit(40);
-
-      if (data) setNotificacoes(data);
-    } catch (e) {
-      console.error(e);
-    } finally {
-      setCarregando(false);
-    }
-  };
-
-  useEffect(() => {
-    carregarNotificacoes();
-
-    const subscription = supabase
-      .channel('notificacoes-realtime')
-      .on('postgres_changes', { event: 'INSERT', table: 'notificacoes', schema: 'public' }, (payload) => {
-        setNotificacoes(prev => [payload.new, ...prev]);
-      })
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(subscription);
-    };
-  }, []);
-
-  const marcarLida = async (id) => {
-    try {
-      await supabase.from('notificacoes').update({ lida: true }).eq('id', id);
-      setNotificacoes(prev => prev.map(n => n.id === id ? { ...n, lida: true } : n));
-    } catch (e) {
-      console.error(e);
-    }
-  };
+  const { user } = useAuth();
+  const { notificacoes, loading, naoLidasCount, marcarLida, marcarTodasLidas, refresh } = useNotificacoes(user?.id);
 
   return (
     <View style={styles.container}>
       <View style={styles.headerRow}>
-        <Text style={styles.title}>Central de Avisos 🔔</Text>
-        <TouchableOpacity onPress={carregarNotificacoes}>
-          <Text style={styles.refreshText}>Atualizar 🔄</Text>
-        </TouchableOpacity>
+        <View style={styles.titleContainer}>
+          <Text style={styles.title}>Central de Alertas 🔔</Text>
+          {naoLidasCount > 0 && (
+            <View style={styles.badgeCount}>
+              <Text style={styles.badgeCountText}>{naoLidasCount}</Text>
+            </View>
+          )}
+        </View>
+        {naoLidasCount > 0 && (
+          <TouchableOpacity style={styles.markAllBtn} onPress={marcarTodasLidas}>
+            <CheckCheck size={14} color="#1E7EC8" />
+            <Text style={styles.markAllText}>Lidas</Text>
+          </TouchableOpacity>
+        )}
       </View>
 
-      {carregando ? (
-        <ActivityIndicator size="large" color="#1E7EC8" style={{ marginTop: 30 }} />
-      ) : (
-        <FlatList
-          data={notificacoes}
-          keyExtractor={(item) => item.id.toString()}
-          renderItem={({ item }) => (
-            <TouchableOpacity 
-              style={[styles.card, !item.lida && styles.cardNaoLida]} 
-              onPress={() => marcarLida(item.id)}
-            >
-              <View style={styles.cardHeader}>
-                <Text style={styles.cardTitle}>{item.titulo}</Text>
-                {!item.lida && <View style={styles.badgeUnread} />}
-              </View>
-              <Text style={styles.cardCorpo}>{item.corpo}</Text>
-              <Text style={styles.cardData}>
-                {new Date(item.criada_em).toLocaleString('pt-BR')}
-              </Text>
-            </TouchableOpacity>
-          )}
-          ListEmptyComponent={
-            <View style={styles.emptyContainer}>
-              <Bell size={32} color="#94A3B8" />
-              <Text style={styles.emptyText}>Você não possui notificações pendentes.</Text>
+      <FlatList
+        data={notificacoes}
+        keyExtractor={(item) => item.id.toString()}
+        refreshControl={<RefreshControl refreshing={loading} onRefresh={refresh} tintColor="#1E7EC8" />}
+        renderItem={({ item }) => (
+          <TouchableOpacity 
+            style={[styles.card, !item.lida && styles.cardNaoLida]} 
+            onPress={() => marcarLida(item.id)}
+            activeOpacity={0.8}
+          >
+            <View style={styles.cardHeader}>
+              <Text style={[styles.cardTitle, !item.lida && styles.cardTitleNaoLida]}>{item.titulo}</Text>
+              {!item.lida && <View style={styles.badgeUnread} />}
             </View>
-          }
-        />
-      )}
+            <Text style={styles.cardCorpo}>{item.corpo}</Text>
+            <Text style={styles.cardData}>
+              {new Date(item.criada_em).toLocaleString('pt-BR')}
+            </Text>
+          </TouchableOpacity>
+        )}
+        ListEmptyComponent={
+          !loading && (
+            <View style={styles.emptyContainer}>
+              <Bell size={36} color="#94A3B8" />
+              <Text style={styles.emptyText}>Você não possui notificações no momento.</Text>
+            </View>
+          )
+        }
+      />
     </View>
   );
 }
@@ -102,13 +72,38 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 16,
   },
+  titleContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
   title: {
     fontSize: 18,
     fontWeight: 'bold',
     color: '#0F172A',
   },
-  refreshText: {
-    fontSize: 13,
+  badgeCount: {
+    backgroundColor: '#EF4444',
+    borderRadius: 10,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+  },
+  badgeCountText: {
+    color: '#FFFFFF',
+    fontSize: 11,
+    fontWeight: 'bold',
+  },
+  markAllBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    backgroundColor: '#E0F2FE',
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 8,
+  },
+  markAllText: {
+    fontSize: 12,
     color: '#1E7EC8',
     fontWeight: '600',
   },
@@ -132,9 +127,13 @@ const styles = StyleSheet.create({
   },
   cardTitle: {
     fontSize: 15,
-    fontWeight: 'bold',
-    color: '#1E293B',
+    fontWeight: '600',
+    color: '#334155',
     flex: 1,
+  },
+  cardTitleNaoLida: {
+    fontWeight: 'bold',
+    color: '#0F172A',
   },
   badgeUnread: {
     width: 8,
@@ -156,8 +155,9 @@ const styles = StyleSheet.create({
     padding: 40,
   },
   emptyText: {
-    marginTop: 10,
+    marginTop: 12,
     fontSize: 14,
     color: '#64748B',
+    textAlign: 'center',
   },
 });

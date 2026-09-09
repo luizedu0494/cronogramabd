@@ -1,11 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { StyleSheet, Text, View, FlatList, TouchableOpacity, ActivityIndicator, ScrollView, RefreshControl } from 'react-native';
 import { supabase } from '../supabase';
-import { Calendar, AlertCircle, Clock, MapPin, User, ChevronRight } from 'lucide-react-native';
+import { Calendar, AlertCircle, Clock, MapPin, User } from 'lucide-react-native';
+import { useAuth } from '../AuthContext';
 
 export function DashboardScreen() {
+  const { userProfile } = useAuth();
   const [aulasHoje, setAulasHoje] = useState([]);
-  const [estatisticas, setEstatisticas] = useState({ totalAulas: 0, laboratoriosAtivos: 0 });
+  const [propostasPendentes, setPropostasPendentes] = useState(0);
+  const [estatisticas, setEstatisticas] = useState({ totalAulasMes: 0, laboratoriosAtivos: 0 });
   const [carregando, setCarregando] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
 
@@ -14,27 +17,35 @@ export function DashboardScreen() {
     try {
       const hoje = new Date().toISOString().split('T')[0];
 
-      // Buscar aulas do dia
-      const { data: aulas, error } = await supabase
+      // 1. Buscar todas as aulas do Supabase para mapeamento híbrido
+      const { data: todasAulas, error } = await supabase
         .from('aulas')
         .select('*')
-        .eq('data', hoje)
-        .order('horario_inicio', { ascending: true });
+        .order('created_at', { ascending: false });
 
-      if (!error && aulas) {
-        setAulasHoje(aulas);
+      if (!error && todasAulas) {
+        // Filtrar aulas de hoje (suportando 'data' ou 'data_inicio')
+        const hojeAulas = todasAulas.filter((a) => {
+          const d1 = a.data;
+          const d2 = a.data_inicio ? a.data_inicio.split('T')[0] : null;
+          return d1 === hoje || d2 === hoje;
+        });
+
+        setAulasHoje(hojeAulas);
+
+        // Filtrar pendentes (suportando 'status' ou 'status_aprovacao')
+        const pendentes = todasAulas.filter(
+          (a) => a.status === 'pendente' || a.status_aprovacao === 'pendente'
+        );
+        setPropostasPendentes(pendentes.length);
+
+        setEstatisticas({
+          totalAulasMes: todasAulas.length,
+          laboratoriosAtivos: 12,
+        });
       }
-
-      // Buscar estatísticas gerais
-      const { data: labsData } = await supabase.from('laboratorios').select('id');
-      const { count: totalAulasCount } = await supabase.from('aulas').select('*', { count: 'exact', head: true });
-
-      setEstatisticas({
-        totalAulas: totalAulasCount || 0,
-        laboratoriosAtivos: labsData?.length || 0,
-      });
     } catch (e) {
-      console.error(e);
+      console.error('Erro ao carregar dashboard:', e);
     } finally {
       setCarregando(false);
       setRefreshing(false);
@@ -43,6 +54,17 @@ export function DashboardScreen() {
 
   useEffect(() => {
     carregarDadosDashboard();
+
+    const channel = supabase
+      .channel('realtime:dashboard')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'aulas' }, () => {
+        carregarDadosDashboard();
+      })
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, []);
 
   return (
@@ -50,21 +72,36 @@ export function DashboardScreen() {
       style={styles.container}
       refreshControl={<RefreshControl refreshing={refreshing} onRefresh={carregarDadosDashboard} colors={['#1E7EC8']} />}
     >
-      {/* Banner de Boas-Vindas */}
+      {/* Banner de Boas-Vindas Personalizado */}
       <View style={styles.welcomeCard}>
-        <Text style={styles.welcomeTitle}>CronoLab CESMAC 🧪</Text>
-        <Text style={styles.welcomeSubtitle}>Painel de Controle e Agendamento da Saúde</Text>
+        <Text style={styles.welcomeTitle}>
+          Olá, {userProfile?.nome || userProfile?.name ? (userProfile.nome || userProfile.name).split(' ')[0] : 'Bem-vindo'} 👋
+        </Text>
+        <Text style={styles.welcomeSubtitle}>
+          CronoLab CESMAC — Painel de Controle de Laboratórios
+        </Text>
+        {(userProfile?.cargo || userProfile?.role) && (
+          <View style={styles.cargoBadge}>
+            <Text style={styles.cargoText}>{(userProfile.cargo || userProfile.role).toUpperCase()}</Text>
+          </View>
+        )}
       </View>
 
-      {/* Cards de Métricas */}
+      {/* Cards de Métricas Reais */}
       <View style={styles.metricsRow}>
         <View style={styles.metricCard}>
           <Text style={styles.metricNumber}>{aulasHoje.length}</Text>
           <Text style={styles.metricLabel}>Aulas Hoje</Text>
         </View>
         <View style={styles.metricCard}>
-          <Text style={styles.metricNumber}>{estatisticas.laboratoriosAtivos}</Text>
-          <Text style={styles.metricLabel}>Laboratórios</Text>
+          <Text style={[styles.metricNumber, propostasPendentes > 0 && { color: '#EA580C' }]}>
+            {propostasPendentes}
+          </Text>
+          <Text style={styles.metricLabel}>Pendentes</Text>
+        </View>
+        <View style={styles.metricCard}>
+          <Text style={styles.metricNumber}>{estatisticas.totalAulasMes}</Text>
+          <Text style={styles.metricLabel}>Total Aulas</Text>
         </View>
       </View>
 
@@ -82,33 +119,41 @@ export function DashboardScreen() {
           <Text style={styles.emptyText}>Nenhuma aula agendada para hoje.</Text>
         </View>
       ) : (
-        aulasHoje.map((aula) => (
-          <View key={aula.id} style={styles.aulaCard}>
-            <View style={styles.aulaHeader}>
-              <Text style={styles.disciplinaText}>{aula.disciplina || 'Atividade Prática'}</Text>
-              <View style={styles.badgeStatus}>
-                <Text style={styles.badgeStatusText}>{aula.status || 'Confirmada'}</Text>
+        aulasHoje.map((aula) => {
+          const statusStr = aula.status || aula.status_aprovacao || 'confirmada';
+          const horarioStr = aula.horario_slot || (aula.horario_inicio ? `${aula.horario_inicio}h - ${aula.horario_fim}h` : 'Horário a definir');
+          const professorStr = aula.proposto_por_nome || aula.professor || aula.docente_nome;
+
+          return (
+            <View key={aula.id} style={styles.aulaCard}>
+              <View style={styles.aulaHeader}>
+                <Text style={styles.disciplinaText}>{aula.assunto || aula.disciplina || 'Atividade Prática'}</Text>
+                <View style={[styles.badgeStatus, statusStr === 'pendente' && styles.badgePendente]}>
+                  <Text style={[styles.badgeStatusText, statusStr === 'pendente' && styles.badgePendenteText]}>
+                    {statusStr}
+                  </Text>
+                </View>
               </View>
-            </View>
 
-            <View style={styles.infoRow}>
-              <Clock size={14} color="#64748B" />
-              <Text style={styles.infoText}>{aula.horario_inicio}h - {aula.horario_fim}h</Text>
-            </View>
-
-            <View style={styles.infoRow}>
-              <MapPin size={14} color="#64748B" />
-              <Text style={styles.infoText}>{aula.laboratorio_nome || 'Laboratório de Saúde'}</Text>
-            </View>
-
-            {aula.docente_nome && (
               <View style={styles.infoRow}>
-                <User size={14} color="#64748B" />
-                <Text style={styles.infoText}>Prof. {aula.docente_nome}</Text>
+                <Clock size={14} color="#64748B" />
+                <Text style={styles.infoText}>{horarioStr}</Text>
               </View>
-            )}
-          </View>
-        ))
+
+              <View style={styles.infoRow}>
+                <MapPin size={14} color="#64748B" />
+                <Text style={styles.infoText}>{aula.laboratorio || aula.laboratorio_nome || 'Laboratório de Saúde'}</Text>
+              </View>
+
+              {professorStr && (
+                <View style={styles.infoRow}>
+                  <User size={14} color="#64748B" />
+                  <Text style={styles.infoText}>Prof. {professorStr}</Text>
+                </View>
+              )}
+            </View>
+          );
+        })
       )}
     </ScrollView>
   );
@@ -125,11 +170,6 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     padding: 20,
     marginBottom: 16,
-    shadowColor: '#1E7EC8',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2,
-    shadowRadius: 8,
-    elevation: 3,
   },
   welcomeTitle: {
     fontSize: 22,
@@ -141,27 +181,40 @@ const styles = StyleSheet.create({
     color: '#E2E8F0',
     marginTop: 4,
   },
+  cargoBadge: {
+    alignSelf: 'flex-start',
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 6,
+    marginTop: 10,
+  },
+  cargoText: {
+    color: '#FFFFFF',
+    fontSize: 10,
+    fontWeight: 'bold',
+  },
   metricsRow: {
     flexDirection: 'row',
-    gap: 12,
+    gap: 10,
     marginBottom: 20,
   },
   metricCard: {
     flex: 1,
     backgroundColor: '#FFFFFF',
     borderRadius: 12,
-    padding: 16,
+    padding: 14,
     borderWidth: 1,
     borderColor: '#E2E8F0',
     alignItems: 'center',
   },
   metricNumber: {
-    fontSize: 24,
+    fontSize: 22,
     fontWeight: 'bold',
     color: '#1E7EC8',
   },
   metricLabel: {
-    fontSize: 12,
+    fontSize: 11,
     color: '#64748B',
     marginTop: 4,
     fontWeight: '500',
@@ -173,7 +226,7 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   sectionTitle: {
-    fontSize: 18,
+    fontSize: 17,
     fontWeight: 'bold',
     color: '#0F172A',
   },
@@ -199,7 +252,7 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   disciplinaText: {
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: 'bold',
     color: '#1E293B',
     flex: 1,
@@ -214,6 +267,13 @@ const styles = StyleSheet.create({
     fontSize: 11,
     fontWeight: '700',
     color: '#166534',
+    textTransform: 'uppercase',
+  },
+  badgePendente: {
+    backgroundColor: '#FFEDD5',
+  },
+  badgePendenteText: {
+    color: '#9A3412',
   },
   infoRow: {
     flexDirection: 'row',
