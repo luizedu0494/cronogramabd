@@ -426,12 +426,18 @@ function VerificarIntegridadeDados() {
             const { error } = await supabase.from('aulas').update({
                 assunto: quickEditFields.assunto,
                 tipo_atividade: quickEditFields.tipoAtividade,
-                cursos: quickEditFields.cursos,
                 laboratorio: quickEditFields.laboratorioSelecionado,
                 status: aulaParaQuickEdit.status || 'agendada'
             }).eq('id', aulaParaQuickEdit.id);
 
             if (error) throw error;
+
+            if (quickEditFields.cursos && quickEditFields.cursos.length > 0) {
+                await supabase.from('aula_cursos').delete().eq('aula_id', aulaParaQuickEdit.id);
+                await supabase.from('aula_cursos').insert(
+                    quickEditFields.cursos.map(c => ({ aula_id: aulaParaQuickEdit.id, curso: c }))
+                );
+            }
 
             setFeedback({ open: true, message: 'Aula atualizada e padronizada com sucesso!', severity: 'success' });
             fetchAulasEContexto();
