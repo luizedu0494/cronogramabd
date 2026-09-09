@@ -683,8 +683,8 @@ function CalendarioCronograma({ userInfo }) {
             if (bulkEditFields.assunto.trim())     updates.assunto = bulkEditFields.assunto.trim();
             if (bulkEditFields.observacoes.trim()) updates.observacoes = bulkEditFields.observacoes.trim();
             if (bulkEditFields.tipoAula) {
-                updates.is_prova   = bulkEditFields.tipoAula === 'prova';
-                updates.is_revisao = bulkEditFields.tipoAula === 'revisao';
+                updates.tipo_atividade = bulkEditFields.tipoAula;
+                updates.is_revisao     = bulkEditFields.tipoAula === 'revisao';
             }
 
             const mudandoData        = !!bulkEditFields.dataInicio;
