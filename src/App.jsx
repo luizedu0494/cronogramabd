@@ -245,8 +245,19 @@ const LoginScreen = ({ emailInput, setEmailInput, passwordInput, setPasswordInpu
     </Container>
 );
 
+const NotificacoesIconHeader = ({ uid, onOpen }) => {
+    const { naoLidas } = useNotificacoes(uid || undefined);
+    return (
+        <IconButton onClick={onOpen} color="inherit" aria-label="Notificações">
+            <Badge badgeContent={naoLidas || 0} color="error">
+                <Bell size={20} />
+            </Badge>
+        </IconButton>
+    );
+};
+
 const NotificacoesMenuArea = ({ uid, open, onClose }) => {
-    const { notificacoes, naoLidas, carregando, marcarLida, marcarTodasLidas } = useNotificacoes(uid);
+    const { notificacoes = [], naoLidas = 0, carregando = false, marcarLida, marcarTodasLidas } = useNotificacoes(uid || undefined);
     return (
         <CentroNotificacoesDrawer
             open={open}
@@ -711,11 +722,10 @@ function App() {
                                         {darkMode ? <Sun size={20}/> : <Moon size={20}/>}
                                     </IconButton>
                                     {role !== 'visualizador' && (
-                                        <IconButton onClick={() => setDrawerNotificacoesAberto(true)} color="inherit" aria-label="Notificações">
-                                            <Badge badgeContent={naoLidas} color="error">
-                                                <Bell size={20} />
-                                            </Badge>
-                                        </IconButton>
+                                        <NotificacoesIconHeader 
+                                            uid={userProfileData?.uid || user?.id} 
+                                            onOpen={() => setDrawerNotificacoesAberto(true)} 
+                                        />
                                     )}
                                     {role === 'visualizador' ? (
                                         <Button
