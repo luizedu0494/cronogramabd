@@ -6,6 +6,7 @@ import {
 import { Trash2, Clock, BookOpen, Users } from 'lucide-react';
 import dayjs from 'dayjs';
 import { useNavigate } from 'react-router-dom';
+import { useTheme } from '@mui/material/styles';
 import { getStatusChip } from '../utils/statusChipUtils';
 import { formatarCursos } from '../utils/cursoUtils';
 
