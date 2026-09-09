@@ -1,25 +1,16 @@
 import { useState, useEffect } from 'react';
-import { StyleSheet, Text, View, FlatList, TouchableOpacity, SafeAreaView, ActivityIndicator, StatusBar } from 'react-native';
+import { StyleSheet, Text, View, FlatList, TouchableOpacity, ActivityIndicator, StatusBar } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import * as Device from 'expo-device';
 import Constants from 'expo-constants';
 import { supabase } from './supabase';
 
 export default function App() {
-  const [expoPushToken, setExpoPushToken] = useState('');
   const [notificacoes, setNotificacoes] = useState([]);
   const [carregando, setCarregando] = useState(true);
-  const [statusPush, setStatusPush] = useState('Modo Expo Go (Push In-App Ativo)');
+  const [statusPush, setStatusPush] = useState('Modo Expo Go (Realtime Ativo ⚡)');
 
   useEffect(() => {
-    // Tenta registrar push apenas em builds de desenvolvimento nativas ou se suportado pelo ambiente
-    registerForPushNotificationsAsync().then(token => {
-      if (token) {
-        setExpoPushToken(token);
-        setStatusPush('Push Nativo Ativo ✅');
-        salvarTokenNoSupabase(token);
-      }
-    });
-
     carregarNotificacoes();
 
     // Escutar novas notificações em tempo real pelo Supabase Realtime
@@ -30,21 +21,44 @@ export default function App() {
       })
       .subscribe();
 
+    // Tentar inicializar push de segundo plano se disponível no ambiente nativo
+    obterTokenPushOpcional();
+
     return () => {
       supabase.removeChannel(subscription);
     };
   }, []);
 
-  const salvarTokenNoSupabase = async (token) => {
+  const obterTokenPushOpcional = async () => {
     try {
-      await supabase.from('push_subscriptions').upsert({
-        user_uid: 'mobile_device',
-        token: token,
-        dispositivo: Device.modelName || 'Mobile',
-        criado_em: new Date().toISOString()
-      }, { onConflict: 'token' });
+      if (Constants.appOwnership === 'expo') {
+        // No Expo Go SDK 53+, o push remoto em segundo plano foi descontinuado pela própria Expo
+        console.log('Executando no Expo Go. O Realtime do Supabase está tratando notificações.');
+        return;
+      }
+      const Notifications = await import('expo-notifications');
+      if (Device.isDevice) {
+        const { status: existingStatus } = await Notifications.getPermissionsAsync();
+        let finalStatus = existingStatus;
+        if (existingStatus !== 'granted') {
+          const { status } = await Notifications.requestPermissionsAsync();
+          finalStatus = status;
+        }
+        if (finalStatus === 'granted') {
+          const tokenData = await Notifications.getExpoPushTokenAsync();
+          if (tokenData?.data) {
+            setStatusPush('Push Nativo Ativo ✅');
+            await supabase.from('push_subscriptions').upsert({
+              user_uid: 'mobile_device',
+              token: tokenData.data,
+              dispositivo: Device.modelName || 'Mobile',
+              criado_em: new Date().toISOString()
+            }, { onConflict: 'token' });
+          }
+        }
+      }
     } catch (e) {
-      console.log('Erro ao salvar token:', e);
+      console.log('Nativo Push desativado no modo Expo Go:', e.message);
     }
   };
 
@@ -124,37 +138,6 @@ export default function App() {
       </View>
     </SafeAreaView>
   );
-}
-
-async function registerForPushNotificationsAsync() {
-  try {
-    const Notifications = await import('expo-notifications');
-    Notifications.setNotificationHandler({
-      handleNotification: async () => ({
-        shouldShowAlert: true,
-        shouldPlaySound: true,
-        shouldSetBadge: true,
-      }),
-    });
-
-    if (Device.isDevice) {
-      const { status: existingStatus } = await Notifications.getPermissionsAsync();
-      let finalStatus = existingStatus;
-      if (existingStatus !== 'granted') {
-        const { status } = await Notifications.requestPermissionsAsync();
-        finalStatus = status;
-      }
-      if (finalStatus === 'granted') {
-        const tokenData = await Notifications.getExpoPushTokenAsync({
-          projectId: Constants.expoConfig?.extra?.eas?.projectId,
-        });
-        return tokenData?.data;
-      }
-    }
-  } catch (e) {
-    console.log('Ambiente Expo Go ou sem suporte nativo a push remoto diretamente:', e.message);
-  }
-  return null;
 }
 
 const styles = StyleSheet.create({
