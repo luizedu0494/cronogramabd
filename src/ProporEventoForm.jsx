@@ -221,8 +221,7 @@ function ProporEventoForm({ userInfo, currentUser, initialDate, onSuccess, onCan
             return;
         }
 
-        const laboratoriosParaVerificar = formData.dynamicLabs.flatMap(lab => lab.laboratorios).filter(Boolean);
-        const labsConsulta = laboratoriosParaVerificar.length > 0 ? laboratoriosParaVerificar : LISTA_LABORATORIOS.map(l => l.name);
+        const labsConsulta = LISTA_LABORATORIOS.map(l => l.name);
 
         consultarDisponibilidade({
             dataInicio: formData.dataInicio,
@@ -374,7 +373,7 @@ function ProporEventoForm({ userInfo, currentUser, initialDate, onSuccess, onCan
                             dataInicio: dataHoraInicio,
                             dataFim: dataHoraFim,
                             horarioSlotString: slot,
-                            criadoPorUid: currentUser?.id || currentUser?.uid || "N/A",
+                            criadoPorUid: currentUser?.uid || currentUser?.id || userInfo?.uid || null,
                             criadoPorNome: userInfo?.name || currentUser?.displayName || currentUser?.email || "Usuário"
                         });
                     }
