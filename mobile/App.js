@@ -1,32 +1,22 @@
 import { useState, useEffect } from 'react';
-import { StyleSheet, Text, View, FlatList, TouchableOpacity, SafeAreaView, ActivityIndicator, StatusBar, Alert } from 'react-native';
-import * as Notifications from 'expo-notifications';
+import { StyleSheet, Text, View, FlatList, TouchableOpacity, SafeAreaView, ActivityIndicator, StatusBar } from 'react-native';
 import * as Device from 'expo-device';
 import Constants from 'expo-constants';
 import { supabase } from './supabase';
-
-Notifications.setNotificationHandler({
-  handleNotification: async () => ({
-    shouldShowAlert: true,
-    shouldPlaySound: true,
-    shouldSetBadge: true,
-  }),
-});
 
 export default function App() {
   const [expoPushToken, setExpoPushToken] = useState('');
   const [notificacoes, setNotificacoes] = useState([]);
   const [carregando, setCarregando] = useState(true);
-  const [statusPush, setStatusPush] = useState('Registrando push...');
+  const [statusPush, setStatusPush] = useState('Modo Expo Go (Push In-App Ativo)');
 
   useEffect(() => {
+    // Tenta registrar push apenas em builds de desenvolvimento nativas ou se suportado pelo ambiente
     registerForPushNotificationsAsync().then(token => {
       if (token) {
         setExpoPushToken(token);
-        setStatusPush('Push Ativo ✅');
+        setStatusPush('Push Nativo Ativo ✅');
         salvarTokenNoSupabase(token);
-      } else {
-        setStatusPush('Dispositivo sem suporte a Push ou no Emulador');
       }
     });
 
@@ -137,26 +127,34 @@ export default function App() {
 }
 
 async function registerForPushNotificationsAsync() {
-  let token;
-  if (Device.isDevice) {
-    const { status: existingStatus } = await Notifications.getPermissionsAsync();
-    let finalStatus = existingStatus;
-    if (existingStatus !== 'granted') {
-      const { status } = await Notifications.requestPermissionsAsync();
-      finalStatus = status;
-    }
-    if (finalStatus !== 'granted') {
-      Alert.alert('Aviso', 'Permissão para notificações push não concedida!');
-      return;
-    }
-    token = (await Notifications.getExpoPushTokenAsync({
-      projectId: Constants.expoConfig?.extra?.eas?.projectId,
-    })).data;
-  } else {
-    console.log('Push nativo requer dispositivo físico ou EAS Build.');
-  }
+  try {
+    const Notifications = await import('expo-notifications');
+    Notifications.setNotificationHandler({
+      handleNotification: async () => ({
+        shouldShowAlert: true,
+        shouldPlaySound: true,
+        shouldSetBadge: true,
+      }),
+    });
 
-  return token;
+    if (Device.isDevice) {
+      const { status: existingStatus } = await Notifications.getPermissionsAsync();
+      let finalStatus = existingStatus;
+      if (existingStatus !== 'granted') {
+        const { status } = await Notifications.requestPermissionsAsync();
+        finalStatus = status;
+      }
+      if (finalStatus === 'granted') {
+        const tokenData = await Notifications.getExpoPushTokenAsync({
+          projectId: Constants.expoConfig?.extra?.eas?.projectId,
+        });
+        return tokenData?.data;
+      }
+    }
+  } catch (e) {
+    console.log('Ambiente Expo Go ou sem suporte nativo a push remoto diretamente:', e.message);
+  }
+  return null;
 }
 
 const styles = StyleSheet.create({
