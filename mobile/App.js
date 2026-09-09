@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { StyleSheet, Text, View, FlatList, TouchableOpacity, SafeAreaView, ActivityIndicator, StatusBar, Alert } from 'react-native';
 import * as Notifications from 'expo-notifications';
 import * as Device from 'expo-device';
@@ -14,10 +14,10 @@ Notifications.setNotificationHandler({
 });
 
 export default function App() {
-  const [expoPushToken, setExpoPushToken] = useState<string>('');
-  const [notificacoes, setNotificacoes] = useState<any[]>([]);
-  const [carregando, setCarregando] = useState<boolean>(true);
-  const [statusPush, setStatusPush] = useState<string>('Registrando push...');
+  const [expoPushToken, setExpoPushToken] = useState('');
+  const [notificacoes, setNotificacoes] = useState([]);
+  const [carregando, setCarregando] = useState(true);
+  const [statusPush, setStatusPush] = useState('Registrando push...');
 
   useEffect(() => {
     registerForPushNotificationsAsync().then(token => {
@@ -45,7 +45,7 @@ export default function App() {
     };
   }, []);
 
-  const salvarTokenNoSupabase = async (token: string) => {
+  const salvarTokenNoSupabase = async (token) => {
     try {
       await supabase.from('push_subscriptions').upsert({
         user_uid: 'mobile_device',
@@ -77,7 +77,7 @@ export default function App() {
     }
   };
 
-  const marcarLida = async (id: string) => {
+  const marcarLida = async (id) => {
     try {
       await supabase.from('notificacoes').update({ lida: true }).eq('id', id);
       setNotificacoes(prev => prev.map(n => n.id === id ? { ...n, lida: true } : n));
