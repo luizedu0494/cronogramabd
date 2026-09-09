@@ -736,12 +736,49 @@ function CalendarioCronograma({ userInfo }) {
                 }
             }
 
-            setFeedback({ open: true, message: `${selectedAulasIds.length} aula(s) atualizadas com sucesso!`, severity: 'success' });
+            if (selectedEventosIds.length > 0) {
+                const { data: eventosAtuais } = await supabase
+                    .from('eventos_manutencao')
+                    .select('*')
+                    .in('id', selectedEventosIds);
+
+                for (const evento of (eventosAtuais || [])) {
+                    const novaData = bulkEditFields.dataInicio
+                        ? dayjs(bulkEditFields.dataInicio).startOf('day')
+                        : dayjs(evento.data_inicio).startOf('day');
+                    const novoLab  = bulkEditFields.laboratorio || evento.laboratorio;
+                    const novoSlot = bulkEditFields.horario     || evento.horario_slot;
+
+                    const [hInicio, hFim] = (novoSlot || '07:00-09:10').split('-');
+                    const [hI, mI] = (hInicio || '07:00').split(':').map(Number);
+                    const [hF, mF] = (hFim || '09:10').split(':').map(Number);
+
+                    const eventoUpdates = {};
+                    if (bulkEditFields.assunto.trim())     eventoUpdates.titulo     = bulkEditFields.assunto.trim();
+                    if (bulkEditFields.observacoes.trim()) eventoUpdates.descricao  = bulkEditFields.observacoes.trim();
+                    if (mudandoLab)                        eventoUpdates.laboratorio = novoLab;
+                    if (mudandoHorario)                    eventoUpdates.horario_slot = novoSlot;
+                    if (mudandoAgendamento) {
+                        eventoUpdates.data_inicio = novaData.hour(hI).minute(mI).second(0).toISOString();
+                        eventoUpdates.data_fim    = novaData.hour(hF).minute(mF).second(0).toISOString();
+                    }
+                    eventoUpdates.updated_at = new Date().toISOString();
+
+                    if (Object.keys(eventoUpdates).length > 0) {
+                        const { error: evErr } = await supabase.from('eventos_manutencao').update(eventoUpdates).eq('id', evento.id);
+                        if (evErr) throw evErr;
+                    }
+                }
+            }
+
+            const totalAlterados = selectedAulasIds.length + selectedEventosIds.length;
+            setFeedback({ open: true, message: `${totalAlterados} item(ns) atualizado(s) com sucesso!`, severity: 'success' });
             setIsBulkEditModalOpen(false);
             setBulkEditFields({ assunto: '', observacoes: '', cursos: [], dataInicio: null, laboratorio: '', horario: '', tipoAula: '' });
             setBulkEditConflitos([]);
             setIsSelectionMode(false);
             setSelectedAulasIds([]);
+            setSelectedEventosIds([]);
             fetchDados();
         } catch (e) {
             console.error(e);
@@ -863,8 +900,8 @@ function CalendarioCronograma({ userInfo }) {
                                 {selectedAulasIds.length > 0 && selectedEventosIds.length > 0 && ` (${selectedAulasIds.length} aula(s), ${selectedEventosIds.length} evento(s))`}
                             </Typography>
                             <Box sx={{ display: 'flex', gap: 1 }}>
-                                <Button size="small" variant="outlined" color="primary" startIcon={<EditIcon />} disabled={selectedAulasIds.length === 0} onClick={() => { setBulkEditFields({ assunto: '', observacoes: '', cursos: [], dataInicio: null, laboratorio: '', horario: '', tipoAula: '' }); setBulkEditConflitos([]); setIsBulkEditModalOpen(true); }}>
-                                    Editar Aulas ({selectedAulasIds.length})
+                                <Button size="small" variant="outlined" color="primary" startIcon={<EditIcon />} disabled={(selectedAulasIds.length + selectedEventosIds.length) === 0} onClick={() => { setBulkEditFields({ assunto: '', observacoes: '', cursos: [], dataInicio: null, laboratorio: '', horario: '', tipoAula: '' }); setBulkEditConflitos([]); setIsBulkEditModalOpen(true); }}>
+                                    Editar Selecionados ({selectedAulasIds.length + selectedEventosIds.length})
                                 </Button>
                                 <Button size="small" variant="contained" color="error" startIcon={<DeleteIcon />} disabled={(selectedAulasIds.length + selectedEventosIds.length) === 0} onClick={() => setIsBulkDeleteModalOpen(true)}>
                                     Excluir Selecionados ({selectedAulasIds.length + selectedEventosIds.length})
