@@ -724,7 +724,8 @@ function CalendarioCronograma({ userInfo }) {
                         updated_at: new Date().toISOString()
                     };
 
-                    await supabase.from('aulas').update(aulaUpdates).eq('id', aula.id);
+                    const { error: updErr } = await supabase.from('aulas').update(aulaUpdates).eq('id', aula.id);
+                    if (updErr) throw updErr;
 
                     if (bulkEditFields.cursos && bulkEditFields.cursos.length > 0) {
                         await supabase.from('aula_cursos').delete().eq('aula_id', aula.id);
