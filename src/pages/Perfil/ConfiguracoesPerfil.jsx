@@ -214,12 +214,11 @@ function ConfiguracoesPerfil() {
                             <TelegramIcon color="primary" /> Conectar Bot do Telegram
                         </Typography>
 
-                        <Card variant="outlined" sx={{ p: 2, bgcolor: '#f8fafc' }}>
+                        <Card variant="outlined" sx={{ p: 2.5, bgcolor: 'background.paper', borderRadius: 2 }}>
                             <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 2 }}>
-                                <Box>
-                                    <Typography variant="subtitle2">
-                                        Status: {telegramChatId ? <Chip label="Conectado" color="success" size="small" /> : <Chip label="Não vinculado" color="default" size="small" />}
-                                    </Typography>
+                                <Box display="flex" alignItems="center" gap={1}>
+                                    <Typography variant="subtitle1" fontWeight="bold">Status:</Typography>
+                                    {telegramChatId ? <Chip label="Conectado ✓" color="success" size="small" /> : <Chip label="Não vinculado" color="default" size="small" />}
                                     {telegramChatId && (
                                         <Typography variant="caption" color="text.secondary">Chat ID: {telegramChatId}</Typography>
                                     )}
@@ -231,14 +230,32 @@ function ConfiguracoesPerfil() {
                                     onClick={handleGerarCodigoTelegram}
                                     disabled={gerandoCodigo}
                                 >
-                                    {gerandoCodigo ? 'Gerando...' : 'Gerar Código de Vinculação'}
+                                    {gerandoCodigo ? 'Gerando...' : '1. Gerar Código de Vinculação'}
                                 </Button>
                             </Box>
 
                             {codigoTelegram && (
-                                <Alert severity="info" sx={{ mt: 2 }}>
-                                    Envie a mensagem <strong>/vincular {codigoTelegram}</strong> para o Bot do Telegram no seu chat do aplicativo. O código expira em 15 minutos.
-                                </Alert>
+                                <Box sx={{ mt: 2, p: 2, bgcolor: 'action.hover', borderRadius: 2, border: '1px solid', borderColor: 'primary.main' }}>
+                                    <Typography variant="subtitle2" fontWeight="bold" color="primary" gutterBottom>
+                                        🔑 Código Gerado: <code>{codigoTelegram}</code>
+                                    </Typography>
+                                    <Typography variant="body2" color="text.secondary" paragraph sx={{ mb: 1.5 }}>
+                                        <strong>Passo a passo para conectar:</strong><br />
+                                        1. Clique no botão abaixo para abrir o chat do Bot no Telegram.<br />
+                                        2. No Telegram, pressione o botão <strong>COMEÇAR / START</strong> ou envie a mensagem: <code>/vincular {codigoTelegram}</code>
+                                    </Typography>
+                                    <Button
+                                        variant="contained"
+                                        color="secondary"
+                                        startIcon={<TelegramIcon />}
+                                        component="a"
+                                        href={`https://t.me/${import.meta.env.VITE_TELEGRAM_BOT_USERNAME || 'cronolab_bot'}?start=${codigoTelegram}`}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                    >
+                                        2. Abrir Bot no Telegram
+                                    </Button>
+                                </Box>
                             )}
                         </Card>
                     </Grid>
