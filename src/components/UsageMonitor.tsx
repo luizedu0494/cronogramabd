@@ -16,14 +16,14 @@ const UsageMonitor: React.FC = () => {
   }
 
   return (
-    <Box sx={{ p: 2, border: '1px solid #ccc', borderRadius: '4px', mt: 3 }}>
+    <Box sx={{ p: 2, border: 1, borderColor: 'divider', borderRadius: 1, mt: 3, bgcolor: 'background.paper' }}>
       <Typography variant="h6" gutterBottom>
-        Monitor de Uso do Firestore (Simulado)
+        Monitor de Uso de Consultas
       </Typography>
 
       <Typography variant="body2" color="text.secondary">
-        Leituras Críticas Registradas: <strong>{usageCount.toLocaleString()}</strong> de{' '}
-        <strong>{DAILY_READ_LIMIT.toLocaleString()}</strong> (Limite Diário do Plano Spark)
+        Consultas Críticas Registradas: <strong>{usageCount.toLocaleString()}</strong> de{' '}
+        <strong>{DAILY_READ_LIMIT.toLocaleString()}</strong> (Limite Diário de Consultas)
       </Typography>
 
       <LinearProgress
@@ -39,14 +39,12 @@ const UsageMonitor: React.FC = () => {
 
       {isCritical && (
         <Alert severity="warning" sx={{ mt: 2 }}>
-          Atenção: O uso de leituras críticas está acima de 80%. Considere otimizar as operações ou
-          monitorar o painel do Firebase.
+          Atenção: O limite de consultas diárias está acima de 80%. Considere otimizar as operações.
         </Alert>
       )}
 
       <Typography variant="caption" display="block" sx={{ mt: 1 }}>
-        *Este contador rastreia apenas as operações que você configurou como críticas e não o uso
-        total do Firebase.
+        *Este contador rastreia as consultas críticas de alta frequência do sistema.
       </Typography>
     </Box>
   );

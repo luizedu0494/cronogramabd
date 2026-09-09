@@ -3,13 +3,21 @@ import { Box, Card, CardContent, Typography, List, ListItem, ListItemText, Divid
 import { Event, AccessTime, School, Science } from '@mui/icons-material';
 
 // Componente para renderizar o resultado de uma consulta de forma visual
-const ResultadoVisual = ({ resultado, mode }) => {
+const ResultadoVisual = ({ resultado, mode, onSelectSugestao }) => {
     const { tipo_visual, titulo, dados_consulta, sugestoes_acao } = resultado;
+
+    const handleSugestaoClick = (comando) => {
+        if (typeof onSelectSugestao === 'function') {
+            onSelectSugestao(comando);
+        } else {
+            console.log('Ação Sugerida:', comando);
+        }
+    };
 
     // 1. Renderização de Card de Resumo (Ex: "Quantas aulas tenho?")
     if (tipo_visual === 'card_resumo' && dados_consulta) {
         return (
-            <Card sx={{ minWidth: 275, mt: 2, backgroundColor: mode === 'dark' ? '#333' : '#fff' }}>
+            <Card sx={{ minWidth: 275, mt: 2, bgcolor: 'background.paper' }}>
                 <CardContent>
                     <Typography variant="h5" component="div" gutterBottom color="primary">
                         {titulo || "Resumo da Consulta"}
@@ -47,7 +55,7 @@ const ResultadoVisual = ({ resultado, mode }) => {
                                 <Chip 
                                     key={index} 
                                     label={sugestao.label} 
-                                    onClick={() => console.log('Ação Sugerida:', sugestao.comando)} 
+                                    onClick={() => handleSugestaoClick(sugestao.comando)} 
                                     color="primary" 
                                     variant="outlined" 
                                     sx={{ mr: 1, mb: 1 }}
@@ -63,8 +71,8 @@ const ResultadoVisual = ({ resultado, mode }) => {
     // 2. Renderização de Tabela de Aulas (Ex: "Aulas de Medicina em Dezembro")
     if (tipo_visual === 'tabela_aulas' && Array.isArray(dados_consulta)) {
         return (
-            <TableContainer component={Paper} sx={{ mt: 2, backgroundColor: mode === 'dark' ? '#333' : '#fff' }}>
-                <Typography variant="h6" sx={{ p: 2, color: mode === 'dark' ? '#fff' : '#000' }}>
+            <TableContainer component={Paper} sx={{ mt: 2, bgcolor: 'background.paper' }}>
+                <Typography variant="h6" sx={{ p: 2, color: 'text.primary' }}>
                     {titulo || "Lista de Aulas"}
                 </Typography>
                 <Table size="small">

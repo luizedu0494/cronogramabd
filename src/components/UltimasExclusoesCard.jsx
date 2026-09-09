@@ -7,6 +7,7 @@ import { Trash2, Clock, BookOpen, Users } from 'lucide-react';
 import dayjs from 'dayjs';
 import { useNavigate } from 'react-router-dom';
 import { useTheme } from '@mui/material/styles';
+import { getStatusChip } from '../utils/statusChipUtils';
 
 const UltimasExclusoesCard = () => {
     const [logsAulas, setLogsAulas] = useState([]);
@@ -44,7 +45,8 @@ const UltimasExclusoesCard = () => {
                 setLogsRevisoes(revisoesExcluidas);
                 setError(null);
             } catch (err) {
-                // Se ainda não existirem logs ou der erro, manter estado limpo
+                console.error("Erro ao carregar o histórico de exclusões:", err);
+                setError("Erro ao carregar o histórico de exclusões.");
                 setLogsAulas([]);
                 setLogsRevisoes([]);
             } finally {
@@ -54,21 +56,6 @@ const UltimasExclusoesCard = () => {
 
         fetchLogs();
     }, []);
-
-    const getStatusChip = (status) => {
-        const sKey = (status || 'aprovada').toLowerCase();
-        const map = { 
-            aprovada: ['success', 'Aprovada'], 
-            pendente: ['warning', 'Pendente'], 
-            rejeitada: ['error', 'Rejeitada'],
-            concluida: ['info', 'Concluída'],
-            realizada: ['success', 'Realizada'],
-            confirmada: ['success', 'Confirmada'],
-            planejada: ['warning', 'Planejada']
-        };
-        const [color, label] = map[sKey] || ['default', 'Aprovada'];
-        return <Chip label={label} color={color} size="small" sx={{ ml: 1, height: 20, fontSize: '0.7rem' }} />;
-    };
 
     const formatarCursos = (log) => {
         const c = log.aula?.cursos || log.aula?.curso;
@@ -94,12 +81,12 @@ const UltimasExclusoesCard = () => {
                 <Box sx={{ py: 1.5 }}>
                     <Box display="flex" justifyContent="space-between" alignItems="flex-start">
                         <Box display="flex" alignItems="center" gap={0.5}>
-                            <Typography variant="caption">{isRevisao ? '📖' : '🎓'}</Typography>
+                            <Typography variant="caption" component="span" aria-hidden="true">{isRevisao ? '📖' : '🎓'}</Typography>
                             <Typography variant="subtitle2" fontWeight="bold" sx={{ color: theme.palette.error.main, lineHeight: 1.2 }}>
                                 {log.aula?.assunto || log.aula?.disciplina || 'Sem nome'}
                             </Typography>
                         </Box>
-                        {getStatusChip(log.aula?.status)}
+                        {getStatusChip(log.aula?.status, { sx: { ml: 1 } })}
                     </Box>
                     {isRevisao && log.aula?.tipoRevisaoLabel && (
                         <Chip label={log.aula.tipoRevisaoLabel} size="small" color="secondary" sx={{ mt: 0.3, height: 18, fontSize: '0.65rem' }} />
@@ -134,8 +121,8 @@ const UltimasExclusoesCard = () => {
                 </Box>
                 <Tabs value={tab} onChange={(_, v) => setTab(v)} textColor="primary" indicatorColor="primary"
                     sx={{ mb: 1, minHeight: 34, '& .MuiTab-root': { minHeight: 34, fontSize: '0.75rem', py: 0 } }}>
-                    <Tab label={`🎓 Aulas (${logsAulas.length})`} />
-                    <Tab label={`📖 Revisões (${logsRevisoes.length})`} />
+                    <Tab label={<span><span aria-hidden="true">🎓 </span>Aulas ({logsAulas.length})</span>} />
+                    <Tab label={<span><span aria-hidden="true">📖 </span>Revisões ({logsRevisoes.length})</span>} />
                 </Tabs>
                 {loading ? (
                     <Box display="flex" justifyContent="center" py={3}><CircularProgress size={22} /></Box>

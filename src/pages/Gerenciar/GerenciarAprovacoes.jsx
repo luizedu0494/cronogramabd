@@ -99,6 +99,30 @@ function AulaCard({ aula, onAction, processando, isSelected, onClick, temConflit
                 <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600 }}>
                     📅 {dataFormatada} &nbsp;•&nbsp; 👤 {aula.proposto_por_nome || aula.propostoPorNome || 'N/A'}
                 </Typography>
+                {aula.status === 'pendente' && onAction && (
+                    <Box display="flex" gap={1} onClick={(e) => e.stopPropagation()}>
+                        <Button
+                            size="small"
+                            variant="outlined"
+                            color="error"
+                            disabled={processando === aula.id}
+                            onClick={(e) => { e.stopPropagation(); onAction(aula, 'rejeitada'); }}
+                            sx={{ minWidth: 32, px: 1, py: 0.2, fontSize: '0.72rem', height: 26 }}
+                        >
+                            Rejeitar
+                        </Button>
+                        <Button
+                            size="small"
+                            variant="contained"
+                            color="success"
+                            disabled={processando === aula.id}
+                            onClick={(e) => { e.stopPropagation(); onAction(aula, 'aprovada'); }}
+                            sx={{ minWidth: 32, px: 1, py: 0.2, fontSize: '0.72rem', height: 26 }}
+                        >
+                            Aprovar
+                        </Button>
+                    </Box>
+                )}
             </Box>
         </Paper>
     );
@@ -484,6 +508,7 @@ function GerenciarAprovacoes() {
                                     aula={aula}
                                     isSelected={aulaSelecionada?.id === aula.id}
                                     onClick={() => setAulaSelecionada(aula)}
+                                    onAction={handleActionClick}
                                     processando={processando}
                                     temConflito={Boolean(conflitosMap[aula.id])}
                                     isCheckable={currentTab === 'pendente'}

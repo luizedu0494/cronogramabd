@@ -14,6 +14,8 @@ import DeleteIcon from '@mui/icons-material/Delete';
 import EmptyState from '../../components/EmptyState';
 import PeopleOutlineIcon from '@mui/icons-material/PeopleOutline';
 
+import DialogConfirmacao from '../../components/DialogConfirmacao';
+
 const ROLES = ['coordenador', 'tecnico', 'visualizador'];
 
 function GerenciarUsuarios() {
@@ -109,9 +111,9 @@ function GerenciarUsuarios() {
     if (error) return (<Container sx={{ mt: 4 }}><Alert severity="error">{error}</Alert></Container>);
 
     return (
-        <Container maxWidth="lg">
-            <Paper elevation={3} sx={{ p: 4, mt: 4 }}>
-                <Typography variant="h4" gutterBottom>Gerenciar Usuários</Typography>
+        <Container maxWidth="lg" sx={{ py: 3 }}>
+            <Paper elevation={3} sx={{ p: { xs: 2, sm: 4 }, mt: 2 }}>
+                <Typography variant="h4" fontWeight={700} gutterBottom>Gerenciar Usuários</Typography>
                 {usuarios.length === 0 ? (
                     <EmptyState 
                         icon={PeopleOutlineIcon}
@@ -119,22 +121,22 @@ function GerenciarUsuarios() {
                         message="Ainda não há usuários cadastrados ou aguardando aprovação no sistema."
                     />
                 ) : (
-                    <List>
+                    <List disablePadding>
                         {usuarios.map((user) => (
-                            <ListItem key={user.id} divider>
+                            <ListItem key={user.id} divider sx={{ flexDirection: { xs: 'column', sm: 'row' }, alignItems: { xs: 'flex-start', sm: 'center' }, py: 2, gap: 1 }}>
                                 <ListItemText
                                     primary={`${user.name} (${user.email})`}
+                                    primaryTypographyProps={{ fontWeight: 600 }}
                                     secondaryTypographyProps={{ component: 'div' }}
-                                    secondary={<Box component="div" sx={{ mt: 0.5 }}>
+                                    secondary={<Box component="div" sx={{ mt: 0.5, display: 'flex', gap: 0.5, flexWrap: 'wrap' }}>
                                         {user.role ? (
                                             <Chip 
                                                 label={user.role === 'coordenador' ? 'Coordenador' : user.role === 'tecnico' ? 'Técnico' : 'Visualizador (Aluno/Prof)'} 
                                                 size="small" 
-                                                sx={{ mr: 1 }} 
                                                 color={user.role === 'coordenador' ? 'primary' : user.role === 'tecnico' ? 'secondary' : 'info'} 
                                             />
                                         ) : (
-                                            <Chip label="Sem Cargo" size="small" sx={{ mr: 1 }} variant="outlined" />
+                                            <Chip label="Sem Cargo" size="small" variant="outlined" />
                                         )}
                                         {user.status === 'rejeitado' ? (
                                             <Chip label="Recusado" size="small" color="error" />
@@ -145,50 +147,54 @@ function GerenciarUsuarios() {
                                         )}
                                     </Box>}
                                 />
-                                <ListItemSecondaryAction>
+                                <Box sx={{ display: 'flex', alignItems: 'center', ml: { xs: 0, sm: 'auto' }, pt: { xs: 1, sm: 0 } }}>
                                     {loadingStates[user.id] ? (
                                         <CircularProgress size={24} />
                                     ) : (
                                         <>
                                             {user.approvalPending && (
                                                 <>
-                                                    <Tooltip title="Aprovar Usuário"><IconButton edge="end" onClick={() => handleAction('approve', user.id)} sx={{ mr: 0.5 }}><CheckCircleIcon color="success" /></IconButton></Tooltip>
-                                                    <Tooltip title="Rejeitar Usuário"><IconButton edge="end" onClick={() => handleAction('reject', user.id)} sx={{ mr: 0.5 }}><CancelIcon color="error" /></IconButton></Tooltip>
+                                                    <Tooltip title="Aprovar Usuário"><IconButton onClick={() => handleAction('approve', user.id)} sx={{ mr: 0.5 }}><CheckCircleIcon color="success" /></IconButton></Tooltip>
+                                                    <Tooltip title="Rejeitar Usuário"><IconButton onClick={() => handleAction('reject', user.id)} sx={{ mr: 0.5 }}><CancelIcon color="error" /></IconButton></Tooltip>
                                                 </>
                                             )}
-                                            <Tooltip title="Editar Cargo"><IconButton edge="end" onClick={() => handleAbrirEditDialog(user)} sx={{ mr: 0.5 }}><EditIcon color="info" /></IconButton></Tooltip>
+                                            <Tooltip title="Editar Cargo"><IconButton onClick={() => handleAbrirEditDialog(user)} sx={{ mr: 0.5 }}><EditIcon color="info" /></IconButton></Tooltip>
                                             <Tooltip title="Excluir Usuário"><IconButton onClick={() => handleOpenDeleteDialog(user)} color="error"><DeleteIcon /></IconButton></Tooltip>
                                         </>
                                     )}
-                                </ListItemSecondaryAction>
+                                </Box>
                             </ListItem>
                         ))}
                     </List>
                 )}
             </Paper>
 
-            <Dialog open={openEditDialog} onClose={() => setOpenEditDialog(false)}>
-                <DialogTitle>Editar Cargo de {usuarioParaEditar?.name}</DialogTitle>
-                <DialogContent><FormControl sx={{ minWidth: 140, mt: 2 }}><InputLabel shrink>Cargo</InputLabel><Select value={novoRole} label="Cargo" onChange={(e) => setNovoRole(e.target.value)}>{ROLES.map(role => <MenuItem key={role} value={role}>{role}</MenuItem>)}</Select></FormControl></DialogContent>
-                <DialogActions>
+            <Dialog open={openEditDialog} onClose={() => setOpenEditDialog(false)} maxWidth="xs" fullWidth>
+                <DialogTitle fontWeight={700}>Editar Cargo de {usuarioParaEditar?.name}</DialogTitle>
+                <DialogContent>
+                    <FormControl fullWidth sx={{ mt: 2 }}>
+                        <InputLabel shrink>Cargo</InputLabel>
+                        <Select value={novoRole} label="Cargo" onChange={(e) => setNovoRole(e.target.value)}>
+                            {ROLES.map(role => <MenuItem key={role} value={role}>{role}</MenuItem>)}
+                        </Select>
+                    </FormControl>
+                </DialogContent>
+                <DialogActions sx={{ px: 3, pb: 2 }}>
                     <Button onClick={() => setOpenEditDialog(false)}>Cancelar</Button>
                     <Button onClick={() => handleAction('editRole', usuarioParaEditar.id, { role: novoRole })} variant="contained">Salvar</Button>
                 </DialogActions>
             </Dialog>
             
-            <Dialog open={openDeleteDialog} onClose={() => setOpenDeleteDialog(false)}>
-                <DialogTitle>Confirmar Exclusão</DialogTitle>
-                <DialogContent>
-                    <Typography>Tem certeza que deseja remover o usuário "{userToDelete?.name}" do sistema?</Typography>
-                    <Typography color="text.secondary" variant="body2" sx={{ mt: 2 }}>
-                        O acesso do usuário será revogado imediatamente. Caso ele tente fazer login novamente, precisará de uma nova aprovação da coordenação.
-                    </Typography>
-                </DialogContent>
-                <DialogActions>
-                    <Button onClick={() => setOpenDeleteDialog(false)}>Cancelar</Button>
-                    <Button onClick={() => handleAction('delete', userToDelete.id)} color="error" variant="contained">Confirmar Exclusão</Button>
-                </DialogActions>
-            </Dialog>
+            <DialogConfirmacao
+                open={openDeleteDialog}
+                title="Confirmar Exclusão"
+                message={`Tem certeza que deseja remover o usuário "${userToDelete?.name}" do sistema? O acesso será revogado imediatamente.`}
+                confirmText="Excluir Usuário"
+                confirmColor="error"
+                loading={loadingStates[userToDelete?.id] || false}
+                onConfirm={() => handleAction('delete', userToDelete.id)}
+                onClose={() => setOpenDeleteDialog(false)}
+            />
 
             <Snackbar open={feedback.open} autoHideDuration={6000} onClose={handleCloseSnackbar} anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}>
                 <Alert onClose={handleCloseSnackbar} severity={feedback.severity} sx={{ width: '100%' }}>{feedback.message}</Alert>

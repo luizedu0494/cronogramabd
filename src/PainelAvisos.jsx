@@ -72,9 +72,11 @@ function PainelAvisos() {
           formatados.sort((a, b) => b.dataCriacao.valueOf() - a.dataCriacao.valueOf());
           setAvisos(formatados);
         } else {
+          if (err) setError('Falha ao carregar avisos. Tente novamente mais tarde.');
           setAvisos([]);
         }
       } catch (e) {
+        setError('Erro de conexão ao carregar avisos.');
         setAvisos([]);
       } finally {
         setLoading(false);
@@ -88,7 +90,7 @@ function PainelAvisos() {
   return (
     <Container maxWidth="md" sx={{ py: 4 }}>
       <Typography variant="h4" fontWeight={700} gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-        📢 Painel de Avisos
+        <span role="img" aria-hidden="true">📢</span> Painel de Avisos
       </Typography>
 
       {error && <Alert severity="error" sx={{ mb: 3 }}>{error}</Alert>}

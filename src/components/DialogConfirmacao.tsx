@@ -13,7 +13,8 @@ import { OverridableStringUnion } from '@mui/types';
 
 export interface DialogConfirmacaoProps {
   open: boolean;
-  onClose: () => void;
+  onClose?: () => void;
+  onCancel?: () => void;
   onConfirm: () => void;
   title: string;
   message: React.ReactNode;
@@ -29,6 +30,7 @@ export interface DialogConfirmacaoProps {
 const DialogConfirmacao: React.FC<DialogConfirmacaoProps> = ({
   open,
   onClose,
+  onCancel,
   onConfirm,
   title,
   message,
@@ -37,18 +39,23 @@ const DialogConfirmacao: React.FC<DialogConfirmacaoProps> = ({
   loading = false,
   confirmColor = 'primary',
 }) => {
+  const handleClose = () => {
+    if (onClose) onClose();
+    else if (onCancel) onCancel();
+  };
+
   return (
-    <Dialog open={open} onClose={onClose} maxWidth="xs">
-      <DialogTitle>{title}</DialogTitle>
+    <Dialog open={open} onClose={handleClose} maxWidth="xs">
+      <DialogTitle fontWeight={700}>{title}</DialogTitle>
       <DialogContent>
-        <Typography>{message}</Typography>
+        <Typography color="text.primary">{message}</Typography>
       </DialogContent>
-      <DialogActions>
-        <Button onClick={onClose} disabled={loading}>
+      <DialogActions sx={{ px: 3, pb: 2 }}>
+        <Button onClick={handleClose} disabled={loading}>
           {cancelText}
         </Button>
         <Button onClick={onConfirm} variant="contained" color={confirmColor} disabled={loading}>
-          {loading ? <CircularProgress size={24} /> : confirmText}
+          {loading ? <CircularProgress size={24} color="inherit" /> : confirmText}
         </Button>
       </DialogActions>
     </Dialog>

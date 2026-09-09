@@ -8,7 +8,7 @@ import { useTheme } from '@mui/material/styles';
 import { useNavigate } from 'react-router-dom';
 import { Clock, BookOpen, Users, FlaskConical } from 'lucide-react';
 import dayjs from 'dayjs';
-import 'dayjs/locale/pt-br';
+import { getStatusChip } from '../utils/statusChipUtils';
 
 dayjs.locale('pt-br');
 
@@ -56,11 +56,7 @@ const UltimasAulasCard = () => {
         fetch();
     }, []);
 
-    const getStatusChip = (status) => {
-        const map = { aprovada: ['success','Aprovada'], pendente: ['warning','Pendente'], rejeitada: ['error','Rejeitada'] };
-        const [color, label] = map[status] || ['default', status || 'Indefinido'];
-        return <Chip label={label} color={color} size="small" variant="outlined" sx={{ height: 20, fontSize: '0.65rem' }} />;
-    };
+
 
     const formatarCursos = (aula) => {
         const c = aula.cursos || aula.curso;
@@ -81,7 +77,7 @@ const UltimasAulasCard = () => {
                 <Box sx={{ py: 1.5 }}>
                     <Box display="flex" justifyContent="space-between" width="100%" mb={0.4}>
                         <Box display="flex" alignItems="center" gap={0.5}>
-                            <Typography variant="caption">{isRevisao ? '📖' : '🎓'}</Typography>
+                            <Typography variant="caption" component="span" aria-hidden="true">{isRevisao ? '📖' : '🎓'}</Typography>
                             <Typography variant="subtitle2" fontWeight="bold" sx={{ color: theme.palette.primary.main }}>
                                 {aula.disciplina || aula.assunto || 'Sem nome'}
                             </Typography>
@@ -124,8 +120,8 @@ const UltimasAulasCard = () => {
                 </Box>
                 <Tabs value={tab} onChange={(_, v) => setTab(v)} textColor="primary" indicatorColor="primary"
                     sx={{ mb: 1, minHeight: 34, '& .MuiTab-root': { minHeight: 34, fontSize: '0.75rem', py: 0 } }}>
-                    <Tab label={`🎓 Aulas (${aulasNormais.length})`} />
-                    <Tab label={`📖 Revisões (${revisoes.length})`} />
+                    <Tab label={<span><span aria-hidden="true">🎓 </span>Aulas ({aulasNormais.length})</span>} />
+                    <Tab label={<span><span aria-hidden="true">📖 </span>Revisões ({revisoes.length})</span>} />
                 </Tabs>
                 {loading ? (
                     <Box display="flex" justifyContent="center" py={3}><CircularProgress size={22} /></Box>

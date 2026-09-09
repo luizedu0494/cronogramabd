@@ -61,8 +61,8 @@ const EventoCard = ({ evento, onEdit, onDelete, isCoordenador, isSelectionMode, 
                 position: 'relative',
                 borderLeft: `4px solid ${color}`,
                 transition: 'box-shadow 0.2s ease-in-out, transform 0.15s ease-in-out',
-                bgcolor: isSelected ? 'rgba(25, 118, 210, 0.12)' : 'background.paper',
-                border: isSelected ? '1px solid #1976d2' : undefined
+                bgcolor: isSelected ? 'action.selected' : 'background.paper',
+                border: isSelected ? (theme) => `1px solid ${theme.palette.primary.main}` : undefined
             }}
         >
             {isSelectionMode && (

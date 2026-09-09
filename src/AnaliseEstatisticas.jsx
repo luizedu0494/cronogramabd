@@ -108,6 +108,16 @@ function AnaliseEstatisticas() {
         fetchData(selectedYear);
     }, [selectedYear]);
 
+const DEFAULT_CHART_COLORS = [
+    '#1E7EC8', '#0097A7', '#D4940A', '#9C27B0', '#2E7D32',
+    '#4AADE8', '#4DD0E1', '#F5C518', '#607D8B', '#E91E63'
+];
+
+    const getChartColor = (index) => {
+        const paletteColors = theme.palette.chartColors || DEFAULT_CHART_COLORS;
+        return paletteColors[index % paletteColors.length];
+    };
+
     const aulasPorMesChartData = {
         labels: ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'],
         datasets: [
@@ -125,7 +135,7 @@ function AnaliseEstatisticas() {
             {
                 label: 'Aulas por Laboratório',
                 data: Object.values(stats?.aulasPorLaboratorio || {}),
-                backgroundColor: Object.keys(stats?.aulasPorLaboratorio || {}).map((_, i) => theme.palette.chartColors[i % theme.palette.chartColors.length]),
+                backgroundColor: Object.keys(stats?.aulasPorLaboratorio || {}).map((_, i) => getChartColor(i)),
             },
         ],
     };
@@ -136,7 +146,7 @@ function AnaliseEstatisticas() {
             {
                 label: 'Aulas por Curso',
                 data: Object.values(stats?.aulasPorCurso || {}),
-                backgroundColor: Object.keys(stats?.aulasPorCurso || {}).map((_, i) => theme.palette.chartColors[i % theme.palette.chartColors.length]),
+                backgroundColor: Object.keys(stats?.aulasPorCurso || {}).map((_, i) => getChartColor(i)),
             },
         ],
     };
