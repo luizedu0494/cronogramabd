@@ -9,6 +9,7 @@ import { useNavigate } from 'react-router-dom';
 import { Clock, BookOpen, Users, FlaskConical } from 'lucide-react';
 import dayjs from 'dayjs';
 import { getStatusChip } from '../utils/statusChipUtils';
+import { formatarCursos } from '../utils/cursoUtils';
 
 dayjs.locale('pt-br');
 
@@ -58,12 +59,6 @@ const UltimasAulasCard = () => {
 
 
 
-    const formatarCursos = (aula) => {
-        const c = aula.cursos || aula.curso;
-        if (Array.isArray(c) && c.length > 0) return c.join(', ');
-        if (typeof c === 'string' && c.trim()) return c;
-        return 'Curso não especificado';
-    };
 
     const renderList = (items, isRevisao) => {
         if (!items.length) return (

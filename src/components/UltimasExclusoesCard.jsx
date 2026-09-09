@@ -6,8 +6,8 @@ import {
 import { Trash2, Clock, BookOpen, Users } from 'lucide-react';
 import dayjs from 'dayjs';
 import { useNavigate } from 'react-router-dom';
-import { useTheme } from '@mui/material/styles';
 import { getStatusChip } from '../utils/statusChipUtils';
+import { formatarCursos } from '../utils/cursoUtils';
 
 const UltimasExclusoesCard = () => {
     const [logsAulas, setLogsAulas] = useState([]);
@@ -57,13 +57,6 @@ const UltimasExclusoesCard = () => {
         fetchLogs();
     }, []);
 
-    const formatarCursos = (log) => {
-        const c = log.aula?.cursos || log.aula?.curso;
-        if (Array.isArray(c) && c.length > 0) return c.join(', ');
-        if (typeof c === 'string' && c.trim()) return c;
-        return 'Curso não especificado';
-    };
-
     const formatarAno = (d) => {
         if (!d) return '';
         const obj = (d && typeof d.toDate === 'function') ? d.toDate() : new Date(d);
@@ -93,7 +86,7 @@ const UltimasExclusoesCard = () => {
                     )}
                     <Box display="flex" alignItems="center" mt={0.5}>
                         <Users size={13} style={{ marginRight: 4, color: theme.palette.text.secondary }} />
-                        <Typography variant="caption">{formatarCursos(log)}{formatarAno(log.aula?.dataInicio)}</Typography>
+                        <Typography variant="caption">{formatarCursos(log.aula)}{formatarAno(log.aula?.dataInicio)}</Typography>
                     </Box>
                     <Box display="flex" alignItems="center" gap={0.5} mt={0.3}>
                         <Clock size={13} style={{ color: theme.palette.text.secondary }} />
