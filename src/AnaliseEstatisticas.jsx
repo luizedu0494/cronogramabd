@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { db } from './firebaseConfig';
-import { collection, query, where, getDocs } from 'firebase/firestore';
+import { supabase } from './supabaseConfig';
 import {
     Container, Typography, Box, Paper, CircularProgress, Alert,
     FormControl, InputLabel, Select, MenuItem, Grid, Card, CardContent,
@@ -52,40 +51,48 @@ function AnaliseEstatisticas() {
         setLoading(true);
         setError(null);
         try {
-            const startOfYear = dayjs(`${year}-01-01`).toDate();
-            const endOfYear = dayjs(`${year}-12-31`).toDate();
+            const startOfYear = dayjs(`${year}-01-01`).startOf('year').toISOString();
+            const endOfYear = dayjs(`${year}-12-31`).endOf('year').toISOString();
 
-            // 1. Aulas Aprovadas por Mês
-            const aulasQuery = query(
-                collection(db, 'aulas'),
-                where('data', '>=', startOfYear),
-                where('data', '<=', endOfYear),
-                where('status', '==', 'aprovada')
-            );
-            const aulasSnapshot = await getDocs(aulasQuery);
-            const aulasData = aulasSnapshot.docs.map(doc => doc.data());
+            // 1. Aulas Aprovadas por Mês no Supabase
+            const { data: aulasData, error: fetchErr } = await supabase
+                .from('aulas')
+                .select('*')
+                .gte('data_inicio', startOfYear)
+                .lte('data_inicio', endOfYear)
+                .eq('status', 'aprovada');
+
+            if (fetchErr) throw fetchErr;
 
             const aulasPorMes = Array(12).fill(0);
             const aulasPorLaboratorio = {};
             const aulasPorCurso = {};
 
-            aulasData.forEach(aula => {
-                const mes = dayjs(aula.data.toDate()).month(); // 0-11
-                aulasPorMes[mes]++;
+            (aulasData || []).forEach(aula => {
+                const dateObj = aula.data_inicio ? dayjs(aula.data_inicio) : null;
+                if (dateObj && dateObj.isValid()) {
+                    const mes = dateObj.month(); // 0-11
+                    aulasPorMes[mes]++;
+                }
 
                 // Estatísticas por Laboratório
-                aulasPorLaboratorio[aula.laboratorio] = (aulasPorLaboratorio[aula.laboratorio] || 0) + 1;
+                const lab = aula.laboratorio || aula.laboratorioSelecionado || 'Não especificado';
+                aulasPorLaboratorio[lab] = (aulasPorLaboratorio[lab] || 0) + 1;
 
                 // Estatísticas por Curso
-                aulasPorCurso[aula.curso] = (aulasPorCurso[aula.curso] || 0) + 1;
+                const cursosList = aula.cursos || (aula.curso ? [aula.curso] : []);
+                cursosList.forEach(c => {
+                    aulasPorCurso[c] = (aulasPorCurso[c] || 0) + 1;
+                });
             });
 
-            // 2. Contagem de Usuários (Apenas para o ano atual, pois a coleção 'users' não tem filtro de data)
+            // 2. Contagem de Usuários no Supabase
             let totalUsers = 0;
             if (year === CURRENT_YEAR) {
-                const usersQuery = query(collection(db, 'users'));
-                const usersSnapshot = await getDocs(usersQuery);
-                totalUsers = usersSnapshot.size;
+                const { count, error: userErr } = await supabase
+                    .from('users')
+                    .select('*', { count: 'exact', head: true });
+                if (!userErr) totalUsers = count || 0;
             }
 
             setStats({
@@ -93,12 +100,12 @@ function AnaliseEstatisticas() {
                 aulasPorLaboratorio,
                 aulasPorCurso,
                 totalUsers,
-                totalAulas: aulasData.length
+                totalAulas: (aulasData || []).length
             });
 
         } catch (err) {
             console.error("Erro ao buscar estatísticas:", err);
-            setError("Não foi possível carregar as estatísticas. Verifique sua conexão com o Firebase.");
+            setError("Não foi possível carregar as estatísticas do sistema.");
         } finally {
             setLoading(false);
         }

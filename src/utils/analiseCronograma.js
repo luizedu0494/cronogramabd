@@ -1,18 +1,6 @@
-import { collection, query, where, getDocs, Timestamp } from 'firebase/firestore';
+import { supabase } from '../supabaseConfig';
 import dayjs from 'dayjs';
 import 'dayjs/locale/pt-br';
-
-// Assumindo que estas constantes e a instância do db estão disponíveis
-// O usuário deve garantir que o caminho para 'db' e as constantes estão corretos
-// Ex: import { db } from '../firebaseConfig';
-// Ex: import { BLOCOS_HORARIO } from '../AssistenteIA';
-// Ex: import { LISTA_LABORATORIOS } from '../constants/laboratorios';
-
-// Mock de dependências para fins de demonstração da lógica
-const db = {
-    // Simulação de acesso ao Firestore
-    aulas: collection(null, "aulas")
-};
 
 const BLOCOS_HORARIO = [
     { "value": "07:00-09:10", "label": "07:00 - 09:10", "turno": "Matutino" },
@@ -30,62 +18,48 @@ const TURNOS = {
 };
 
 /**
- * Busca aulas no Firebase com base em critérios de data e laboratório.
+ * Busca aulas no Supabase com base em critérios de data e laboratório.
  * @param {object} criterios - Critérios de busca (data, mes, ano, laboratorio, termoBusca).
  * @returns {Promise<Array>} Lista de aulas encontradas.
  */
 export const buscarAulasInteligente = async (criterios) => {
-    // Esta função substitui e aprimora a lógica de buscarAulasFirebase em AssistenteIA.jsx
     try {
-        let q = collection(db, "aulas");
-        const constraints = [];
+        let query = supabase.from('aulas').select('*');
 
-        // 1. Filtro de Data
         if (criterios.data) {
-            const dataInicio = dayjs(criterios.data, 'DD/MM/YYYY').startOf('day');
-            const dataFim = dataInicio.endOf('day');
-            constraints.push(where("dataInicio", ">=", Timestamp.fromDate(dataInicio.toDate())));
-            constraints.push(where("dataInicio", "<=", Timestamp.fromDate(dataFim.toDate())));
+            const dataInicio = dayjs(criterios.data, 'DD/MM/YYYY').startOf('day').toISOString();
+            const dataFim = dayjs(criterios.data, 'DD/MM/YYYY').endOf('day').toISOString();
+            query = query.gte('data_inicio', dataInicio).lte('data_inicio', dataFim);
         } else if (criterios.mes) {
             const [mes, ano] = criterios.mes.split('/');
-            const dataInicio = dayjs().month(parseInt(mes) - 1).year(parseInt(ano)).startOf('month');
-            const dataFim = dataInicio.endOf('month');
-            constraints.push(where("dataInicio", ">=", Timestamp.fromDate(dataInicio.toDate())));
-            constraints.push(where("dataInicio", "<=", Timestamp.fromDate(dataFim.toDate())));
+            const dataInicio = dayjs().month(parseInt(mes) - 1).year(parseInt(ano)).startOf('month').toISOString();
+            const dataFim = dayjs().month(parseInt(mes) - 1).year(parseInt(ano)).endOf('month').toISOString();
+            query = query.gte('data_inicio', dataInicio).lte('data_inicio', dataFim);
         } else if (criterios.ano) {
-            const dataInicio = dayjs().year(parseInt(criterios.ano)).startOf('year');
-            const dataFim = dataInicio.endOf('year');
-            constraints.push(where("dataInicio", ">=", Timestamp.fromDate(dataInicio.toDate())));
-            constraints.push(where("dataInicio", "<=", Timestamp.fromDate(dataFim.toDate())));
+            const dataInicio = dayjs().year(parseInt(criterios.ano)).startOf('year').toISOString();
+            const dataFim = dayjs().year(parseInt(criterios.ano)).endOf('year').toISOString();
+            query = query.gte('data_inicio', dataInicio).lte('data_inicio', dataFim);
         }
 
-        // 2. Filtro de Laboratório
         if (criterios.laboratorio) {
-            constraints.push(where("laboratorioSelecionado", "==", criterios.laboratorio));
+            query = query.eq('laboratorio', criterios.laboratorio);
         }
 
-        // 3. Execução da Query
-        if (constraints.length > 0) {
-            q = query(q, ...constraints);
-        }
+        const { data, error } = await query;
+        if (error) throw error;
 
-        // Simulação de getDocs (o usuário deve garantir que a instância 'db' é real)
-        // const querySnapshot = await getDocs(q);
-        // let aulas = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-        
-        // Retornando um mock para fins de demonstração da lógica de análise
-        let aulas = [
-            { id: 'a1', assunto: 'Anatomia Humana', horarioSlotString: '07:00-09:10', laboratorioSelecionado: 'anatomia_1', dataInicio: dayjs().toDate(), cursos: ['medicina'] },
-            { id: 'a2', assunto: 'Histologia', horarioSlotString: '09:30-12:00', laboratorioSelecionado: 'microscopia_2', dataInicio: dayjs().toDate(), cursos: ['biomedicina'] },
-            { id: 'a3', assunto: 'BCMOL - Projeto X', horarioSlotString: '13:00-15:10', laboratorioSelecionado: 'multidisciplinar_1', dataInicio: dayjs().toDate(), cursos: ['farmacia'] },
-        ];
+        let aulas = (data || []).map(d => ({
+            ...d,
+            laboratorioSelecionado: d.laboratorio,
+            horarioSlotString: d.horario_slot,
+            dataInicio: d.data_inicio ? dayjs(d.data_inicio).toDate() : null,
+        }));
 
-        // 4. Filtro de Termo de Busca (Full-Text - Cliente-Side)
         if (criterios.termoBusca) {
             const termo = criterios.termoBusca.toLowerCase();
             aulas = aulas.filter(aula => 
-                aula.assunto.toLowerCase().includes(termo) ||
-                (aula.tipoAtividade && aula.tipoAtividade.toLowerCase().includes(termo)) ||
+                (aula.assunto && aula.assunto.toLowerCase().includes(termo)) ||
+                (aula.tipo_atividade && aula.tipo_atividade.toLowerCase().includes(termo)) ||
                 (aula.observacoes && aula.observacoes.toLowerCase().includes(termo))
             );
         }

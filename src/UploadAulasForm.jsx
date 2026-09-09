@@ -1,7 +1,6 @@
 // src/UploadAulasForm.js
 import React, { useState, useEffect, useMemo } from 'react';
-import { db } from './firebaseConfig';
-import { collection, addDoc, serverTimestamp, Timestamp } from 'firebase/firestore';
+import { supabase } from './supabaseConfig';
 import { useAuth } from './AuthContext';
 
 import {
@@ -160,16 +159,21 @@ function UploadAulasForm() {
     for (const row of aulasValidasParaImportar) {
       try {
         const aulaDataToSave = {
-          tipoAtividade: row.tipoAtividadeValid, dataInicio: row.dataInicioValid.toDate(), dataFim: row.dataFimValid.toDate(),
-          assunto: String(row.assunto).trim(), observacoes: String(row.observacoes).trim(), tipoLaboratorio: row.tipoLaboratorio,
-          laboratorioSelecionado: row.laboratorioSelecionado, status: 'aprovada', 
-          propostaPorEmail: String(row.propostaPorEmail || currentUser.email).trim(),
-          propostaPorUid: currentUser.uid, 
-          propostaPorNome: String(row.propostaPorNome || userProfile?.name || currentUser.displayName).trim(),
-          createdAt: serverTimestamp(), assignedTechnicians: [], assignedTechnicianUids: [],
-          horarioSlotString: row.horarioSlotString || `${row.horaInicioStr}-${row.horaFimStr}`,
+          tipo_atividade: row.tipoAtividadeValid || 'Aula',
+          data_inicio: row.dataInicioValid ? dayjs(row.dataInicioValid.toDate ? row.dataInicioValid.toDate() : row.dataInicioValid).toISOString() : new Date().toISOString(),
+          data_fim: row.dataFimValid ? dayjs(row.dataFimValid.toDate ? row.dataFimValid.toDate() : row.dataFimValid).toISOString() : null,
+          assunto: String(row.assunto).trim(),
+          observacoes: String(row.observacoes || '').trim(),
+          laboratorio: row.laboratorioSelecionado || row.tipoLaboratorio || 'Não especificado',
+          status: 'aprovada',
+          proposto_por_uid: currentUser?.uid || null,
+          proposto_por_nome: String(row.propostaPorNome || userProfile?.name || currentUser?.displayName || 'Coordenador').trim(),
+          horario_slot: row.horarioSlotString || `${row.horaInicioStr}-${row.horaFimStr}`,
+          origem: 'importacao_planilha',
+          created_at: new Date().toISOString()
         };
-        await addDoc(collection(db, "aulas"), aulaDataToSave);
+        const { error: insErr } = await supabase.from('aulas').insert([aulaDataToSave]);
+        if (insErr) throw insErr;
         aulasAdicionadas++;
       } catch (err) { console.error(`Erro salvar linha ${row.originalRowIndex}:`, err); errosImportacao.push(`Linha ${row.originalRowIndex}: ${err.message}`); }
     }

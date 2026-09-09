@@ -7,8 +7,7 @@ import {
 } from '@mui/material';
 import { format, startOfDay, endOfDay, startOfMonth, endOfMonth, startOfYear, endOfYear } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { collection, query, where, getDocs, Timestamp, orderBy } from 'firebase/firestore';
-import { db } from './firebaseConfig';
+import { supabase } from './supabaseConfig';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
@@ -41,13 +40,8 @@ const ListagemCompletaAulas = () => {
     useEffect(() => {
         const fetchUsuarios = async () => {
             try {
-                const usuariosRef = collection(db, 'usuarios');
-                const querySnapshot = await getDocs(usuariosRef);
-                const usuariosList = querySnapshot.docs.map(doc => ({
-                    uid: doc.id,
-                    nome: doc.data().name || 'Usuário desconhecido'
-                }));
-                setUsuarios(usuariosList);
+                const { data } = await supabase.from('users').select('uid, name');
+                setUsuarios((data || []).map(u => ({ uid: u.uid, nome: u.name || 'Usuário' })));
             } catch (err) {
                 console.error("Erro ao buscar usuários:", err);
             }
@@ -57,22 +51,17 @@ const ListagemCompletaAulas = () => {
 
     // Função para construir o filtro de data
     const construirFiltroData = useCallback(() => {
-        if (filtroTipo === 'dia' && filtroDataInicio) {
-            const inicio = startOfDay(filtroDataInicio.toDate());
-            const fim = endOfDay(filtroDataInicio.toDate());
-            return { inicio: Timestamp.fromDate(inicio), fim: Timestamp.fromDate(fim) };
-        } else if (filtroTipo === 'mes' && filtroDataInicio) {
-            const inicio = startOfMonth(filtroDataInicio.toDate());
-            const fim = endOfMonth(filtroDataInicio.toDate());
-            return { inicio: Timestamp.fromDate(inicio), fim: Timestamp.fromDate(fim) };
-        } else if (filtroTipo === 'ano' && filtroDataInicio) {
-            const inicio = startOfYear(filtroDataInicio.toDate());
-            const fim = endOfYear(filtroDataInicio.toDate());
-            return { inicio: Timestamp.fromDate(inicio), fim: Timestamp.fromDate(fim) };
-        } else if (filtroTipo === 'intervalo' && filtroDataInicio && filtroDataFim) {
-            const inicio = startOfDay(filtroDataInicio.toDate());
-            const fim = endOfDay(filtroDataFim.toDate());
-            return { inicio: Timestamp.fromDate(inicio), fim: Timestamp.fromDate(fim) };
+        if (!filtroDataInicio) return null;
+        const dObj = dayjs(filtroDataInicio.toDate ? filtroDataInicio.toDate() : filtroDataInicio);
+        if (filtroTipo === 'dia') {
+            return { inicio: dObj.startOf('day').toISOString(), fim: dObj.endOf('day').toISOString() };
+        } else if (filtroTipo === 'mes') {
+            return { inicio: dObj.startOf('month').toISOString(), fim: dObj.endOf('month').toISOString() };
+        } else if (filtroTipo === 'ano') {
+            return { inicio: dObj.startOf('year').toISOString(), fim: dObj.endOf('year').toISOString() };
+        } else if (filtroTipo === 'intervalo' && filtroDataFim) {
+            const dFimObj = dayjs(filtroDataFim.toDate ? filtroDataFim.toDate() : filtroDataFim);
+            return { inicio: dObj.startOf('day').toISOString(), fim: dFimObj.endOf('day').toISOString() };
         }
         return null;
     }, [filtroTipo, filtroDataInicio, filtroDataFim]);
@@ -82,60 +71,40 @@ const ListagemCompletaAulas = () => {
         setLoading(true);
         setError(null);
         try {
-            const aulasRef = collection(db, 'aulas');
-            let q = query(aulasRef, orderBy('dataCriacao', 'desc'));
+            let queryBuilder = supabase.from('aulas').select('*').order('created_at', { ascending: false });
 
-            // Construir array de condições where
-            const conditions = [];
-
-            // Filtro por status
             if (filtroStatus) {
-                conditions.push(where('status', '==', filtroStatus));
+                queryBuilder = queryBuilder.eq('status', filtroStatus);
             }
 
-            // Filtro por autor
             if (filtroAutor) {
-                conditions.push(where('autorUid', '==', filtroAutor));
+                queryBuilder = queryBuilder.eq('proposto_por_uid', filtroAutor);
             }
 
-            // Filtro por data
             const filtroData = construirFiltroData();
             if (filtroData) {
-                conditions.push(where('dataInicio', '>=', filtroData.inicio));
-                conditions.push(where('dataInicio', '<=', filtroData.fim));
+                queryBuilder = queryBuilder.gte('data_inicio', filtroData.inicio).lte('data_inicio', filtroData.fim);
             }
 
-            // Aplicar condições
-            if (conditions.length > 0) {
-                q = query(aulasRef, ...conditions, orderBy('dataCriacao', 'desc'));
-            }
+            const { data, error: err } = await queryBuilder;
+            if (err) throw err;
 
-            const querySnapshot = await getDocs(q);
-
-            let aulasList = querySnapshot.docs.map(doc => ({
-                id: doc.id,
-                ...doc.data(),
-                dataInicio: doc.data().dataInicio?.toDate().toISOString() || null,
-                dataFim: doc.data().dataFim?.toDate().toISOString() || null,
-                dataCriacao: doc.data().dataCriacao?.toDate().toISOString() || null,
+            const fetched = (data || []).map(d => ({
+                id: d.id,
+                ...d,
+                title: d.assunto,
+                dataInicio: d.data_inicio ? new Date(d.data_inicio) : null,
+                dataFim: d.data_fim ? new Date(d.data_fim) : null,
+                laboratorioSelecionado: d.laboratorio,
+                propostaPorNome: d.proposto_por_nome,
             }));
-
-            // Filtro por termo de busca (título, laboratório)
-            if (searchTerm) {
-                aulasList = aulasList.filter(aula =>
-                    (aula.titulo?.toLowerCase().includes(searchTerm.toLowerCase())) ||
-                    (aula.laboratorio?.toLowerCase().includes(searchTerm.toLowerCase()))
-                );
-            }
-
-            setAulas(aulasList);
+            setAulas(fetched);
         } catch (err) {
             console.error("Erro ao buscar aulas:", err);
-            setError("Não foi possível carregar as aulas. Verifique os filtros e tente novamente.");
+            setError("Não foi possível carregar as aulas.");
         } finally {
             setLoading(false);
-        }
-    }, [filtroStatus, filtroAutor, filtroTipo, filtroDataInicio, filtroDataFim, searchTerm, construirFiltroData]);
+    }, [filtroStatus, filtroAutor, construirFiltroData]);
 
     // Executar busca quando filtros mudam
     useEffect(() => {

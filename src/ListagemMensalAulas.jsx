@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { collection, getDocs, query, where, orderBy, doc, Timestamp, deleteDoc, addDoc, serverTimestamp } from 'firebase/firestore';
-import { db } from './firebaseConfig';
+import { supabase } from './supabaseConfig';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import {
@@ -62,29 +61,29 @@ function ListagemMensalAulas({ userInfo, setSnackBar }) {
     const fetchAulas = useCallback(async () => {
         setLoading(true);
         try {
-            const startOfMonth = selectedMonth.startOf('month').toDate();
-            const endOfMonth = selectedMonth.endOf('month').toDate();
+            const startOfMonth = selectedMonth.startOf('month').toISOString();
+            const endOfMonth = selectedMonth.endOf('month').toISOString();
 
-            const aulasRef = collection(db, 'aulas');
-            const q = query(
-                aulasRef,
-                where('status', '==', 'aprovada'),
-                where('dataInicio', '>=', Timestamp.fromDate(startOfMonth)),
-                where('dataInicio', '<=', Timestamp.fromDate(endOfMonth)),
-                orderBy('dataInicio', 'asc')
-            );
-            const querySnapshot = await getDocs(q);
+            const { data, error } = await supabase
+                .from('aulas')
+                .select('*')
+                .eq('status', 'aprovada')
+                .gte('data_inicio', startOfMonth)
+                .lte('data_inicio', endOfMonth)
+                .order('data_inicio', { ascending: true });
 
-            const aulasList = querySnapshot.docs.map(aulaDoc => {
-                const aulaData = aulaDoc.data();
-                return {
-                    id: aulaDoc.id, ...aulaData,
-                    start: aulaData.dataInicio.toDate(),
-                    end: aulaData.dataFim.toDate(),
-                    title: aulaData.assunto,
-                    tecnicosNomes: (aulaData.tecnicosInfo || []).map(t => t.name),
-                };
-            });
+            if (error) throw error;
+
+            const aulasList = (data || []).map(aulaData => ({
+                id: aulaData.id,
+                ...aulaData,
+                start: aulaData.data_inicio ? new Date(aulaData.data_inicio) : new Date(),
+                end: aulaData.data_fim ? new Date(aulaData.data_fim) : new Date(),
+                title: aulaData.assunto,
+                laboratorioSelecionado: aulaData.laboratorio || aulaData.laboratorioSelecionado,
+                propostoPorNome: aulaData.proposto_por_nome || aulaData.propostaPorNome,
+                tecnicosNomes: (aulaData.tecnicosInfo || []).map((t) => t.name || t),
+            }));
             setAulas(aulasList);
         } catch (error) {
             console.error("Erro ao buscar aulas:", error);
@@ -101,7 +100,7 @@ function ListagemMensalAulas({ userInfo, setSnackBar }) {
     const aulasFiltradas = useMemo(() => {
         return aulas.filter(aula => {
             const searchMatch = searchTerm === '' || 
-                                aula.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                                (aula.title && aula.title.toLowerCase().includes(searchTerm.toLowerCase())) ||
                                 (aula.propostoPorNome && aula.propostoPorNome.toLowerCase().includes(searchTerm.toLowerCase()));
             
             const labMatch = laboratorioFilter.length === 0 || laboratorioFilter.includes(aula.laboratorioSelecionado);
@@ -124,15 +123,10 @@ function ListagemMensalAulas({ userInfo, setSnackBar }) {
         const nomeAulaCancelada = aulaToDelete.title;
         try {
             await registrarLogExclusao(aulaToDelete, userInfo);
-            await deleteDoc(doc(db, 'aulas', aulaToDelete.id));
-            if(setSnackBar) setSnackBar('Aula excluída com sucesso!');
-            if (tecnicosDesignados.length > 0) {
-                await fetch('/api/send-push-notification', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ uids: tecnicosDesignados, title: 'Aula Cancelada', body: `A aula '${nomeAulaCancelada}' foi removida.`, link: '/minhas-designacoes' }),
-                });
-            }
+            const { error: delErr } = await supabase.from('aulas').delete().eq('id', aulaToDelete.id);
+            if (delErr) throw delErr;
+            if (setSnackBar) setSnackBar('Aula excluída com sucesso!');
+            fetchAulas();
         } catch (error) {
             console.error("Erro ao excluir aula:", error);
             if(setSnackBar) setSnackBar(`Erro ao excluir aula: ${error.message}`);

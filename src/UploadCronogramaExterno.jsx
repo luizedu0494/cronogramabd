@@ -28,8 +28,7 @@ import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import EventAvailableIcon from '@mui/icons-material/EventAvailable';
 import ExcelJS from 'exceljs';
 import { saveAs } from 'file-saver';
-import { collection, getDocs, writeBatch, doc, addDoc, serverTimestamp, query, where } from 'firebase/firestore';
-import { db } from './firebaseConfig';
+import { supabase } from './supabaseConfig';
 import { useAuth } from './AuthContext';
 import { parseCronogramaExterno } from './utils/parseCronogramaExterno';
 import { analisarItensImportados } from './utils/analisarItensImportados';
@@ -207,37 +206,43 @@ export default function UploadCronogramaExterno() {
     setProcessandoBatch(true);
 
     try {
-      const tamanhoBatch = 400;
+      const tamanhoBatch = 100;
       let agendadosSucesso = 0;
-      let errosCount = 0;
 
       for (let i = 0; i < paraAgendar.length; i += tamanhoBatch) {
         const chunk = paraAgendar.slice(i, i + tamanhoBatch);
-        const batch = writeBatch(db);
+        const records = chunk.map(item => ({
+          assunto: item.normalizado.assunto || 'Sem Assunto',
+          tipo_atividade: item.normalizado.tipoAtividade || 'Aula',
+          laboratorio: item.normalizado.laboratorioSelecionado || item.normalizado.laboratorio || 'Não especificado',
+          horario_slot: item.normalizado.horarioSlotString || item.normalizado.horarioSlot || '07:00-09:10',
+          data_inicio: item.normalizado.dataInicio ? new Date(item.normalizado.dataInicio).toISOString() : new Date().toISOString(),
+          data_fim: item.normalizado.dataFim ? new Date(item.normalizado.dataFim).toISOString() : null,
+          status: item.normalizado.status || 'aprovada',
+          cursos: item.normalizado.cursos || [],
+          proposto_por_uid: usuario?.uid || null,
+          proposto_por_nome: usuario?.name || usuario?.email || 'Coordenador',
+          origem: 'importacao_externa',
+          created_at: new Date().toISOString()
+        }));
 
-        chunk.forEach(item => {
-          const docRef = doc(collection(db, 'aulas'));
-          batch.set(docRef, {
-            ...item.normalizado,
-            criadoPor: usuario?.uid || 'coordenador',
-            criadoEm: serverTimestamp(),
-            origem: 'importacao_externa',
-            nomeArquivoOrigem: arquivo?.name || 'desconhecido',
-          });
-        });
-
-        await batch.commit();
+        const { error: insertErr } = await supabase.from('aulas').insert(records);
+        if (insertErr) throw insertErr;
         agendadosSucesso += chunk.length;
       }
 
-      await addDoc(collection(db, 'logs_importacao'), {
-        coordenadorUid: usuario?.uid || 'coordenador',
-        coordenadorEmail: usuario?.email || 'desconhecido',
-        nomeArquivo: arquivo?.name || '',
-        totalNoArquivo: itensAnalisados.length,
-        totalAgendados: agendadosSucesso,
-        timestamp: serverTimestamp(),
-      });
+      await supabase.from('logs').insert([{
+        type: 'importacao_externa',
+        collection: 'aulas',
+        payload: {
+          coordenadorUid: usuario?.uid || 'coordenador',
+          coordenadorEmail: usuario?.email || 'desconhecido',
+          nomeArquivo: arquivo?.name || '',
+          totalNoArquivo: itensAnalisados.length,
+          totalAgendados: agendadosSucesso,
+        },
+        created_at: new Date().toISOString(),
+      }]);
 
       setResultadoFinal({
         sucesso: true,

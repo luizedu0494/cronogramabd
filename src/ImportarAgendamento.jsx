@@ -26,11 +26,7 @@ import dayjs from 'dayjs';
 import 'dayjs/locale/pt-br';
 import isBetween from 'dayjs/plugin/isBetween';
 import * as XLSX from 'xlsx';
-import { db } from './firebaseConfig';
-import {
-    collection, addDoc, serverTimestamp, query,
-    where, getDocs, Timestamp
-} from 'firebase/firestore';
+import { supabase } from './supabaseConfig';
 import { LISTA_LABORATORIOS, TIPOS_LABORATORIO } from './constants/laboratorios';
 import { LISTA_CURSOS } from './constants/cursos';
 import PropTypes from 'prop-types';
@@ -743,26 +739,23 @@ function ImportarAgendamento({ userInfo, currentUser }) {
         for (let i = 0; i < aulasSelecionadas.length; i++) {
             const a = aulasSelecionadas[i];
             try {
-                const dataTS = Timestamp.fromDate(dayjs(a.dataAgendamento).startOf('day').toDate());
-                await addDoc(collection(db, 'aulas'), {
+                const dataISO = dayjs(a.dataAgendamento).startOf('day').toISOString();
+                const aulaDataToSave = {
                     assunto: a.assunto.trim(),
                     observacoes: a.observacoes?.trim() || '',
-                    tipoAtividade: 'aula',
-                    dataInicio: dataTS,
-                    dataFim: dataTS,
-                    horarioSlotString: a.horarios,
-                    laboratorioSelecionado: a.laboratorio,
-                    tipoLaboratorio: a.tipoLab || LISTA_LABORATORIOS.find(l => l.id === a.laboratorio)?.tipo || '',
+                    tipo_atividade: 'aula',
+                    data_inicio: dataISO,
+                    data_fim: dataISO,
+                    horario_slot: a.horarios,
+                    laboratorio: a.laboratorio,
                     status: isCoordenador ? 'aprovada' : 'pendente',
-                    propostaPorUid: currentUser?.uid || null,
-                    propostaPorNome: userInfo?.name || currentUser?.email || 'Importação',
-                    propostaPorEmail: currentUser?.email || '',
-                    importadoDeArquivo: file?.name || 'importacao',
-                    importadaVia: 'ImportarAgendamento-IA',
-                    createdAt: serverTimestamp(),
-                    assignedTechnicians: [],
-                    assignedTechnicianUids: [],
-                });
+                    proposto_por_uid: currentUser?.uid || null,
+                    proposto_por_nome: userInfo?.name || currentUser?.email || 'Importação',
+                    origem: 'ImportarAgendamento-IA',
+                    created_at: new Date().toISOString()
+                };
+                const { error: insErr } = await supabase.from('aulas').insert([aulaDataToSave]);
+                if (insErr) throw insErr;
                 results.push({ aula: a, status: 'sucesso', msg: isCoordenador ? 'Agendado' : 'Proposto (pendente)' });
             } catch (e) {
                 results.push({ aula: a, status: 'erro', msg: e.message });

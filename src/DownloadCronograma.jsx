@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
-import { db } from './firebaseConfig';
-import { collection, query, where, getDocs, Timestamp, orderBy } from 'firebase/firestore';
+import { supabase } from './supabaseConfig';
 import {
     Button, Container, Paper, Typography, Box, CircularProgress, Alert, Snackbar,
     FormControl, InputLabel, Select, MenuItem, TextField, Grid, OutlinedInput, Chip,
@@ -167,43 +166,47 @@ function DownloadCronograma() {
     const buscarAulas = async (inicio, fim) => {
         if (!filtros.incluirAulas) return [];
 
-        let q = query(
-            collection(db, 'aulas'),
-            where('status', '==', 'aprovada'),
-            where('dataInicio', '>=', Timestamp.fromDate(inicio.toDate())),
-            where('dataInicio', '<=', Timestamp.fromDate(fim.toDate()))
-        );
+        let queryBuilder = supabase
+            .from('aulas')
+            .select('*')
+            .eq('status', 'aprovada')
+            .gte('data_inicio', inicio.toISOString())
+            .lte('data_inicio', fim.toISOString())
+            .order('data_inicio', { ascending: true });
 
         if (filtros.laboratorioFiltro.length > 0) {
-            q = query(q, where('laboratorioSelecionado', 'in', filtros.laboratorioFiltro));
+            queryBuilder = queryBuilder.in('laboratorio', filtros.laboratorioFiltro);
         }
         if (filtros.horarioFiltro.length > 0) {
-            q = query(q, where('horarioSlotString', 'in', filtros.horarioFiltro));
-        }
-        if (filtros.assuntoFiltro.trim()) {
-            q = query(q, where('assunto', '>=', filtros.assuntoFiltro), where('assunto', '<=', filtros.assuntoFiltro + '\uf8ff'));
-        }
-        if (filtros.cursosFiltro.length > 0) {
-            q = query(q, where('cursos', 'array-contains-any', filtros.cursosFiltro));
-        }
-        if (filtros.ligaFiltro) {
-            q = query(q, where('liga', '==', filtros.ligaFiltro));
+            queryBuilder = queryBuilder.in('horario_slot', filtros.horarioFiltro);
         }
 
-        q = query(q, orderBy('dataInicio', 'asc'));
+        const { data, error } = await queryBuilder;
+        if (error) {
+            console.error('Erro ao buscar aulas:', error);
+            return [];
+        }
 
-        const snapshot = await getDocs(q);
-        let docs = snapshot.docs.map(doc => ({
-            id: doc.id,
+        let docs = (data || []).map(d => ({
+            id: d.id,
             _sourceType: 'aula',
-            ...doc.data()
+            ...d,
+            laboratorioSelecionado: d.laboratorio,
+            horarioSlotString: d.horario_slot,
+            dataInicio: d.data_inicio ? new Date(d.data_inicio) : null,
+            dataFim: d.data_fim ? new Date(d.data_fim) : null,
+            propostaPorNome: d.proposto_por_nome,
         }));
 
-        // Filtro de tipos de aula no frontend
+        if (filtros.assuntoFiltro?.trim()) {
+            const termo = filtros.assuntoFiltro.toLowerCase().trim();
+            docs = docs.filter(a => a.assunto?.toLowerCase().includes(termo));
+        }
+
         if (filtros.tiposAula.length > 0) {
             docs = docs.filter(aula => {
-                const tipoAtiv = (aula.tipoAtividade || '').toLowerCase();
-                const isRev = Boolean(aula.isRevisao);
+                const tipoAtiv = (aula.tipo_atividade || '').toLowerCase();
+                const isRev = Boolean(aula.is_revisao);
 
                 return filtros.tiposAula.some(t => {
                     if (t === 'revisao') return isRev || tipoAtiv.includes('revisão') || tipoAtiv.includes('revisao');
@@ -222,18 +225,24 @@ function DownloadCronograma() {
     const buscarEventos = async (inicio, fim) => {
         if (!filtros.incluirEventos) return [];
 
-        let q = query(
-            collection(db, 'eventosManutencao'),
-            where('dataInicio', '>=', Timestamp.fromDate(inicio.toDate())),
-            where('dataInicio', '<=', Timestamp.fromDate(fim.toDate())),
-            orderBy('dataInicio', 'asc')
-        );
+        const { data, error } = await supabase
+            .from('eventos_manutencao')
+            .select('*')
+            .gte('data_inicio', inicio.toISOString())
+            .lte('data_inicio', fim.toISOString())
+            .order('data_inicio', { ascending: true });
 
-        const snapshot = await getDocs(q);
-        let docs = snapshot.docs.map(doc => ({
-            id: doc.id,
+        if (error) {
+            console.error('Erro ao buscar eventos:', error);
+            return [];
+        }
+
+        let docs = (data || []).map(e => ({
+            id: e.id,
             _sourceType: 'evento',
-            ...doc.data()
+            ...e,
+            dataInicio: e.data_inicio ? new Date(e.data_inicio) : null,
+            dataFim: e.data_fim ? new Date(e.data_fim) : null,
         }));
 
         // Filtro de laboratórios para eventos no frontend

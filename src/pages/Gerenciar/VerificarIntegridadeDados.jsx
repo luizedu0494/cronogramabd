@@ -6,8 +6,7 @@ import {
     TextField, FormControl, InputLabel, Select, MenuItem, Chip, OutlinedInput, Card, CardContent, CardActions,
     Checkbox, FormControlLabel, Tooltip, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Stack
 } from '@mui/material';
-import { db } from '../../firebaseConfig';
-import { collection, getDocs, doc, deleteDoc, updateDoc, writeBatch, serverTimestamp, addDoc, query, where, Timestamp } from 'firebase/firestore';
+import { supabase } from '../../supabaseConfig';
 import {
     BugReport, CheckCircle, Warning, Delete, Edit, DataObject, Groups,
     FilterList, FileDownload, CleaningServices, HistoryToggleOff, ContentCopy, SelectAll, Refresh,
@@ -86,19 +85,18 @@ function VerificarIntegridadeDados() {
     useEffect(() => {
         const carregarContextoInicial = async () => {
             try {
-                const periodosSnap = await getDocs(collection(db, "periodosSemAtividade"));
-                const listP = periodosSnap.docs.map(d => ({ id: d.id, ...d.data() }));
-                setPeriodos(listP);
-                if (listP.length > 0) setEscopoPeriodoId(listP[0].id);
+                const { data } = await supabase.from('config').select('*');
+                setPeriodos(data || []);
+                if (data && data.length > 0) setEscopoPeriodoId(data[0].id);
             } catch (err) {
                 console.warn("Não foi possível carregar os períodos iniciais:", err);
             }
 
             try {
-                const usuariosSnap = await getDocs(collection(db, "users"));
+                const { data: usersData } = await supabase.from('users').select('*');
                 const mapU = {};
-                usuariosSnap.docs.forEach(uDoc => {
-                    mapU[uDoc.id] = { id: uDoc.id, ...uDoc.data() };
+                (usersData || []).forEach(uDoc => {
+                    mapU[uDoc.uid || uDoc.id] = uDoc;
                 });
                 setUsuariosMap(mapU);
             } catch (uErr) {
@@ -108,54 +106,47 @@ function VerificarIntegridadeDados() {
         carregarContextoInicial();
     }, []);
 
-    // Buscar dados do Firestore com base no escopo pré-definido pelo usuário
+    // Buscar dados do Supabase com base no escopo pré-definido pelo usuário
     const fetchAulasEContexto = useCallback(async () => {
         setLoading(true);
         setHasValidated(true);
         setSelectedIds(new Set());
 
         try {
-            let aulasQuery;
+            let query = supabase.from('aulas').select('*');
 
             if (escopoModo === 'mes_atual') {
-                const inicioMes = dayjs().startOf('month').toDate();
-                const fimMes = dayjs().endOf('month').toDate();
-                aulasQuery = query(
-                    collection(db, "aulas"),
-                    where("dataInicio", ">=", Timestamp.fromDate(inicioMes)),
-                    where("dataInicio", "<=", Timestamp.fromDate(fimMes))
-                );
+                const inicioMes = dayjs().startOf('month').toISOString();
+                const fimMes = dayjs().endOf('month').toISOString();
+                query = query.gte('data_inicio', inicioMes).lte('data_inicio', fimMes);
                 setInfoLeituras(`Varredura do Mês Atual (${dayjs().format('MMMM/YYYY')})`);
             } else if (escopoModo === 'periodo_letivo' && escopoPeriodoId) {
                 const pSelecionado = periodos.find(p => p.id === escopoPeriodoId);
-                if (pSelecionado && pSelecionado.dataInicio?.toDate && pSelecionado.dataFim?.toDate) {
-                    aulasQuery = query(
-                        collection(db, "aulas"),
-                        where("dataInicio", ">=", pSelecionado.dataInicio),
-                        where("dataInicio", "<=", pSelecionado.dataFim)
-                    );
+                if (pSelecionado && pSelecionado.data_inicio && pSelecionado.data_fim) {
+                    query = query.gte('data_inicio', pSelecionado.data_inicio).lte('data_inicio', pSelecionado.data_fim);
                     setInfoLeituras(`Varredura do Período: "${pSelecionado.descricao || 'Selecionado'}"`);
                 } else {
-                    aulasQuery = collection(db, "aulas");
                     setInfoLeituras('Varredura Geral (Sem filtro rígido de data)');
                 }
             } else if (escopoModo === 'datas_customizada' && escopoDataInicio && escopoDataFim) {
-                const dtInicio = dayjs(escopoDataInicio).startOf('day').toDate();
-                const dtFim = dayjs(escopoDataFim).endOf('day').toDate();
-                aulasQuery = query(
-                    collection(db, "aulas"),
-                    where("dataInicio", ">=", Timestamp.fromDate(dtInicio)),
-                    where("dataInicio", "<=", Timestamp.fromDate(dtFim))
-                );
+                const dtInicio = dayjs(escopoDataInicio).startOf('day').toISOString();
+                const dtFim = dayjs(escopoDataFim).endOf('day').toISOString();
+                query = query.gte('data_inicio', dtInicio).lte('data_inicio', dtFim);
                 setInfoLeituras(`Varredura de ${dayjs(dtInicio).format('DD/MM/YYYY')} até ${dayjs(dtFim).format('DD/MM/YYYY')}`);
             } else {
-                // Varredura completa da coleção (alerta de consumo)
-                aulasQuery = collection(db, "aulas");
-                setInfoLeituras('Varredura Completa de Toda a Coleção (Todas as Aulas)');
+                setInfoLeituras('Varredura Completa de Toda a Tabela (Todas as Aulas)');
             }
 
-            const aulasSnapshot = await getDocs(aulasQuery);
-            const listaAulas = aulasSnapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+            const { data, error } = await query;
+            if (error) throw error;
+
+            const listaAulas = (data || []).map(d => ({
+                ...d,
+                laboratorioSelecionado: d.laboratorio,
+                horarioSlotString: d.horario_slot,
+                dataInicio: d.data_inicio ? dayjs(d.data_inicio).toDate() : null,
+                dataFim: d.data_fim ? dayjs(d.data_fim).toDate() : null,
+            }));
             setAulas(listaAulas);
 
         } catch (err) {
@@ -354,16 +345,15 @@ function VerificarIntegridadeDados() {
         if (!aulaToDelete) return;
         setLoading(true);
         try {
-            await deleteDoc(doc(db, 'aulas', aulaToDelete.id));
+            const { error } = await supabase.from('aulas').delete().eq('id', aulaToDelete.id);
+            if (error) throw error;
 
             // Log de Auditoria
-            await addDoc(collection(db, 'logs'), {
-                timestamp: serverTimestamp(),
-                executadoPorUid: currentUser?.uid || 'desconhecido',
-                executadoPorEmail: currentUser?.email || 'desconhecido',
-                quantidadeExcluidos: 1,
-                itensExcluidos: [{ id: aulaToDelete.id, ...aulaToDelete }]
-            });
+            await supabase.from('logs').insert([{
+                executado_por_uid: currentUser?.uid || 'desconhecido',
+                quantidade_excluidos: 1,
+                itens_excluidos: [{ id: aulaToDelete.id, assunto: aulaToDelete.assunto }]
+            }]);
 
             setFeedback({ open: true, message: `Aula "${aulaToDelete.assunto || aulaToDelete.id}" excluída com sucesso.`, severity: 'success' });
             fetchAulasEContexto();
@@ -376,7 +366,7 @@ function VerificarIntegridadeDados() {
         }
     };
 
-    // Exclusão em Massa com Dry-Run e batching de 500 itens
+    // Exclusão em Massa com Dry-Run e Supabase
     const confirmMassDelete = async () => {
         const idsParaDeletar = Array.from(selectedIds);
         if (idsParaDeletar.length === 0) return;
@@ -385,31 +375,21 @@ function VerificarIntegridadeDados() {
         try {
             const itemsParaDeletar = todosProblemas.filter(p => selectedIds.has(p.id));
 
-            // Firestore Batch tem limite de 500 operações por batch
-            const CHUNK_SIZE = 450;
-            for (let i = 0; i < idsParaDeletar.length; i += CHUNK_SIZE) {
-                const chunk = idsParaDeletar.slice(i, i + CHUNK_SIZE);
-                const batch = writeBatch(db);
-                chunk.forEach(id => {
-                    batch.delete(doc(db, 'aulas', id));
-                });
-                await batch.commit();
-            }
+            const { error } = await supabase.from('aulas').delete().in('id', idsParaDeletar);
+            if (error) throw error;
 
-            // Registrar Log de Auditoria no Firestore
-            await addDoc(collection(db, 'logs'), {
-                timestamp: serverTimestamp(),
-                executadoPorUid: currentUser?.uid || 'desconhecido',
-                executadoPorEmail: currentUser?.email || 'desconhecido',
-                quantidadeExcluidos: itemsParaDeletar.length,
-                itensExcluidos: itemsParaDeletar.map(item => ({
+            // Registrar Log de Auditoria
+            await supabase.from('logs').insert([{
+                executado_por_uid: currentUser?.uid || 'desconhecido',
+                quantidade_excluidos: itemsParaDeletar.length,
+                itens_excluidos: itemsParaDeletar.map(item => ({
                     id: item.id,
                     assunto: item.assunto || item.disciplina || 'Sem Assunto',
                     laboratorio: item.laboratorioSelecionado || item.laboratorio || 'N/A',
                     categorias: item.categorias,
                     erros: item.erros
                 }))
-            });
+            }]);
 
             setFeedback({
                 open: true,
@@ -443,12 +423,16 @@ function VerificarIntegridadeDados() {
         if (!aulaParaQuickEdit) return;
         setLoading(true);
         try {
-            await updateDoc(doc(db, 'aulas', aulaParaQuickEdit.id), {
-                ...quickEditFields,
-                // Garantir padronização dos campos novos
+            const { error } = await supabase.from('aulas').update({
+                assunto: quickEditFields.assunto,
+                tipo_atividade: quickEditFields.tipoAtividade,
+                cursos: quickEditFields.cursos,
                 laboratorio: quickEditFields.laboratorioSelecionado,
                 status: aulaParaQuickEdit.status || 'agendada'
-            });
+            }).eq('id', aulaParaQuickEdit.id);
+
+            if (error) throw error;
+
             setFeedback({ open: true, message: 'Aula atualizada e padronizada com sucesso!', severity: 'success' });
             fetchAulasEContexto();
         } catch (error) {

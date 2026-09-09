@@ -24,8 +24,7 @@ import 'dayjs/locale/pt-br';
 import customParseFormat from 'dayjs/plugin/customParseFormat';
 import isSameOrBefore from 'dayjs/plugin/isSameOrBefore';
 import isBetween from 'dayjs/plugin/isBetween';
-import { db } from './firebaseConfig';
-import { collection, query, where, getDocs, addDoc, serverTimestamp, Timestamp } from 'firebase/firestore';
+import { supabase } from './supabaseConfig';
 import { useAuth } from './AuthContext';
 import { LISTA_LABORATORIOS } from './constants/laboratorios';
 
@@ -785,22 +784,13 @@ function ImportarCronograma() {
     for (let i = 0; i < aulasParaImportar.length; i++) {
       const c = aulasParaImportar[i];
       try {
-        const lab = LISTA_LABORATORIOS.find((l) => l.name === c.laboratorio);
-        const dtInicio = dayjs(`${c.data} ${c.horaInicio}`, 'DD/MM/YYYY HH:mm');
-        const dtFim = dayjs(`${c.data} ${c.horaFim}`, 'DD/MM/YYYY HH:mm');
-
-        await addDoc(collection(db, 'aulas'), {
-          tipoAtividade: c.tipoAtividade || 'aula',
-          dataInicio: Timestamp.fromDate(dtInicio.toDate()),
-          dataFim: Timestamp.fromDate(dtFim.toDate()),
-          assunto: c.assunto.trim(),
-          observacoes: c.observacoes?.trim() || '',
-          tipoLaboratorio: lab?.tipo || 'desconhecido',
-          laboratorioSelecionado: c.laboratorio,
+        const dataObj = dayjs(`${c.data} ${c.horaInicio}`, 'DD/MM/YYYY HH:mm').toDate();
+        const aulaToSave = {
+          assunto: c.assunto || 'Sem Assunto',
+          tipo_atividade: c.tipoAtividade || 'aula',
+          data_inicio: dataObj.toISOString(),
+          laboratorio: c.laboratorio || 'Não especificado',
           status: 'aprovada',
-          propostaPorEmail: currentUser.email,
-          propostaPorUid: currentUser.uid,
-          propostaPorNome: userProfile?.name || currentUser.displayName || currentUser.email,
           createdAt: serverTimestamp(),
           assignedTechnicians: [],
           assignedTechnicianUids: [],

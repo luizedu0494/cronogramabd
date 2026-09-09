@@ -4,10 +4,7 @@ import {
     Alert, Snackbar, IconButton, InputAdornment, Chip, Avatar
 } from '@mui/material';
 import { Send as SendIcon, SmartToy as AIIcon, Mic as MicIcon, Stop as StopIcon, Person as PersonIcon } from '@mui/icons-material';
-import { db } from './firebaseConfig';
-import {
-    collection, query, where, getDocs, Timestamp
-} from 'firebase/firestore';
+import { supabase } from './supabaseConfig';
 import dayjs from 'dayjs';
 import 'dayjs/locale/pt-br';
 import { LISTA_LABORATORIOS } from './constants/laboratorios';
@@ -28,7 +25,6 @@ const BLOCOS_HORARIO = [
 const GROQ_API_KEY = import.meta.env.VITE_GROQ_API_KEY;
 const GROQ_MODEL = import.meta.env.VITE_GROQ_MODEL_LIGHT || 'groq/compound-mini';
 
-import { addDoc, serverTimestamp } from 'firebase/firestore';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import SendTimeExtensionIcon from '@mui/icons-material/SendTimeExtension';
 import { notificadorTelegram } from './services/NotificadorTelegram';
@@ -228,38 +224,38 @@ function AssistenteIATecnico({ userInfo, currentUser, mode }) {
 
     const buscarAulasFirebase = async (criterios) => {
         try {
-            let q = collection(db, "aulas");
-            const constraints = [];
+            let queryBuilder = supabase.from('aulas').select('*');
 
             if (criterios.data) {
-                const dataInicio = dayjs(criterios.data, 'DD/MM/YYYY').startOf('day');
-                const dataFim = dataInicio.endOf('day');
-                constraints.push(where("dataInicio", ">=", Timestamp.fromDate(dataInicio.toDate())));
-                constraints.push(where("dataInicio", "<=", Timestamp.fromDate(dataFim.toDate())));
+                const dataInicio = dayjs(criterios.data, 'DD/MM/YYYY').startOf('day').toISOString();
+                const dataFim = dayjs(criterios.data, 'DD/MM/YYYY').endOf('day').toISOString();
+                queryBuilder = queryBuilder.gte('data_inicio', dataInicio).lte('data_inicio', dataFim);
             } else if (criterios.mes) {
                 const [mes, ano] = criterios.mes.split('/');
-                const dataInicio = dayjs().month(parseInt(mes) - 1).year(parseInt(ano)).startOf('month');
-                const dataFim = dataInicio.endOf('month');
-                constraints.push(where("dataInicio", ">=", Timestamp.fromDate(dataInicio.toDate())));
-                constraints.push(where("dataInicio", "<=", Timestamp.fromDate(dataFim.toDate())));
+                const dataInicio = dayjs().month(parseInt(mes) - 1).year(parseInt(ano)).startOf('month').toISOString();
+                const dataFim = dayjs().month(parseInt(mes) - 1).year(parseInt(ano)).endOf('month').toISOString();
+                queryBuilder = queryBuilder.gte('data_inicio', dataInicio).lte('data_inicio', dataFim);
             }
 
             if (criterios.laboratorio) {
-                constraints.push(where("laboratorioSelecionado", "==", criterios.laboratorio));
+                queryBuilder = queryBuilder.eq('laboratorio', criterios.laboratorio);
             }
 
-            if (constraints.length > 0) {
-                q = query(q, ...constraints);
-            }
+            const { data, error } = await queryBuilder;
+            if (error) throw error;
 
-            const querySnapshot = await getDocs(q);
-            let aulas = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+            let aulas = (data || []).map(d => ({
+                id: d.id,
+                ...d,
+                laboratorioSelecionado: d.laboratorio,
+                dataInicio: d.data_inicio ? dayjs(d.data_inicio) : null,
+            }));
 
             if (criterios.termoBusca) {
                 const termo = criterios.termoBusca.toLowerCase();
                 aulas = aulas.filter(aula => 
-                    aula.assunto.toLowerCase().includes(termo) ||
-                    (aula.tipoAtividade && aula.tipoAtividade.toLowerCase().includes(termo))
+                    (aula.assunto && aula.assunto.toLowerCase().includes(termo)) ||
+                    (aula.tipo_atividade && aula.tipo_atividade.toLowerCase().includes(termo))
                 );
             }
 

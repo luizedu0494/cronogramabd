@@ -7,8 +7,7 @@ import {
 } from '@mui/material';
 
 import ClearIcon from '@mui/icons-material/Clear';
-import { collection, getDocs, query, where, doc, updateDoc, orderBy } from 'firebase/firestore';
-import { db } from './firebaseConfig';
+import { supabase } from './supabaseConfig';
 import PropTypes from 'prop-types';
 
 function DesignarTecnicosModal({ open, onClose, aula, setSnackBar }) {
@@ -22,22 +21,17 @@ function DesignarTecnicosModal({ open, onClose, aula, setSnackBar }) {
         setLoading(true);
         setError('');
         try {
-            const usersRef = collection(db, 'users');
-            const qTecnicos = query(usersRef, where('role', '==', 'tecnico'));
-            const tecnicosSnapshot = await getDocs(qTecnicos);
-            const tecnicosList = tecnicosSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+            const { data: tecnicosData } = await supabase.from('users').select('*').eq('role', 'tecnico');
+            const tecnicosList = (tecnicosData || []).map(u => ({ id: u.uid, ...u }));
             setTecnicosDisponiveis(tecnicosList);
 
-            // Busca histórico de designações para o laboratório da aula
             const labAlvo = aula?.laboratorioSelecionado || aula?.laboratorio;
             if (labAlvo) {
-                const qAulasLab = query(collection(db, 'aulas'), where('laboratorioSelecionado', '==', labAlvo));
-                const snapLab = await getDocs(qAulasLab);
+                const { data: aulasLab } = await supabase.from('aulas').select('tecnicos').eq('laboratorio', labAlvo);
                 const freq = {};
-                snapLab.docs.forEach(d => {
-                    const data = d.data();
-                    if (Array.isArray(data.tecnicos)) {
-                        data.tecnicos.forEach(tId => {
+                (aulasLab || []).forEach(d => {
+                    if (Array.isArray(d.tecnicos)) {
+                        d.tecnicos.forEach(tId => {
                             freq[tId] = (freq[tId] || 0) + 1;
                         });
                     }
@@ -45,11 +39,7 @@ function DesignarTecnicosModal({ open, onClose, aula, setSnackBar }) {
                 setTecnicosFrequencia(freq);
             }
 
-            const gruposRef = collection(db, 'grupos');
-            const qGrupos = query(gruposRef, orderBy('nome'));
-            const gruposSnapshot = await getDocs(qGrupos);
-            const gruposList = gruposSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-            setGrupos(gruposList);
+            setGrupos([]);
 
             if (aula && Array.isArray(aula.tecnicos)) {
                 setSelectedTecnicos(aula.tecnicos);
@@ -101,11 +91,12 @@ function DesignarTecnicosModal({ open, onClose, aula, setSnackBar }) {
         }).filter(Boolean);
 
         try {
-            const aulaRef = doc(db, 'aulas', aula.id);
-            await updateDoc(aulaRef, {
-                tecnicos: selectedTecnicos,
-                tecnicosInfo: tecnicosInfoParaSalvar 
-            });
+            const { error: updateErr } = await supabase
+                .from('aulas')
+                .update({ tecnicos: selectedTecnicos })
+                .eq('id', aula.id);
+
+            if (updateErr) throw updateErr;
 
             if (idsParaNotificar.length > 0) {
                 // Notificar via Web Push
