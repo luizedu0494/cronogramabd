@@ -99,7 +99,7 @@ const styles = StyleSheet.create({
     borderRadius: 30,
     backgroundColor: '#E0F2FE',
     alignItems: 'center',
-    justify.content: 'center',
+    justifyContent: 'center',
   },
   userInfo: {
     flex: 1,
