@@ -9,6 +9,14 @@ import { useNavigate } from 'react-router-dom';
 import { BookOpen, ChevronRight, Clock, User, CheckCircle, XCircle } from 'lucide-react';
 import useFetchAulas from '../hooks/useFetchAulas';
 
+import { LISTA_CURSOS } from '../constants/cursos';
+
+const formatarNomeCurso = (c) => {
+    if (!c) return '';
+    const encontrado = LISTA_CURSOS.find(item => item.value === c || item.label.toLowerCase() === String(c).toLowerCase());
+    return encontrado ? encontrado.label : c;
+};
+
 const CardAulasRecentes = ({ limite = 5 }) => {
     const theme = useTheme();
     const navigate = useNavigate();
@@ -158,11 +166,17 @@ const CardAulasRecentes = ({ limite = 5 }) => {
                                     <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 0.5, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                                         {aula.titulo || aula.assunto || 'Sem título'}
                                     </Typography>
-                                    {(aula.curso || (Array.isArray(aula.cursos) && aula.cursos.length > 0)) && (
-                                        <Typography variant="caption" sx={{ color: theme.palette.primary.main, fontWeight: 500, display: 'block', mb: 0.5 }}>
-                                            Curso: {aula.curso || aula.cursos.join(', ')}
-                                        </Typography>
-                                    )}
+                                    {(() => {
+                                        const listaCursos = Array.isArray(aula.cursos) && aula.cursos.length > 0
+                                            ? aula.cursos.map(formatarNomeCurso).join(', ')
+                                            : (aula.curso ? formatarNomeCurso(aula.curso) : '');
+                                        if (!listaCursos) return null;
+                                        return (
+                                            <Typography variant="caption" sx={{ color: theme.palette.primary.main, fontWeight: 600, display: 'block', mb: 0.5 }}>
+                                                Curso: {listaCursos}
+                                            </Typography>
+                                        );
+                                    })()}
                                     <Typography variant="caption" sx={{ color: theme.palette.text.secondary }}>
                                         {aula.laboratorio || 'Laboratório não especificado'}
                                     </Typography>
