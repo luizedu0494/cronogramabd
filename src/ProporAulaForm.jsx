@@ -699,6 +699,16 @@ function ProporAulaForm({ userInfo, currentUser, initialDate, onSuccess, onCance
                 };
                 const { error } = await supabase.from('aulas').update(finalData).eq('id', aulaId);
                 if (error) throw error;
+
+                // Atualizar relacionamento de cursos na edição
+                if (aula.cursos) {
+                    await supabase.from('aula_cursos').delete().eq('aula_id', aulaId);
+                    if (aula.cursos.length > 0) {
+                        await supabase.from('aula_cursos').insert(
+                            aula.cursos.map(curso => ({ aula_id: aulaId, curso }))
+                        );
+                    }
+                }
                 finalizadas.push({ ...aula, id: aulaId });
             } else {
                 for (const aula of aulasParaConfirmar) {

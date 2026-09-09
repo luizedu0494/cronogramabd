@@ -725,6 +725,13 @@ function CalendarioCronograma({ userInfo }) {
                     };
 
                     await supabase.from('aulas').update(aulaUpdates).eq('id', aula.id);
+
+                    if (bulkEditFields.cursos && bulkEditFields.cursos.length > 0) {
+                        await supabase.from('aula_cursos').delete().eq('aula_id', aula.id);
+                        await supabase.from('aula_cursos').insert(
+                            bulkEditFields.cursos.map(c => ({ aula_id: aula.id, curso: c }))
+                        );
+                    }
                 }
             }
 
