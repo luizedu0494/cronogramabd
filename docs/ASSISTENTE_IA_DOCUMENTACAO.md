@@ -2,7 +2,7 @@
 
 ## Visão Geral
 
-O **Assistente IA** é uma funcionalidade exclusiva para coordenadores que permite gerenciar aulas (adicionar, editar, excluir) através de comandos em linguagem natural. A IA utiliza a API Groq com o modelo `llama-3.1-8b-instant` para interpretar os comandos e executar as ações no Firebase.
+O **Assistente IA** é uma funcionalidade exclusiva para coordenadores que permite gerenciar aulas (adicionar, editar, excluir) através de comandos em linguagem natural. A IA utiliza a API Groq com modelos avançados para interpretar os comandos e executar as ações no Supabase (PostgreSQL).
 
 ## Características Principais
 

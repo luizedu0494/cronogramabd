@@ -222,7 +222,7 @@ function AssistenteIATecnico({ userInfo, currentUser, mode }) {
         }
     };
 
-    const buscarAulasFirebase = async (criterios) => {
+    const buscarAulasSupabase = async (criterios) => {
         try {
             let queryBuilder = supabase.from('aulas').select('*');
 
@@ -295,7 +295,7 @@ function AssistenteIATecnico({ userInfo, currentUser, mode }) {
                 return;
             }
 
-            const aulas = await buscarAulasFirebase(resultadoIA.dados || {});
+            const aulas = await buscarAulasSupabase(resultadoIA.dados || {});
             let resposta = resultadoIA.resposta;
 
             if (typeof resposta !== 'string') {

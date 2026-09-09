@@ -27,7 +27,7 @@ Este sistema implementa uma **IA estruturada** que processa consultas em linguag
                             ▼
 ┌─────────────────────────────────────────────────────────────┐
 │                     ExecutorAcoes.js                        │
-│              (Execução de Ações no Firebase)                │
+│              (Execução de Ações no Supabase)                │
 └───────────────────────────┬─────────────────────────────────┘
                             │
                             ▼
@@ -102,10 +102,10 @@ const resultado = await processador.processar("Quantas aulas tem hoje?");
 
 ### 4. ExecutorAcoes.js
 
-**Responsabilidade:** Executar ações no Firebase e retornar dados estruturados.
+**Responsabilidade:** Executar ações no Supabase e retornar dados estruturados.
 
 **Ações Suportadas:**
-- **consultar:** Busca aulas no Firebase
+- **consultar:** Busca aulas no Supabase
 - **adicionar:** Cria novas aulas (com verificação de conflitos)
 - **editar:** Atualiza aulas existentes
 - **excluir:** Remove aulas
@@ -359,7 +359,7 @@ O sistema usa as seguintes bibliotecas já instaladas no projeto:
 
 - React
 - Material-UI (@mui/material)
-- Firebase (firestore)
+- Supabase (PostgreSQL)
 - dayjs
 - chart.js + react-chartjs-2
 

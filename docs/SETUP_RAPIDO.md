@@ -36,14 +36,14 @@ Telegram → Procure @userinfobot → Clique Start
 VITE_TELEGRAM_BOT_TOKEN=123456789:ABCdefGHIjklmnoPQRstuvWXYZ-1234567890
 ```
 
-**No Firebase Console:**
-1. Firestore → users → Seu usuário
-2. Adicione campo: `telegramChatId` = `987654321`
+**No Supabase:**
+1. Tabela `users` → Seu usuário
+2. Adicione ou atualize a coluna: `telegram_chat_id` = `987654321` (ou conecte diretamente pela tela de Perfil via Código de Vinculação)
 
 ### 4️⃣ Testar (1 min)
 
 ```bash
-npm start
+npm run dev
 ```
 
 Adicione uma aula → Verifique notificação no Telegram ✅
@@ -55,10 +55,10 @@ Adicione uma aula → Verifique notificação no Telegram ✅
 - [ ] Bot criado (@BotFather)
 - [ ] Token copiado
 - [ ] Chat ID obtido (@userinfobot)
-- [ ] `.env.local` criado
-- [ ] Token adicionado em `.env.local`
-- [ ] Chat ID adicionado no Firebase
-- [ ] Servidor iniciado (`npm start`)
+- [ ] `.env` criado
+- [ ] Token adicionado em `.env`
+- [ ] Chat ID ou vinculo cadastrado no Supabase
+- [ ] Servidor iniciado (`npm run dev`)
 - [ ] Notificação recebida no Telegram
 
 ---
@@ -67,7 +67,7 @@ Adicione uma aula → Verifique notificação no Telegram ✅
 
 | Problema | Solução |
 |----------|---------|
-| Notificação não chega | Verifique `.env.local` e Firebase |
+| Notificação não chega | Verifique `.env` e Supabase |
 | Erro "Unauthorized" | Token inválido - copie novamente de @BotFather |
 | Erro "Chat not found" | Chat ID inválido - copie novamente de @userinfobot |
 | Variável não carregada | Reinicie servidor (`npm start`) |

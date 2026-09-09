@@ -268,7 +268,7 @@ function ConfiguracoesPerfil() {
                         <Alert severity={pushAtivo ? "success" : "info"} sx={{ mb: 2 }}>
                             {pushAtivo 
                               ? "Notificações Web Push nativas VAPID estão ativas neste dispositivo."
-                              : "Ative notificações nativas para receber alertas instantâneos diretamente na sua área de trabalho/dispositivo móvel sem necessidade do Firebase."
+                              : "Ative notificações nativas para receber alertas instantâneos diretamente na sua área de trabalho ou dispositivo móvel."
                             }
                         </Alert>
                         <Button

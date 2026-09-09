@@ -11,6 +11,7 @@
   <a href="#funcionalidades">Funcionalidades</a> •
   <a href="#identidade-visual-e-design">Identidade & Design</a> •
   <a href="#tecnologias">Tecnologias</a> •
+  <a href="#configuracao-e-instalacao">Instalação & Setup</a> •
   <a href="#status-do-projeto">Status do Projeto</a>
 </p>
 
@@ -28,26 +29,24 @@
   <a href="https://cronogramabd.vercel.app"><strong>🌐 Ver demonstração ao vivo →</strong></a>
 </p>
 
-> 💼 **Projeto proprietário em desenvolvimento comercial.**
-> Este repositório é uma vitrine do produto, com descrição de arquitetura, funcionalidades e decisões técnicas. O código-fonte completo não é público. Para parcerias, licenciamento ou acesso a uma demo guiada, entre em contato.
-
 ---
 
 ## Sobre
 
 O **CronoLab** é uma solução completa desenvolvida para resolver um desafio crítico no ambiente acadêmico: a **gestão descentralizada de laboratórios de aulas e pesquisas**.
 
-O sistema centraliza a agenda de múltiplos espaços físicos em uma única interface inteligente, atendendo às necessidades de **Coordenadores**, **Técnicos de Laboratório**, **Professores** e **Alunos (Visitantes)**. Ele substitui planilhas manuais e conflitos de horários por um banco de dados relacional Supabase (PostgreSQL) com verificação automática de choques de agenda, análise preditiva de ocupação e atualizações em tempo real.
+O sistema centraliza a agenda de múltiplos espaços físicos em uma única interface inteligente, atendendo às necessidades de **Coordenadores**, **Técnicos de Laboratório**, **Professores** e **Alunos (Visitantes)**. Ele substitui planilhas manuais e conflitos de horários por um banco de dados relacional **Supabase (PostgreSQL)** com verificação automática de choques de agenda, análise preditiva de ocupação e atualizações em tempo real.
 
-**Destaques:**
-- 🏫 **Pronto para Instituições de Ensino**: adequado para universidades, faculdades e centros tecnológicos com múltiplos laboratórios
-- 🎓 **Modo Visitante sem Necessidade de Cadastro**: acesso direto e instantâneo para Alunos e Professores consultarem os horários
-- ⚡ **Arquitetura 100% Supabase (PostgreSQL)**: consultas relacionais de alta velocidade e atualizações em tempo real via WebSockets (`postgres_changes`)
-- 🔐 **Autenticação Flexível & Segura**: Login por E-mail + Senha ou **Login Social com Google OAuth**
-- 📱 **PWA Responsivo**: instalável em smartphones e desktops (Android/iOS/Windows) com suporte a Web Push
-- 🌙 **Design de Alto Padrão**: Dark mode nativo com paleta de cores harmoniosa e animações fluidas
-- 📥 **Importação e Exportação Completa**: reconhecimento automático em Excel, CSV, JSON e Word (.docx), exportação em Excel, PDF e .ics
-- 🔔 **Notificações em Tempo Real**: alertas via Telegram e Web Push em mudanças na grade
+### ✨ Destaques:
+- 🏫 **Pronto para Instituições de Ensino**: Adequado para universidades, faculdades e centros tecnológicos com múltiplos laboratórios.
+- 🎓 **Modo Visitante sem Necessidade de Cadastro**: Acesso direto e instantâneo para Alunos e Professores consultarem os horários.
+- ⚡ **Arquitetura 100% Supabase (PostgreSQL)**: Consultas relacionais de alta velocidade e atualizações em tempo real via WebSockets (`postgres_changes`).
+- 🔐 **Autenticação Flexível & Segura**: Login por E-mail + Senha ou **Login Social com Google OAuth** via Supabase Auth (PKCE Flow).
+- 🤖 **Assistente com Inteligência Artificial**: Motor de IA alimentado por Groq API (`llama-3.3-70b-versatile` / `groq/compound`) para interpretação de comandos e análises.
+- 📱 **PWA Responsivo**: Instalável em smartphones e desktops (Android/iOS/Windows) com suporte a Web Push nativo VAPID.
+- 💬 **Integração Nativa com Telegram Bot**: Alertas em tempo real e vinculação de conta em 1 clique via deep link (`t.me/bot?start=CRN-XXXX`).
+- 🌙 **Design de Alto Padrão**: Dark mode nativo com paleta de cores harmoniosa e animações fluidas.
+- 📥 **Importação e Exportação Completa**: Reconhecimento automático em Excel, CSV, JSON e Word (.docx), exportação em Excel (.xlsx), PDF e iCal (.ics).
 
 ---
 
@@ -55,53 +54,57 @@ O sistema centraliza a agenda de múltiplos espaços físicos em uma única inte
 
 Para facilitar a consulta dos horários de aulas e disponibilidade de laboratórios, o sistema conta com um modo de acesso público direto na tela inicial:
 
-- 🔓 **Sem Cadastro Nem Aprovação**: alunos e professores entram instantaneamente
-- 📅 **Direto ao Calendário**: o visitante vai direto para a grade semanal
-- 📥 **Exportação de Dados**: agenda do semestre/mês em Excel (.xlsx), PDF e iCal (.ics)
-- 🛡️ **Segurança Reforçada**: acesso puramente de leitura; funcionalidades administrativas e Assistente de IA são restritas à equipe autorizada
+- 🔓 **Sem Cadastro Nem Aprovação**: Alunos e professores entram instantaneamente.
+- 📅 **Direto ao Calendário**: O visitante vai direto para a grade semanal e filtros por laboratório.
+- 📥 **Exportação de Dados**: Agenda do semestre/mês em Excel (.xlsx), PDF e iCal (.ics).
+- 🛡️ **Segurança Reforçada**: Acesso puramente de leitura; funcionalidades administrativas e Assistente de IA são restritas à equipe autorizada.
 
 ---
 
 ## Perfis de Acesso
 
-O acesso restrito da equipe é controlado por um fluxo de aprovação. Ao se cadastrar via **E-mail + Senha** ou **Google**, a conta fica com o status **Pendente** até que a coordenação aprove o perfil adequado:
+O acesso restrito da equipe é controlado por um fluxo de aprovação via Supabase Auth. Ao se cadastrar via **E-mail + Senha** ou **Google**, a conta fica com o status **Pendente** até que a coordenação aprove o perfil adequado:
 
 ### 👨‍💼 Coordenador
-- Painel de Indicadores (KPIs) em tempo real
-- Agendamento direto de aulas e bloqueios de manutenção
-- Central de Aprovações de propostas enviadas
-- Gestão de usuários e cargos
-- Importação de cronogramas em lote
-- Avisos e comunicados por prioridade
+- Painel de Indicadores (KPIs) e estatísticas em tempo real.
+- Agendamento direto de aulas, revisões e provas.
+- Gestão de bloqueios de manutenção preventiva.
+- Central de Aprovações de propostas enviadas pela equipe.
+- Gestão de usuários, alteração de cargos e aprovação de cadastros.
+- Importação de cronogramas em lote por planilhas ou documentos.
+- Painel de Avisos e comunicados com controle de prioridade.
+- Ferramenta de **Verificação de Integridade de Dados** e auditoria.
 
 ### 🧑‍🔬 Técnico de Laboratório
-- Seleção de laboratórios favoritos
-- Envio de propostas de reserva de horário
-- Painel de designações e agenda pessoal
-- Reserva de revisões/monitorias e manutenção preventiva
+- Seleção de laboratórios favoritos no painel inicial.
+- Envio de propostas de reserva de horário para aprovação.
+- Painel de designações e agenda pessoal por técnico.
+- Reserva de revisões/monitorias e preparação de bancadas.
 
 ### 🎓 Visitante (Aluno / Professor)
-- Visualização do Cronograma de Aulas e Calendário Acadêmico
-- Exportação de horários em Excel, PDF e .ics
-- Guia prático de dúvidas
+- Visualização do Cronograma de Aulas e Calendário Acadêmico.
+- Filtro inteligente por curso, laboratório e turno.
+- Exportação de horários em Excel, PDF e .ics.
+- Guia prático de dúvidas (FAQ).
 
 ---
 
-## Funcionalidades
+## Funcionalidades Detalhadas
 
 ### 📅 Agendamento e Grade Relacional
-- Blocos padronizados de horários (Manhã, Tarde, Noite)
-- Verificação instantânea de conflitos e colisão de turmas
-- Auditoria e histórico completo de alterações
+- Blocos padronizados de horários (Matutino, Vespertino, Noturno).
+- Verificação instantânea de conflitos e colisão de turmas em tempo real.
+- Suporte a múltiplas turmas e disciplinas simultâneas com cálculo de ocupação.
+- Histórico completo de auditoria e exclusões na tabela de `logs`.
 
-### 🔐 Autenticação & Recuperação de Conta
-- Formulário de acesso com validação estrita
-- Fluxo de "Esqueceu sua senha?" via Supabase Auth
-- Login social com Google (conforme diretrizes visuais)
+### 🤖 Assistente de IA Técnico
+- Interpretação de comandos de voz ou texto em linguagem natural.
+- Análise automática de conflitos na grade e sugestões de horários vagos.
+- Extração estruturada de parâmetros de agendamentos.
 
-### 📥 Importação e Exportação de Dados
-- Leitura automática de Excel, CSV, JSON e Word
-- Exportação em Excel (.xlsx), iCalendar (.ics) e PDF
+### 🔔 Notificações Unificadas (Telegram & Web Push VAPID)
+- **Bot do Telegram**: Vinculação em 1 clique com geração de código temporário e redirecionamento deep-link. Alertas instantâneos de alteração de grade no grupo ou privado.
+- **Web Push Naitvo (VAPID)**: Notificações no navegador para desktop e dispositivos móveis sem dependência de serviços legados.
 
 ---
 
@@ -119,17 +122,68 @@ O acesso restrito da equipe é controlado por um fluxo de aprovação. Ao se cad
 
 ## Arquitetura & Tecnologias
 
-- **Frontend**: React 19, Vite 7, Material UI (MUI v7), Lucide Icons
-- **Backend & Database**: Supabase PostgreSQL, Supabase Realtime, Supabase Auth
-- **Serverless Functions**: Vercel Serverless API
-- **Inteligência Artificial**: LangChain.js & Groq API (`llama-3.3-70b-versatile`)
-- **Documentos & Mídia**: ExcelJS, SheetJS (`xlsx`), Tesseract.js (OCR), jsPDF
+- **Frontend**: React 19, Vite 7, Material UI (MUI v7), Lucide Icons, Emotion
+- **Backend & Database**: Supabase PostgreSQL, Supabase Auth (PKCE), Supabase Realtime
+- **Hospedagem & CDN**: Vercel Serverless
+- **Inteligência Artificial**: LangChain.js & Groq API (`llama-3.3-70b-versatile` / `groq/compound`)
+- **Notificações**: Telegram Bot API (`node-telegram-bot-api`), Web Push VAPID API
+- **Documentos & Mídia**: ExcelJS, SheetJS (`xlsx`), Tesseract.js (OCR), jsPDF, Cloudinary
+
+---
+
+## Configuração e Instalação
+
+### 1. Pré-requisitos
+- Node.js (v18 ou superior)
+- Gerenciador de pacotes `npm` ou `yarn`
+- Conta no [Supabase](https://supabase.com)
+
+### 2. Configurar o Banco de Dados (Supabase)
+Execute os scripts SQL disponibilizados no **SQL Editor** do seu projeto Supabase:
+- [`supabase/full_schema.sql`](./supabase/full_schema.sql) — Tabela `users`, `aulas`, `eventos_manutencao`, `avisos`, `notificacoes`, `logs`, `config`, `telegram_vinculos_pendentes`, `push_subscriptions`, etc.
+
+### 3. Variáveis de Ambiente (`.env`)
+Crie um arquivo `.env` na raiz do projeto com base no `.env.example`:
+
+```env
+# Supabase PostgreSQL
+VITE_SUPABASE_URL=https://seu_projeto.supabase.co
+VITE_SUPABASE_ANON_KEY=sua_chave_anonima_supabase
+
+# Telegram Bot
+VITE_TELEGRAM_BOT_TOKEN=seu_bot_token
+VITE_TELEGRAM_CHAT_ID=seu_chat_id
+VITE_TELEGRAM_BOT_USERNAME=seu_bot_username
+
+# Web Push Notifications (VAPID)
+VITE_VAPID_PUBLIC_KEY=sua_chave_publica_vapid
+VAPID_PRIVATE_KEY=sua_chave_privada_vapid
+
+# Groq IA API
+VITE_GROQ_API_KEY=sua_chave_groq
+
+# Cloudinary (Imagens)
+VITE_CLOUDINARY_CLOUD_NAME=seu_cloud_name
+VITE_CLOUDINARY_UPLOAD_PRESET=seu_upload_preset
+```
+
+### 4. Executar Localmente
+```bash
+# Instalar dependências
+npm install
+
+# Iniciar servidor de desenvolvimento
+npm run dev
+
+# Gerar build de produção
+npm run build
+```
 
 ---
 
 ## Status do Projeto
 
-🚧 Em desenvolvimento ativo, com deploy contínuo em produção.
+🚧 Em desenvolvimento ativo, com deploy contínuo em produção via Vercel.
 Interessado em uma demonstração guiada, parceria ou licenciamento para sua instituição? Entre em contato pelo perfil do GitHub.
 
 ---

@@ -1,6 +1,6 @@
 // src/ImportarCronograma.jsx
 // Importação Inteligente de Cronograma via PDF, DOCX ou Excel
-// Processamento 100% client-side - sem custo adicional no Firebase Free Plan
+// Processamento 100% client-side - otimizado para o Supabase
 
 import React, { useState, useCallback, useRef } from 'react';
 import {
@@ -1054,7 +1054,7 @@ function ImportarCronograma() {
             </Alert>
           )}
           <Typography variant="body2" color="text.secondary" mt={2}>
-            Esta ação criará os registros diretamente no Firebase. Não é possível desfazer em lote.
+            Esta ação criará os registros diretamente no Supabase. Não é possível desfazer em lote.
           </Typography>
         </DialogContent>
         <DialogActions>

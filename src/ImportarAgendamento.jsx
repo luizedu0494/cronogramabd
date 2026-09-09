@@ -1,7 +1,7 @@
 // src/ImportarAgendamento.jsx
 // Importação Inteligente com IA (Claude) para interpretação dos arquivos
 // Parsers client-side extraem o texto → Claude interpreta e retorna JSON estruturado
-// Zero custo extra no Firebase Free Plan: 1 query por lote para verificar conflitos
+// Otimizado para Supabase: 1 query por lote para verificar conflitos
 
 import React, { useState, useCallback, useRef } from 'react';
 import {
