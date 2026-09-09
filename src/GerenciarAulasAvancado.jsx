@@ -203,6 +203,15 @@ function GerenciarAulasAvancado({ userInfo }) {
 
             if (updateError) throw updateError;
 
+            if (editFields.cursos && editFields.cursos.length > 0) {
+                for (const aulaId of selectedAulas) {
+                    await supabase.from('aula_cursos').delete().eq('aula_id', aulaId);
+                    await supabase.from('aula_cursos').insert(
+                        editFields.cursos.map(c => ({ aula_id: aulaId, curso: c }))
+                    );
+                }
+            }
+
             setFeedback({ open: true, message: `${selectedAulas.length} aula(s) atualizada(s) com sucesso!`, severity: 'success' });
             handleSearch(pagina);
             setSelectedAulas([]);
