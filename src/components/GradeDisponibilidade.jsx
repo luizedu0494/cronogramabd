@@ -222,11 +222,8 @@ export default function GradeDisponibilidade({
             <Box 
               sx={{ 
                 width: '100%', 
-                overflowX: 'auto', 
-                pb: 0.5, 
-                pt: 0.5,
-                '&::-webkit-scrollbar': { height: 4 },
-                '&::-webkit-scrollbar-thumb': { bgcolor: 'rgba(0,0,0,0.15)', borderRadius: 2 }
+                pt: 1,
+                pb: 0.5
               }}
             >
               <ToggleButtonGroup
@@ -237,17 +234,22 @@ export default function GradeDisponibilidade({
                 color="primary"
                 sx={{
                   display: 'flex',
-                  flexWrap: 'nowrap',
-                  gap: 0.75,
+                  flexWrap: 'wrap',
+                  justifyContent: 'stretch',
+                  gap: 1,
+                  width: '100%',
                   '& .MuiToggleButton-root': {
-                    flexShrink: 0,
+                    flex: { xs: '1 1 calc(33.33% - 8px)', sm: '1 1 auto' },
+                    minWidth: { xs: 'calc(33.33% - 8px)', sm: 100 },
                     borderRadius: '20px !important',
                     border: '1px solid !important',
                     borderColor: 'divider',
-                    px: 2,
+                    px: { xs: 1, sm: 2 },
                     py: 0.75,
-                    fontSize: '0.8rem',
+                    fontSize: { xs: '0.75rem', sm: '0.8rem' },
                     fontWeight: 700,
+                    textAlign: 'center',
+                    justifyContent: 'center',
                     whiteSpace: 'nowrap'
                   }
                 }}

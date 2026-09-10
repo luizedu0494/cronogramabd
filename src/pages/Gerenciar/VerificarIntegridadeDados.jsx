@@ -721,11 +721,11 @@ function VerificarIntegridadeDados() {
                             <FilterList color="primary" />
                             <Typography variant="h6">Filtros e Pesquisa</Typography>
                         </Box>
-                        <Grid container spacing={2}>
-                            <Grid item xs={12} sm={6} md={3}>
-                                <FormControl fullWidth size="small">
-                                    <InputLabel>Categoria de Problema</InputLabel>
-                                    <Select value={filtroCategoria} label="Categoria de Problema" onChange={(e) => setFiltroCategoria(e.target.value)}>
+                        <Grid container spacing={2} sx={{ flexWrap: 'wrap', width: '100%' }}>
+                            <Grid item xs={12} sm={6} md={3} sx={{ width: '100%', flexBasis: { xs: '100%', sm: '50%', md: '25%' } }}>
+                                <FormControl fullWidth size="small" sx={{ minWidth: { xs: '100%', sm: 160 }, width: '100%' }}>
+                                    <InputLabel shrink notched>Categoria de Problema</InputLabel>
+                                    <Select value={filtroCategoria} input={<OutlinedInput notched label="Categoria de Problema" />} onChange={(e) => setFiltroCategoria(e.target.value)}>
                                         <MenuItem value="todas">Todas as Categorias ({todosProblemas.length})</MenuItem>
                                         <MenuItem value="invalidos">Dados Inválidos ({dadosInvalidos.length})</MenuItem>
                                         <MenuItem value="legados">Schema Legado / Órfãos ({dadosLegados.length})</MenuItem>
@@ -735,10 +735,10 @@ function VerificarIntegridadeDados() {
                                     </Select>
                                 </FormControl>
                             </Grid>
-                            <Grid item xs={12} sm={6} md={3}>
-                                <FormControl fullWidth size="small">
-                                    <InputLabel>Laboratório</InputLabel>
-                                    <Select value={filtroLaboratorio} label="Laboratório" onChange={(e) => setFiltroLaboratorio(e.target.value)}>
+                            <Grid item xs={12} sm={6} md={3} sx={{ width: '100%', flexBasis: { xs: '100%', sm: '50%', md: '25%' } }}>
+                                <FormControl fullWidth size="small" sx={{ minWidth: { xs: '100%', sm: 160 }, width: '100%' }}>
+                                    <InputLabel shrink notched>Laboratório</InputLabel>
+                                    <Select value={filtroLaboratorio} input={<OutlinedInput notched label="Laboratório" />} onChange={(e) => setFiltroLaboratorio(e.target.value)}>
                                         <MenuItem value="">Todos os Laboratórios</MenuItem>
                                         {LISTA_LABORATORIOS_VALIDOS.map(lab => (
                                             <MenuItem key={lab} value={lab}>{lab}</MenuItem>
@@ -746,10 +746,10 @@ function VerificarIntegridadeDados() {
                                     </Select>
                                 </FormControl>
                             </Grid>
-                            <Grid item xs={12} sm={6} md={3}>
-                                <FormControl fullWidth size="small">
-                                    <InputLabel>Curso</InputLabel>
-                                    <Select value={filtroCurso} label="Curso" onChange={(e) => setFiltroCurso(e.target.value)}>
+                            <Grid item xs={12} sm={6} md={3} sx={{ width: '100%', flexBasis: { xs: '100%', sm: '50%', md: '25%' } }}>
+                                <FormControl fullWidth size="small" sx={{ minWidth: { xs: '100%', sm: 140 }, width: '100%' }}>
+                                    <InputLabel shrink notched>Curso</InputLabel>
+                                    <Select value={filtroCurso} input={<OutlinedInput notched label="Curso" />} onChange={(e) => setFiltroCurso(e.target.value)}>
                                         <MenuItem value="">Todos os Cursos</MenuItem>
                                         {LISTA_CURSOS.map(c => (
                                             <MenuItem key={c.value} value={c.value}>{c.label}</MenuItem>

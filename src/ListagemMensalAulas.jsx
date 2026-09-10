@@ -140,10 +140,27 @@ function ListagemMensalAulas({ userInfo, setSnackBar }) {
             <Container maxWidth="lg">
                 <Paper elevation={3} sx={{ p: 3, mt: 4 }}>
                     <Typography variant="h4" gutterBottom align="center">Listagem Mensal de Aulas</Typography>
-                    <Grid container spacing={2} alignItems="center" sx={{ mb: 3 }}>
-                        <Grid item xs={12} md={4}><DatePicker views={['month', 'year']} label="Mês/Ano" value={dayjs(selectedMonth)} onChange={(newDate) => setSelectedMonth(newDate || dayjs())} slotProps={{ textField: { fullWidth: true, size: 'small' } }} /></Grid>
-                        <Grid item xs={12} md={4}><FormControl sx={{ minWidth: 160 }} size="small"><InputLabel shrink>Laboratório</InputLabel><Select multiple value={laboratorioFilter} label="Laboratório" onChange={(e) => setLaboratorioFilter(typeof e.target.value === 'string' ? e.target.value.split(',') : e.target.value)} renderValue={(selected) => selected.join(', ')}><MenuItem value=""><em>Todos</em></MenuItem>{LISTA_LABORATORIOS.map(l => <MenuItem key={l.id} value={l.name}>{l.name}</MenuItem>)}</Select></FormControl></Grid>
-                        <Grid item xs={12} md={4}><TextField label="Buscar Assunto ou Proponente" variant="outlined" fullWidth size="small" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} InputProps={{ endAdornment: (<InputAdornment position="end"><SearchIcon /></InputAdornment>), }}/></Grid>
+                    <Grid container spacing={2} alignItems="center" sx={{ mb: 3, flexWrap: 'wrap', width: '100%' }}>
+                        <Grid item xs={12} md={4} sx={{ width: '100%' }}><DatePicker views={['month', 'year']} label="Mês/Ano" value={dayjs(selectedMonth)} onChange={(newDate) => setSelectedMonth(newDate || dayjs())} slotProps={{ textField: { fullWidth: true, size: 'small' } }} /></Grid>
+                        <Grid item xs={12} md={4} sx={{ width: '100%' }}>
+                            <FormControl fullWidth size="small" sx={{ minWidth: { xs: '100%', sm: 160 }, width: '100%' }}>
+                                <InputLabel shrink notched>Laboratório</InputLabel>
+                                <Select
+                                    multiple
+                                    value={laboratorioFilter}
+                                    onChange={(e) => setLaboratorioFilter(typeof e.target.value === 'string' ? e.target.value.split(',') : e.target.value)}
+                                    input={<OutlinedInput notched label="Laboratório" />}
+                                    renderValue={(selected) => {
+                                        if (!selected || selected.length === 0) return <span style={{ opacity: 0.7 }}>Todos os laboratórios</span>;
+                                        return selected.join(', ');
+                                    }}
+                                >
+                                    <MenuItem value=""><em>Todos</em></MenuItem>
+                                    {LISTA_LABORATORIOS.map(l => <MenuItem key={l.id} value={l.name}>{l.name}</MenuItem>)}
+                                </Select>
+                            </FormControl>
+                        </Grid>
+                        <Grid item xs={12} md={4} sx={{ width: '100%' }}><TextField label="Buscar Assunto ou Proponente" variant="outlined" fullWidth size="small" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} InputProps={{ endAdornment: (<InputAdornment position="end"><SearchIcon /></InputAdornment>), }}/></Grid>
                     </Grid>
                     {loading ? <Box sx={{ display: 'flex', justifyContent: 'center', my: 4 }}><CircularProgress /></Box> : (
                         <List>

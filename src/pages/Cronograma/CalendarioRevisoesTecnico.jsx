@@ -832,21 +832,21 @@ function CalendarioRevisoesTecnico({ userInfo }) {
 
                         {/* Filtros */}
                         <Grid item xs={12} md={5}>
-                            <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
+                            <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', width: '100%' }}>
                                 <TextField size="small" placeholder="Buscar..." value={filtroBusca}
                                     onChange={e => setFiltroBusca(e.target.value)}
                                     InputProps={{ startAdornment: <InputAdornment position="start"><SearchIcon fontSize="small" /></InputAdornment> }}
-                                    sx={{ flex: 1, minWidth: 120 }} />
-                                <FormControl size="small" sx={{ minWidth: 130 }}>
-                                    <InputLabel shrink>Situação</InputLabel>
-                                    <Select value={filtroStatus} onChange={e => setFiltroStatus(e.target.value)} label="Situação">
+                                    sx={{ flex: { xs: '1 1 100%', sm: 1 }, minWidth: { xs: '100%', sm: 120 } }} />
+                                <FormControl size="small" sx={{ minWidth: { xs: '100%', sm: 130 }, flex: { xs: '1 1 100%', sm: 'auto' } }}>
+                                    <InputLabel shrink notched>Situação</InputLabel>
+                                    <Select value={filtroStatus} onChange={e => setFiltroStatus(e.target.value)} input={<OutlinedInput notched label="Situação" />}>
                                         <MenuItem value="">Todas</MenuItem>
                                         {STATUS_REVISAO.map(s => <MenuItem key={s.value} value={s.value}>{s.label}</MenuItem>)}
                                     </Select>
                                 </FormControl>
-                                <FormControl size="small" sx={{ minWidth: 140 }}>
-                                    <InputLabel shrink>Tipo</InputLabel>
-                                    <Select value={filtroTipo} onChange={e => setFiltroTipo(e.target.value)} label="Tipo">
+                                <FormControl size="small" sx={{ minWidth: { xs: '100%', sm: 140 }, flex: { xs: '1 1 100%', sm: 'auto' } }}>
+                                    <InputLabel shrink notched>Tipo</InputLabel>
+                                    <Select value={filtroTipo} onChange={e => setFiltroTipo(e.target.value)} input={<OutlinedInput notched label="Tipo" />}>
                                         <MenuItem value="">Todos</MenuItem>
                                         {TIPOS_REVISAO.map(t => <MenuItem key={t.value} value={t.value}>{t.icon} {t.label}</MenuItem>)}
                                     </Select>

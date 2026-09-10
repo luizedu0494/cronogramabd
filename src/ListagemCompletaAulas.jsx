@@ -214,16 +214,16 @@ const ListagemCompletaAulas = () => {
                         </Grid>
 
                         {/* Filtro por Status */}
-                        <Grid item xs={12} sm={6} md={4}>
-                            <FormControl sx={{ minWidth: 130 }} size="small">
-                                <InputLabel shrink>Status</InputLabel>
+                        <Grid item xs={12} sm={6} md={4} sx={{ width: '100%' }}>
+                            <FormControl fullWidth sx={{ minWidth: { xs: '100%', sm: 130 } }} size="small">
+                                <InputLabel shrink notched>Status</InputLabel>
                                 <Select
                                     value={filtroStatus}
                                     onChange={(e) => {
                                         setFiltroStatus(e.target.value);
                                         setPage(0);
                                     }}
-                                    label="Status"
+                                    input={<OutlinedInput notched label="Status" />}
                                 >
                                     <MenuItem value="">Todos</MenuItem>
                                     <MenuItem value="aprovada">Aprovada</MenuItem>
@@ -234,16 +234,16 @@ const ListagemCompletaAulas = () => {
                         </Grid>
 
                         {/* Filtro por Autor */}
-                        <Grid item xs={12} sm={6} md={4}>
-                            <FormControl sx={{ minWidth: 140 }} size="small">
-                                <InputLabel shrink>Autor</InputLabel>
+                        <Grid item xs={12} sm={6} md={4} sx={{ width: '100%' }}>
+                            <FormControl fullWidth sx={{ minWidth: { xs: '100%', sm: 140 } }} size="small">
+                                <InputLabel shrink notched>Autor</InputLabel>
                                 <Select
                                     value={filtroAutor}
                                     onChange={(e) => {
                                         setFiltroAutor(e.target.value);
                                         setPage(0);
                                     }}
-                                    label="Autor"
+                                    input={<OutlinedInput notched label="Autor" />}
                                 >
                                     <MenuItem value="">Todos</MenuItem>
                                     {usuarios.map(usuario => (
@@ -256,16 +256,16 @@ const ListagemCompletaAulas = () => {
                         </Grid>
 
                         {/* Tipo de Filtro de Data */}
-                        <Grid item xs={12} sm={6} md={4}>
-                            <FormControl sx={{ minWidth: 140 }} size="small">
-                                <InputLabel shrink>Filtro de Data</InputLabel>
+                        <Grid item xs={12} sm={6} md={4} sx={{ width: '100%' }}>
+                            <FormControl fullWidth sx={{ minWidth: { xs: '100%', sm: 140 } }} size="small">
+                                <InputLabel shrink notched>Filtro de Data</InputLabel>
                                 <Select
                                     value={filtroTipo}
                                     onChange={(e) => {
                                         setFiltroTipo(e.target.value);
                                         setPage(0);
                                     }}
-                                    label="Filtro de Data"
+                                    input={<OutlinedInput notched label="Filtro de Data" />}
                                 >
                                     <MenuItem value="">Nenhum</MenuItem>
                                     <MenuItem value="dia">Por Dia</MenuItem>
