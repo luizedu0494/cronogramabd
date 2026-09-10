@@ -4,7 +4,7 @@ import {
     Snackbar, Alert, FormControl, InputLabel, Select, MenuItem, Tooltip,
     Divider, Card, CardContent, CardActions, Chip, Tabs, Tab, Badge,
     TextField, InputAdornment, Collapse, Fade, Dialog, DialogTitle,
-    DialogContent, DialogContentText, DialogActions
+    DialogContent, DialogContentText, DialogActions, Checkbox
 } from '@mui/material';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import CancelIcon from '@mui/icons-material/Cancel';
