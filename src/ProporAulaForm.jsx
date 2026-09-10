@@ -708,7 +708,7 @@ function ProporAulaForm({ userInfo, currentUser, initialDate, onSuccess, onCance
 
                 const finalData = {
                     assunto: aula.assunto,
-                    tipo_atividade: aula.tipoAtividade || 'aula',
+                    tipo_atividade: aula.isProva ? 'prova' : (aula.isRevisao ? 'revisao' : (aula.tipoAtividade || 'aula')),
                     laboratorio: aula.laboratorioSelecionado || aula.laboratorio,
                     horario_slot: aula.horarioSlotString,
                     data_inicio: dtInicioIso,
@@ -717,6 +717,7 @@ function ProporAulaForm({ userInfo, currentUser, initialDate, onSuccess, onCance
                     proposto_por_uid: aula.propostoPorUid,
                     proposto_por_nome: aula.propostoPorNome,
                     is_revisao: aula.isRevisao || false,
+                    is_prova: aula.isProva || false,
                     tipo_revisao_label: aula.tipoRevisaoLabel || null,
                     liga: aula.liga || null,
                     observacoes: aula.observacoes || null,
@@ -752,7 +753,7 @@ function ProporAulaForm({ userInfo, currentUser, initialDate, onSuccess, onCance
 
                     const finalData = {
                         assunto: aula.assunto,
-                        tipo_atividade: aula.tipoAtividade || 'aula',
+                        tipo_atividade: aula.isProva ? 'prova' : (aula.isRevisao ? 'revisao' : (aula.tipoAtividade || 'aula')),
                         laboratorio: aula.laboratorioSelecionado || aula.laboratorio,
                         horario_slot: aula.horarioSlotString,
                         data_inicio: dtInicioIso,
@@ -761,6 +762,7 @@ function ProporAulaForm({ userInfo, currentUser, initialDate, onSuccess, onCance
                         proposto_por_uid: aula.propostoPorUid,
                         proposto_por_nome: aula.propostoPorNome,
                         is_revisao: aula.isRevisao || false,
+                        is_prova: aula.isProva || false,
                         tipo_revisao_label: aula.tipoRevisaoLabel || null,
                         liga: aula.liga || null,
                         observacoes: aula.observacoes || null,
