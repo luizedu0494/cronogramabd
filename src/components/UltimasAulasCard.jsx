@@ -120,11 +120,11 @@ const UltimasAulasCard = () => {
                     <Tab label={<span><span aria-hidden="true">📖 </span>Revisões ({revisoes.length})</span>} />
                 </Tabs>
                 {loading ? (
-                    <Box display="flex" justifyContent="center" py={3}><CircularProgress size={22} /></Box>
+                    <Box display="flex" justifyContent="center" alignItems="center" flexGrow={1} minHeight={180}><CircularProgress size={22} /></Box>
                 ) : error ? (
                     <Alert severity="error">{error}</Alert>
                 ) : (
-                    <Box>
+                    <Box sx={{ display: 'flex', flexDirection: 'column', flexGrow: 1, justifyContent: (tab === 0 && !aulasNormais.length) || (tab === 1 && !revisoes.length) ? 'center' : 'flex-start', minHeight: 180 }}>
                         {tab === 0 && renderList(aulasNormais, false)}
                         {tab === 1 && renderList(revisoes, true)}
                     </Box>

@@ -569,7 +569,7 @@ const PaginaInicial = ({ userInfo }) => {
     );
 
     return (
-        <Container maxWidth="lg" sx={{ mt: 2, mb: 4 }}>
+        <Container maxWidth="xl" sx={{ mt: 2, mb: 4, mx: 'auto', px: { xs: 2, sm: 3, md: 4 } }}>
 
             {/* ── ONBOARDING DO TÉCNICO (apenas primeira vez neste dispositivo) ── */}
             {userInfo?.role === 'tecnico' && onboardingStep !== null && <OnboardingTecnico />}
