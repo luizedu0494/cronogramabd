@@ -90,7 +90,7 @@ const HistoricoAulas = () => {
                 user: { nome: item.criado_por_nome || 'Sistema' }
             }));
 
-            // 3. Buscar Logs de Exclusão no Supabase
+            // 3. Buscar Logs de Exclusão e Edição no Supabase
             const { data: resLogs, error: errLogs } = await supabase
                 .from('logs')
                 .select('*')
@@ -99,28 +99,35 @@ const HistoricoAulas = () => {
 
             if (errLogs) console.warn('Erro ao buscar logs:', errLogs);
 
-            const aulasExcluidas = (resLogs || [])
-                .filter(l => l.type === 'DELETE')
+            const logsProcessados = (resLogs || [])
                 .map(item => {
                     const payload = item.payload || {};
-                    const aulaData = payload.item || {};
+                    const aulaData = payload.item || payload.aula || {};
+                    const isDelete = item.type === 'DELETE' || item.type === 'exclusao';
+                    const isUpdate = item.type === 'UPDATE' || item.type === 'edicao';
+                    
+                    if (!isDelete && !isUpdate) return null;
+
                     return {
                         id: `log-${item.id}`,
-                        type: 'exclusao',
+                        type: isDelete ? 'exclusao' : 'edicao',
                         aula: {
-                            assunto: aulaData.assunto || aulaData.title || payload.descricao || 'Excluído',
+                            assunto: aulaData.assunto || aulaData.title || payload.descricao || (isDelete ? 'Excluído' : 'Editado'),
                             cursos: aulaData.cursos || ['Geral'],
                             laboratorio: aulaData.laboratorio || aulaData.laboratorioSelecionado || 'N/A',
-                            status: 'rejeitada',
-                            dataInicio: aulaData.dataInicio || item.created_at
+                            status: isDelete ? 'rejeitada' : (aulaData.status || 'aprovada'),
+                            dataInicio: aulaData.dataInicio || item.created_at,
+                            isRevisao: aulaData.isRevisao || aulaData.is_revisao,
+                            tipoRevisaoLabel: aulaData.tipoRevisaoLabel
                         },
                         timestamp: item.created_at ? new Date(item.created_at) : new Date(),
                         user: { nome: item.user_nome || 'Desconhecido' }
                     };
-                });
+                })
+                .filter(Boolean);
 
             // 4. Unificar e Ordenar por Data
-            let todosLogs = [...aulasAdicionadas, ...eventosAdicionados, ...aulasExcluidas];
+            let todosLogs = [...aulasAdicionadas, ...eventosAdicionados, ...logsProcessados];
             todosLogs.sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
             todosLogs = todosLogs.slice(0, MAX_RESULTS);
 
@@ -255,6 +262,7 @@ const HistoricoAulas = () => {
         switch (type) {
             case 'adicionada': return 'primary';
             case 'evento': return 'secondary'; // Cor roxa para eventos
+            case 'edicao': return 'warning';
             case 'exclusao': return 'error';
             default: return 'default';
         }
@@ -262,8 +270,9 @@ const HistoricoAulas = () => {
 
     const getTipoLabel = (type) => {
         switch (type) {
-            case 'adicionada': return 'Aula';
+            case 'adicionada': return 'Aula Nova';
             case 'evento': return 'Evento';
+            case 'edicao': return 'Editado';
             case 'exclusao': return 'Excluído';
             default: return type;
         }
@@ -297,7 +306,7 @@ const HistoricoAulas = () => {
             </Box>
 
             <Typography variant="subtitle1" color="text.secondary" gutterBottom>
-                Visualize as últimas aulas e eventos adicionados ou excluídos.
+                Visualize as últimas aulas e eventos adicionados, editados ou excluídos.
             </Typography>
 
             {/* Filtros */}
