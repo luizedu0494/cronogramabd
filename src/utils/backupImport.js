@@ -7,54 +7,134 @@ function normalizar(str) {
 /**
  * Converte registro do formato Firebase (camelCase) para o formato Supabase (snake_case)
  */
-export function converterFirebaseParaSupabase(tabela, item) {
-  if (!item) return item;
+// Mapeamento de chaves conhecidas do Firebase (camelCase) para Supabase (snake_case)
+const MAPA_CAMPOS_FIREBASE_PARA_SUPABASE = {
+  aulas: {
+    laboratorioSelecionado: 'laboratorio',
+    dataInicio: 'data_inicio',
+    dataFim: 'data_fim',
+    tipoAtividade: 'tipo_atividade',
+    isRevisao: 'is_revisao',
+    isProva: 'is_prova',
+    horarioSlotString: 'horario_slot',
+    proponenteNome: 'proposto_por_nome',
+    usuarioNome: 'proposto_por_nome',
+    propostoPorUid: 'proposto_por_uid',
+    tipoRevisaoLabel: 'tipo_revisao_label',
+  },
+  eventos_manutencao: {
+    laboratorioSelecionado: 'laboratorio',
+    dataInicio: 'data_inicio',
+    dataFim: 'data_fim',
+    criadoPorUid: 'criado_por_uid',
+    criadoPorNome: 'criado_por_nome',
+  },
+  periodos_sem_atividade: {
+    dataInicio: 'data_inicio',
+    dataFim: 'data_fim',
+    motivo: 'descricao',
+  },
+};
 
-  // Se já possui snake_case ou foi gerado pelo Supabase, retorna como está
-  if (tabela === 'aulas' && (item.laboratorio || item.data_inicio)) {
-    return item;
-  }
+// Colunas válidas permitidas em cada tabela do Supabase
+const COLUNAS_VALIDAS_SUPABASE = {
+  aulas: [
+    'id', 'assunto', 'tipo_atividade', 'laboratorio', 'horario_slot',
+    'data_inicio', 'data_fim', 'status', 'cursos', 'proposto_por_uid',
+    'proposto_por_nome', 'tecnicos', 'is_revisao', 'tipo_revisao_label',
+    'is_prova', 'observacoes', 'origem', 'created_at', 'updated_at'
+  ],
+  eventos_manutencao: [
+    'id', 'titulo', 'descricao', 'tipo', 'laboratorio', 'laboratorios',
+    'data_inicio', 'data_fim', 'horario_slot', 'status', 'criado_por_uid',
+    'criado_por_nome', 'created_at', 'updated_at'
+  ],
+  periodos_sem_atividade: [
+    'id', 'descricao', 'data_inicio', 'data_fim', 'created_at'
+  ],
+  grupos: [
+    'id', 'nome', 'descricao', 'created_at'
+  ],
+  avisos: [
+    'id', 'titulo', 'mensagem', 'tipo', 'criado_por_uid', 'criado_por_nome', 'created_at'
+  ],
+};
 
-  switch (tabela) {
-    case 'aulas':
-      return {
-        ...item,
-        laboratorio: item.laboratorio || item.laboratorioSelecionado || '',
-        data_inicio: item.data_inicio || item.dataInicio || null,
-        data_fim: item.data_fim || item.dataFim || null,
-        tipo_atividade: item.tipo_atividade || item.tipoAtividade || 'aula',
-        is_revisao: item.is_revisao !== undefined ? item.isRevisao : false,
-        is_prova: item.is_prova !== undefined ? item.isProva : (item.tipoAtividade === 'prova'),
-        horario_slot: item.horario_slot || item.horarioSlotString || '',
-        cursos: item.cursos || (item.curso ? [item.curso] : []),
-        proposto_por_nome: item.proposto_por_nome || item.proponenteNome || item.usuarioNome || '',
-        assunto: item.assunto || item.titulo || '',
-      };
-    case 'eventos_manutencao':
-      return {
-        ...item,
-        laboratorio: item.laboratorio || item.laboratorioSelecionado || '',
-        data_inicio: item.data_inicio || item.dataInicio || null,
-        data_fim: item.data_fim || item.dataFim || null,
-        titulo: item.titulo || item.nome || '',
-        descricao: item.descricao || '',
-      };
-    case 'periodos_sem_atividade':
-      return {
-        ...item,
-        data_inicio: item.data_inicio || item.dataInicio || null,
-        data_fim: item.data_fim || item.dataFim || null,
-        descricao: item.descricao || item.motivo || '',
-      };
-    default:
-      return item;
-  }
+function normalizarNomeTabela(nomeOriginal) {
+  const dePara = {
+    eventosmanutencao: 'eventos_manutencao',
+    eventos_manutencao: 'eventos_manutencao',
+    periodossematividade: 'periodos_sem_atividade',
+    periodos_sem_atividade: 'periodos_sem_atividade',
+    aulas: 'aulas',
+    grupos: 'grupos',
+    avisos: 'avisos',
+  };
+  const chave = (nomeOriginal || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+  return dePara[chave] || nomeOriginal;
 }
 
-export function chaveNatural(tabela, item) {
-  const itemNormalizado = converterFirebaseParaSupabase(tabela, item);
+/**
+ * Converte registro do formato Firebase (camelCase) para o formato Supabase (snake_case)
+ * e remove quaisquer atributos legados não suportados pelo schema Postgres.
+ */
+export function converterFirebaseParaSupabase(tabelaTarget, item) {
+  if (!item) return item;
 
-  switch (tabela) {
+  const itemConvertido = {};
+  const mapa = MAPA_CAMPOS_FIREBASE_PARA_SUPABASE[tabelaTarget] || {};
+  const colunasPermitidas = new Set(COLUNAS_VALIDAS_SUPABASE[tabelaTarget] || []);
+
+  // 1. Mapeia campos e renomeia
+  for (const [chave, valor] of Object.entries(item)) {
+    const chaveDestino = mapa[chave] || chave;
+    itemConvertido[chaveDestino] = valor;
+  }
+
+  // 2. Ajustes específicos por entidade
+  if (tabelaTarget === 'aulas') {
+    itemConvertido.laboratorio = itemConvertido.laboratorio || item.laboratorioSelecionado || '';
+    itemConvertido.data_inicio = itemConvertido.data_inicio || item.dataInicio || null;
+    itemConvertido.data_fim = itemConvertido.data_fim || item.dataFim || null;
+    itemConvertido.tipo_atividade = itemConvertido.tipo_atividade || item.tipoAtividade || 'aula';
+    itemConvertido.is_revisao = itemConvertido.is_revisao !== undefined ? itemConvertido.is_revisao : (item.isRevisao || false);
+    itemConvertido.is_prova = itemConvertido.is_prova !== undefined ? itemConvertido.is_prova : (item.isProva || item.tipoAtividade === 'prova');
+    itemConvertido.horario_slot = itemConvertido.horario_slot || item.horarioSlotString || '';
+    itemConvertido.cursos = itemConvertido.cursos || (item.curso ? [item.curso] : []);
+    itemConvertido.proposto_por_nome = itemConvertido.proposto_por_nome || item.proponenteNome || item.usuarioNome || '';
+    itemConvertido.assunto = itemConvertido.assunto || item.titulo || '';
+  }
+
+  // 3. Converte Timestamp Firestore ({seconds, nanoseconds}) ou número para ISO String se necessário
+  for (const campoData of ['data_inicio', 'data_fim', 'created_at', 'updated_at']) {
+    if (itemConvertido[campoData]) {
+      const val = itemConvertido[campoData];
+      if (typeof val === 'object' && val.seconds !== undefined) {
+        itemConvertido[campoData] = new Date(val.seconds * 1000).toISOString();
+      } else if (typeof val === 'number') {
+        itemConvertido[campoData] = new Date(val).toISOString();
+      }
+    }
+  }
+
+  // 4. Filtra estritamente apenas colunas existentes no schema do Supabase (descarta createdAt, updatedAt, etc)
+  const itemSanitizado = {};
+  for (const [chave, valor] of Object.entries(itemConvertido)) {
+    if (colunasPermitidas.has(chave) && valor !== undefined && valor !== null) {
+      itemSanitizado[chave] = valor;
+    }
+  }
+
+  // Mantém _id ou id para referência de deduplicação
+  if (item._id) itemSanitizado._id = item._id;
+
+  return itemSanitizado;
+}
+
+export function chaveNatural(tabelaTarget, item) {
+  const itemNormalizado = converterFirebaseParaSupabase(tabelaTarget, item);
+
+  switch (tabelaTarget) {
     case 'aulas':
       return `${normalizar(itemNormalizado.laboratorio)}|${itemNormalizado.data_inicio}|${normalizar(itemNormalizado.assunto)}`;
     case 'eventos_manutencao':
@@ -76,34 +156,40 @@ export async function analisarBackupParaImportacao(backupJson) {
   }
 
   const relatorio = {};
-  const isFirebaseOrigin = backupJson.meta?.backendOrigem === 'firebase';
+  const isFirebaseOrigin = backupJson.meta?.backendOrigem === 'firebase' || !backupJson.meta?.backendOrigem;
 
-  for (const [tabela, itens] of Object.entries(backupJson.colecoes)) {
+  for (const [nomeColecaoOriginal, itens] of Object.entries(backupJson.colecoes)) {
     if (!Array.isArray(itens)) continue;
 
-    // Busca registros já existentes na tabela
-    const { data: existentes, error } = await supabase.from(tabela).select('*');
-    if (error) {
-      console.warn(`Aviso ao ler tabela ${tabela}: ${error.message}`);
+    const tabelaTarget = normalizarNomeTabela(nomeColecaoOriginal);
+    if (!COLUNAS_VALIDAS_SUPABASE[tabelaTarget]) {
+      console.warn(`Coleção/tabela não reconhecida ignorada: ${nomeColecaoOriginal}`);
+      continue;
     }
 
-    const chavesExistentes = new Set((existentes || []).map(e => chaveNatural(tabela, e)));
+    // Busca registros já existentes na tabela Postgres
+    const { data: existentes, error } = await supabase.from(tabelaTarget).select('*');
+    if (error) {
+      console.warn(`Aviso ao ler tabela ${tabelaTarget}: ${error.message}`);
+    }
+
+    const chavesExistentes = new Set((existentes || []).map(e => chaveNatural(tabelaTarget, e)));
 
     const novos = [];
     const jaExistem = [];
 
     for (const item of itens) {
-      const itemConvertido = isFirebaseOrigin ? converterFirebaseParaSupabase(tabela, item) : item;
-      const chave = chaveNatural(tabela, itemConvertido);
+      const itemSanitizado = converterFirebaseParaSupabase(tabelaTarget, item);
+      const chave = chaveNatural(tabelaTarget, itemSanitizado);
 
       if (chavesExistentes.has(chave)) {
-        jaExistem.push(itemConvertido);
+        jaExistem.push(itemSanitizado);
       } else {
-        novos.push(itemConvertido);
+        novos.push(itemSanitizado);
       }
     }
 
-    relatorio[tabela] = {
+    relatorio[tabelaTarget] = {
       novos,
       jaExistem,
       totalNoBackup: itens.length,
@@ -118,10 +204,23 @@ export async function importarSomenteNovos(relatorio, userProfile) {
     const novos = data.novos || [];
     if (novos.length === 0) continue;
 
-    const linhas = novos.map(({ _id, id, _membros, ...resto }) => ({
-      ...resto,
-      origem: 'backup_importado',
-    }));
+    const colunasPermitidas = new Set(COLUNAS_VALIDAS_SUPABASE[tabela] || []);
+
+    const linhas = novos.map(({ _id, id, _membros, ...resto }) => {
+      const linhaSanitizada = {
+        ...resto,
+        origem: resto.origem || 'backup_importado',
+      };
+
+      // Garante que NENHUMA propriedade extra fora do schema do Supabase seja enviada no payload do insert
+      const linhaFinal = {};
+      for (const [key, val] of Object.entries(linhaSanitizada)) {
+        if (colunasPermitidas.has(key) && key !== 'id') {
+          linhaFinal[key] = val;
+        }
+      }
+      return linhaFinal;
+    });
 
     // Insere em lotes de 500 registros
     for (let i = 0; i < linhas.length; i += 500) {
@@ -132,6 +231,7 @@ export async function importarSomenteNovos(relatorio, userProfile) {
       }
     }
   }
+
 
   // Registra auditoria na tabela 'logs' se ela existir
   try {
