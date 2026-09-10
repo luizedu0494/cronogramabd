@@ -5,7 +5,7 @@
 ![Banner CronoLab](./imgbanner.png)
 
 <p align="center">
-  <a href="#-o-que-%C3%A9-o-cronolab-para-leigos">O que é?</a> •
+  <a href="#-sobre-o-projeto--origem">Sobre & Origem</a> •
   <a href="#-como-funciona-para-cada-perfil">Como Funciona</a> •
   <a href="#-demonstra%C3%A7%C3%A3o-visual--gifs">GIFs & Demonstrações</a> •
   <a href="#-recursos-e-funcionalidades">Recursos</a> •
@@ -28,15 +28,17 @@
 
 ---
 
-## 💡 O que é o CronoLab? (Para Leigos)
+## 💡 Sobre o Projeto & Origem
 
-Em faculdades e universidades, conseguir um laboratório para dar aula, fazer provas ou realizar aulas práticas costuma ser confuso: papéis perdidos, trocas de mensagens informais e dois professores tentando usar a mesma sala no mesmo horário.
+A ideia do **CronoLab** nasceu diretamente da **vivência prática**. Atuando no dia a dia como **auxiliar de laboratório e apoiando a coordenação acadêmica**, vivenciei de perto os grandes desafios na gestão dos espaços físicos: trocas de mensagens dispersas, papéis perdidos e o retrabalho constante causado por choque de horários entre disciplinas.
 
-O **CronoLab** resolve tudo isso! Funciona como uma **agenda digital inteligente**:
-- 🚫 **Impede horários duplicados automaticamente**: O sistema não deixa duas pessoas reservarem o mesmo laboratório no mesmo horário.
-- 📱 **100% Responsivo no Celular e Computador**: Acesse de qualquer dispositivo com interface totalmente adaptada.
-- 🔔 **Notificações em Tempo Real**: Receba avisos no seu navegador/área de trabalho quando uma aula for proposta, aprovada ou alterada.
-- 📄 **Exportação Fácil**: Baixe a programação em Excel, PDF ou sincronize direto com o Google Agenda, Outlook e Apple Calendar.
+Percebendo essa necessidade real, projetei o **CronoLab**: um sistema inteligente, transparente e robusto feito sob medida para facilitar a rotina dos **colegas técnicos**, dar previsibilidade à **coordenação** e garantir acesso rápido para **professores e alunos**.
+
+### O que o CronoLab proporciona:
+- 🚫 **Validação Automática contra Conflitos**: Bloqueia no ato qualquer tentativa de agendamento duplicado para a mesma sala e horário.
+- 📱 **Acessibilidade Multiplataforma**: Experiência fluida tanto no computador de bancada quanto no smartphone.
+- 🔔 **Comunicação Ativa & Notificações**: Alertas no navegador/área de trabalho assim que uma aula é proposta, aprovada ou ajustada.
+- 📄 **Integração de Relatórios**: Exportação direta para Excel, PDF e calendários corporativos (Google Agenda, Outlook, Apple Calendar).
 
 ---
 
