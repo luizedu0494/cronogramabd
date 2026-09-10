@@ -717,7 +717,7 @@ function ProporAulaForm({ userInfo, currentUser, initialDate, onSuccess, onCance
                     horario_slot: finalHorarioSlot,
                     data_inicio: dtInicioIso,
                     data_fim: dtFimIso,
-                    status: aula.status,
+                    status: aula.status || 'aprovada',
                     proposto_por_uid: aula.propostoPorUid || currentUser?.uid || '',
                     proposto_por_nome: aula.propostoPorNome || userInfo?.nome || currentUser?.displayName || '',
                     is_revisao: aula.isRevisao || false,
@@ -839,8 +839,9 @@ function ProporAulaForm({ userInfo, currentUser, initialDate, onSuccess, onCance
             if (onSuccess) onSuccess();
             else if (!isEditMode) setOpenKeepDataDialog(true);
         } catch (error) {
-            console.error("Erro no envio do agendamento:", error);
-            setSnackbarMessage('Erro ao salvar agendamento.');
+            console.error("Erro no envio do agendamento:", error, JSON.stringify(error, null, 2));
+            const msg = error?.message || error?.details || 'Erro ao salvar agendamento.';
+            setSnackbarMessage(`Erro ao salvar agendamento: ${msg}`);
             setSnackbarSeverity('error');
             setOpenSnackbar(true);
         } finally {
