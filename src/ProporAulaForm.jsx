@@ -706,16 +706,20 @@ function ProporAulaForm({ userInfo, currentUser, initialDate, onSuccess, onCance
                 const dtInicioIso = dayjs(aula.dataInicio).isValid() ? dayjs(aula.dataInicio).toISOString() : new Date(aula.dataInicio).toISOString();
                 const dtFimIso = dayjs(aula.dataFim).isValid() ? dayjs(aula.dataFim).toISOString() : new Date(aula.dataFim).toISOString();
 
+                const finalHorarioSlot = Array.isArray(aula.horarioSlotString) 
+                    ? aula.horarioSlotString[0] 
+                    : (aula.horarioSlotString || '');
+
                 const finalData = {
                     assunto: aula.assunto,
                     tipo_atividade: aula.isProva ? 'prova' : (aula.isRevisao ? 'revisao' : (aula.tipoAtividade || 'aula')),
                     laboratorio: aula.laboratorioSelecionado || aula.laboratorio,
-                    horario_slot: aula.horarioSlotString,
+                    horario_slot: finalHorarioSlot,
                     data_inicio: dtInicioIso,
                     data_fim: dtFimIso,
                     status: aula.status,
-                    proposto_por_uid: aula.propostoPorUid,
-                    proposto_por_nome: aula.propostoPorNome,
+                    proposto_por_uid: aula.propostoPorUid || currentUser?.uid || '',
+                    proposto_por_nome: aula.propostoPorNome || userInfo?.nome || currentUser?.displayName || '',
                     is_revisao: aula.isRevisao || false,
                     is_prova: aula.isProva || false,
                     tipo_revisao_label: aula.tipoRevisaoLabel || null,
@@ -751,16 +755,20 @@ function ProporAulaForm({ userInfo, currentUser, initialDate, onSuccess, onCance
                     const dtInicioIso = dayjs(aula.dataInicio).isValid() ? dayjs(aula.dataInicio).toISOString() : new Date(aula.dataInicio).toISOString();
                     const dtFimIso = dayjs(aula.dataFim).isValid() ? dayjs(aula.dataFim).toISOString() : new Date(aula.dataFim).toISOString();
 
+                    const finalHorarioSlot = Array.isArray(aula.horarioSlotString) 
+                        ? aula.horarioSlotString[0] 
+                        : (aula.horarioSlotString || '');
+
                     const finalData = {
                         assunto: aula.assunto,
                         tipo_atividade: aula.isProva ? 'prova' : (aula.isRevisao ? 'revisao' : (aula.tipoAtividade || 'aula')),
                         laboratorio: aula.laboratorioSelecionado || aula.laboratorio,
-                        horario_slot: aula.horarioSlotString,
+                        horario_slot: finalHorarioSlot,
                         data_inicio: dtInicioIso,
                         data_fim: dtFimIso,
                         status: aula.status,
-                        proposto_por_uid: aula.propostoPorUid,
-                        proposto_por_nome: aula.propostoPorNome,
+                        proposto_por_uid: aula.propostoPorUid || currentUser?.uid || '',
+                        proposto_por_nome: aula.propostoPorNome || userInfo?.nome || currentUser?.displayName || '',
                         is_revisao: aula.isRevisao || false,
                         is_prova: aula.isProva || false,
                         tipo_revisao_label: aula.tipoRevisaoLabel || null,
