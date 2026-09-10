@@ -721,17 +721,17 @@ function DownloadCronograma() {
                     <Typography variant="subtitle2" color="primary" gutterBottom>
                         🔍 Filtros Adicionais (Laboratório, Horário, Curso)
                     </Typography>
-                    <Grid container spacing={2} sx={{ mb: 3 }}>
-                        <Grid item xs={12} sm={6} md={4}>
-                            <FormControl fullWidth size="small">
-                                <InputLabel shrink>Laboratório(s)</InputLabel>
+                    <Grid container spacing={2} sx={{ mb: 3, flexWrap: 'wrap', width: '100%' }}>
+                        <Grid item xs={12} sm={6} md={4} sx={{ width: '100%', flexBasis: { xs: '100%', sm: '50%', md: '33.33%' } }}>
+                            <FormControl fullWidth size="small" sx={{ minWidth: { xs: '100%', sm: 180 }, width: '100%' }}>
+                                <InputLabel shrink notched>Laboratório(s)</InputLabel>
                                 <Select
                                     multiple
                                     value={filtros.laboratorioFiltro}
                                     onChange={(e) => handleFiltroChange('laboratorioFiltro', e.target.value)}
                                     input={<OutlinedInput notched label="Laboratório(s)" />}
                                     renderValue={(sel) => {
-                                        if (!sel || sel.length === 0) return <em>Todos os laboratórios</em>;
+                                        if (!sel || sel.length === 0) return <span style={{ opacity: 0.7 }}>Todos os laboratórios</span>;
                                         if (sel.length > 2) {
                                             return (
                                                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
@@ -777,16 +777,16 @@ function DownloadCronograma() {
                             </FormControl>
                         </Grid>
 
-                        <Grid item xs={12} sm={6} md={4}>
-                            <FormControl fullWidth size="small" disabled={!filtros.incluirAulas}>
-                                <InputLabel shrink>Horário(s)</InputLabel>
+                        <Grid item xs={12} sm={6} md={4} sx={{ width: '100%', flexBasis: { xs: '100%', sm: '50%', md: '33.33%' } }}>
+                            <FormControl fullWidth size="small" disabled={!filtros.incluirAulas} sx={{ minWidth: { xs: '100%', sm: 160 }, width: '100%' }}>
+                                <InputLabel shrink notched>Horário(s)</InputLabel>
                                 <Select
                                     multiple
                                     value={filtros.horarioFiltro}
                                     onChange={(e) => handleFiltroChange('horarioFiltro', e.target.value)}
                                     input={<OutlinedInput notched label="Horário(s)" />}
                                     renderValue={(sel) => {
-                                        if (!sel || sel.length === 0) return <em>Todos os horários</em>;
+                                        if (!sel || sel.length === 0) return <span style={{ opacity: 0.7 }}>Todos os horários</span>;
                                         if (sel.length > 2) {
                                             return (
                                                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
@@ -832,7 +832,7 @@ function DownloadCronograma() {
                             </FormControl>
                         </Grid>
 
-                        <Grid item xs={12} sm={6} md={4}>
+                        <Grid item xs={12} sm={6} md={4} sx={{ width: '100%', flexBasis: { xs: '100%', sm: '50%', md: '33.33%' } }}>
                             <TextField
                                 fullWidth
                                 size="small"
@@ -840,22 +840,26 @@ function DownloadCronograma() {
                                 value={filtros.assuntoFiltro}
                                 onChange={(e) => handleFiltroChange('assuntoFiltro', e.target.value)}
                                 disabled={!filtros.incluirAulas}
+                                sx={{ minWidth: { xs: '100%', sm: 160 } }}
                             />
                         </Grid>
 
-                        <Grid item xs={12} sm={6} md={4}>
-                            <FormControl fullWidth size="small" disabled={!filtros.incluirAulas}>
-                                <InputLabel shrink>Curso(s)</InputLabel>
+                        <Grid item xs={12} sm={6} md={4} sx={{ width: '100%', flexBasis: { xs: '100%', sm: '50%', md: '33.33%' } }}>
+                            <FormControl fullWidth size="small" disabled={!filtros.incluirAulas} sx={{ minWidth: { xs: '100%', sm: 160 }, width: '100%' }}>
+                                <InputLabel shrink notched>Curso(s)</InputLabel>
                                 <Select
                                     multiple
                                     value={filtros.cursosFiltro}
                                     onChange={(e) => handleFiltroChange('cursosFiltro', e.target.value)}
                                     input={<OutlinedInput notched label="Curso(s)" />}
-                                    renderValue={(sel) => (
-                                        <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
-                                            {sel.map(v => <Chip key={v} label={v} size="small" />)}
-                                        </Box>
-                                    )}
+                                    renderValue={(sel) => {
+                                        if (!sel || sel.length === 0) return <span style={{ opacity: 0.7 }}>Todos os cursos</span>;
+                                        return (
+                                            <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
+                                                {sel.map(v => <Chip key={v} label={v} size="small" />)}
+                                            </Box>
+                                        );
+                                    }}
                                 >
                                     {LISTA_CURSOS.map(c => (
                                         <MenuItem key={c.value} value={c.value}>{c.label}</MenuItem>
@@ -864,9 +868,9 @@ function DownloadCronograma() {
                             </FormControl>
                         </Grid>
 
-                        <Grid item xs={12} sm={6} md={4}>
-                            <FormControl fullWidth size="small" disabled={!filtros.incluirAulas}>
-                                <InputLabel shrink>Liga</InputLabel>
+                        <Grid item xs={12} sm={6} md={4} sx={{ width: '100%', flexBasis: { xs: '100%', sm: '50%', md: '33.33%' } }}>
+                            <FormControl fullWidth size="small" disabled={!filtros.incluirAulas} sx={{ minWidth: { xs: '100%', sm: 140 }, width: '100%' }}>
+                                <InputLabel shrink notched>Liga</InputLabel>
                                 <Select
                                     value={filtros.ligaFiltro}
                                     onChange={(e) => handleFiltroChange('ligaFiltro', e.target.value)}

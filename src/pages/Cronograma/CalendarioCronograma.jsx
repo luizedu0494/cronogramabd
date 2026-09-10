@@ -997,14 +997,14 @@ function CalendarioCronograma({ userInfo }) {
                                 </ToggleButtonGroup>
                             </Box>
 
-                            <Grid container spacing={2} alignItems="center">
-                                <Grid item xs={12} sm={6} md={3}>
+                            <Grid container spacing={2} alignItems="center" sx={{ flexWrap: 'wrap', width: '100%' }}>
+                                <Grid item xs={12} sm={12} md={3} sx={{ width: '100%', flexBasis: { xs: '100%', md: '25%' } }}>
                                     <Tooltip title={abaCalendario === 'grade' ? "Filtro de Assunto não se aplica à Grade de Disponibilidade" : ""}>
                                         <TextField fullWidth size="small" label="Buscar Assunto" disabled={abaCalendario === 'grade'} value={filtros.assunto} onChange={(e) => setFiltros({...filtros, assunto: e.target.value})} InputProps={{ startAdornment: <InputAdornment position="start"><SearchIcon fontSize="small" /></InputAdornment> }} />
                                     </Tooltip>
                                 </Grid>
-                                <Grid item xs={12} sm={6} md={3}>
-                                    <FormControl fullWidth size="small" sx={{ minWidth: { xs: '100%', sm: 170 } }}>
+                                <Grid item xs={12} sm={6} md={3} sx={{ width: '100%', flexBasis: { xs: '100%', sm: '50%', md: '25%' } }}>
+                                    <FormControl fullWidth size="small" sx={{ minWidth: { xs: '100%', sm: 170 }, width: '100%' }}>
                                         <InputLabel shrink notched>Laboratórios</InputLabel>
                                         <Select 
                                             multiple 
@@ -1012,7 +1012,7 @@ function CalendarioCronograma({ userInfo }) {
                                             onChange={(e) => setFiltros({...filtros, laboratorio: e.target.value})} 
                                             input={<OutlinedInput notched label="Laboratórios" />} 
                                             renderValue={(selected) => {
-                                                if (!selected || selected.length === 0) return <span style={{ opacity: 0.7 }}>Todos os Laboratórios</span>;
+                                                if (!selected || selected.length === 0) return <span style={{ opacity: 0.7 }}>Todos os Labs</span>;
                                                 return (
                                                     <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
                                                         {selected.map(v => (
@@ -1042,9 +1042,9 @@ function CalendarioCronograma({ userInfo }) {
                                         </Select>
                                     </FormControl>
                                 </Grid>
-                                <Grid item xs={12} sm={6} md={3}>
+                                <Grid item xs={12} sm={6} md={3} sx={{ width: '100%', flexBasis: { xs: '100%', sm: '50%', md: '25%' } }}>
                                     <Tooltip title={abaCalendario === 'grade' ? "Filtro de Cursos não se aplica à Grade de Disponibilidade" : ""}>
-                                        <FormControl fullWidth size="small" disabled={abaCalendario === 'grade'} sx={{ minWidth: { xs: '100%', sm: 150 } }}>
+                                        <FormControl fullWidth size="small" disabled={abaCalendario === 'grade'} sx={{ minWidth: { xs: '100%', sm: 150 }, width: '100%' }}>
                                             <InputLabel shrink notched>Cursos</InputLabel>
                                             <Select 
                                                 multiple 
@@ -1086,9 +1086,9 @@ function CalendarioCronograma({ userInfo }) {
                                         </FormControl>
                                     </Tooltip>
                                 </Grid>
-                                <Grid item xs={12} sm={6} md={1.5}>
+                                <Grid item xs={12} sm={6} md={1.5} sx={{ width: '100%', flexBasis: { xs: '100%', sm: '50%', md: '12.5%' } }}>
                                     <Tooltip title={abaCalendario === 'grade' ? "Filtro de Turno não se aplica à Grade de Disponibilidade" : ""}>
-                                        <FormControl fullWidth size="small" disabled={abaCalendario === 'grade'} sx={{ minWidth: { xs: '100%', sm: 130 } }}>
+                                        <FormControl fullWidth size="small" disabled={abaCalendario === 'grade'} sx={{ minWidth: { xs: '100%', sm: 130 }, width: '100%' }}>
                                             <InputLabel shrink notched>Turno</InputLabel>
                                             <Select 
                                                 multiple 
@@ -1113,7 +1113,7 @@ function CalendarioCronograma({ userInfo }) {
                                         </FormControl>
                                     </Tooltip>
                                 </Grid>
-                                <Grid item xs={12} sm={6} md={1.5}>
+                                <Grid item xs={12} sm={6} md={1.5} sx={{ width: '100%', flexBasis: { xs: '100%', sm: '50%', md: '12.5%' } }}>
                                     <Button fullWidth variant="outlined" color="error" onClick={limparFiltros} startIcon={<ClearAllIcon />} sx={{ height: '40px', fontWeight: 700, minWidth: 110 }}>
                                         Limpar
                                     </Button>

@@ -252,19 +252,19 @@ function GerenciarAulasAvancado({ userInfo }) {
                         <Grid item xs={12} sm={6} md={3}>
                             <DatePicker label="Data Fim" value={filtros.dataFim} onChange={handleDateChange('dataFim')} slotProps={{ textField: { fullWidth: true, size: 'small' } }} />
                         </Grid>
-                        <Grid item xs={12} sm={6} md={3}>
-                            <FormControl sx={{ minWidth: 130 }} size="small">
-                                <InputLabel shrink>Status</InputLabel>
-                                <Select value={filtros.status} label="Status" onChange={handleFiltroChange('status')}>
+                        <Grid item xs={12} sm={6} md={3} sx={{ width: '100%' }}>
+                            <FormControl fullWidth sx={{ minWidth: { xs: '100%', sm: 140 }, width: '100%' }} size="small">
+                                <InputLabel shrink notched>Status</InputLabel>
+                                <Select value={filtros.status} label="Status" onChange={handleFiltroChange('status')} input={<OutlinedInput notched label="Status" />}>
                                     <MenuItem value=""><em>Todos</em></MenuItem>
                                     {STATUS_AULA.map(s => <MenuItem key={s} value={s}>{s}</MenuItem>)}
                                 </Select>
                             </FormControl>
                         </Grid>
-                        <Grid item xs={12} sm={6} md={3}>
-                            <FormControl sx={{ minWidth: 160 }} size="small">
-                                <InputLabel shrink>Laboratório(s)</InputLabel>
-                                <Select multiple value={filtros.laboratorio} onChange={handleFiltroChange('laboratorio')} input={<OutlinedInput notched label="Laboratório(s)" />} renderValue={(selected) => selected.length === 0 ? <em style={{color:'rgba(200,200,200,0.5)'}}>Laboratório(s)</em> : selected.length === 1 ? selected[0] : `${selected[0]} +${selected.length - 1}`}>
+                        <Grid item xs={12} sm={6} md={3} sx={{ width: '100%' }}>
+                            <FormControl fullWidth sx={{ minWidth: { xs: '100%', sm: 170 }, width: '100%' }} size="small">
+                                <InputLabel shrink notched>Laboratório(s)</InputLabel>
+                                <Select multiple value={filtros.laboratorio} onChange={handleFiltroChange('laboratorio')} input={<OutlinedInput notched label="Laboratório(s)" />} renderValue={(selected) => selected.length === 0 ? <span style={{opacity: 0.7}}>Todos os Labs</span> : selected.length === 1 ? selected[0] : `${selected[0]} +${selected.length - 1}`}>
                                     {LISTA_LABORATORIOS.map(l => <MenuItem key={l.id} value={l.name}>{l.name}</MenuItem>)}
                                 </Select>
                             </FormControl>

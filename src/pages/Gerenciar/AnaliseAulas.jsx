@@ -450,16 +450,16 @@ function AnaliseAulas() {
             <Paper elevation={2} sx={{ p: 2, mb: 4 }}>
                 <Typography variant="h6" gutterBottom>Filtros</Typography>
                 <Grid container spacing={2}>
-                    <Grid item xs={12} sm={4}>
-                        <FormControl fullWidth size="small">
-                            <InputLabel>Laboratório(s)</InputLabel>
+                    <Grid item xs={12} sm={4} sx={{ width: '100%' }}>
+                        <FormControl fullWidth size="small" sx={{ minWidth: { xs: '100%', sm: 170 }, width: '100%' }}>
+                            <InputLabel shrink notched>Laboratório(s)</InputLabel>
                             <Select 
                                 multiple 
                                 value={laboratoriosFiltro} 
                                 onChange={(e) => setLaboratoriosFiltro(e.target.value)} 
-                                input={<OutlinedInput label="Laboratório(s)" />} 
+                                input={<OutlinedInput notched label="Laboratório(s)" />} 
                                 renderValue={(selected) => {
-                                    if (!selected || selected.length === 0) return <em>Todos os laboratórios</em>;
+                                    if (!selected || selected.length === 0) return <span style={{ opacity: 0.7 }}>Todos os laboratórios</span>;
                                     if (selected.length > 2) {
                                         return (
                                             <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
@@ -502,16 +502,16 @@ function AnaliseAulas() {
                             </Select>
                         </FormControl>
                     </Grid>
-                    <Grid item xs={12} sm={4}>
-                        <FormControl fullWidth size="small">
-                            <InputLabel>Curso(s)</InputLabel>
+                    <Grid item xs={12} sm={4} sx={{ width: '100%' }}>
+                        <FormControl fullWidth size="small" sx={{ minWidth: { xs: '100%', sm: 160 }, width: '100%' }}>
+                            <InputLabel shrink notched>Curso(s)</InputLabel>
                             <Select 
                                 multiple 
                                 value={cursosFiltro} 
                                 onChange={(e) => setCursosFiltro(e.target.value)} 
-                                input={<OutlinedInput label="Curso(s)" />} 
+                                input={<OutlinedInput notched label="Curso(s)" />} 
                                 renderValue={(selected) => {
-                                    if (!selected || selected.length === 0) return <em>Todos os cursos</em>;
+                                    if (!selected || selected.length === 0) return <span style={{ opacity: 0.7 }}>Todos os cursos</span>;
                                     if (selected.length > 2) {
                                         return (
                                             <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
