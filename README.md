@@ -1,16 +1,16 @@
 # 🔬 CronoLab — Sistema de Gestão de Cronogramas de Laboratórios
 
-> **Plataforma web moderna, intuitiva e acessível** desenvolvida para simplificar o agendamento de laboratórios acadêmicos em universidades e faculdades. Conecta alunos, professores, técnicos e coordenadores em um só lugar de maneira rápida e organizada.
+> **Plataforma web proprietária, intuitiva e moderna** desenvolvida para simplificar o agendamento de laboratórios acadêmicos em Universidades e Instituições de Ensino Superior (IES). Conecta alunos, professores, técnicos e coordenadores em um só ambiente organizado.
 
 ![Banner CronoLab](./imgbanner.png)
 
 <p align="center">
   <a href="#-o-que-%C3%A9-o-cronolab-para-leigos">O que é?</a> •
-  <a href="#-como-funciona-para-cada-pessoa">Como Funciona</a> •
-  <a href="#-demonstra%C3%A7%C3%A3o-em-v%C3%ADdeos--gifs">GIFs & Demonstrações</a> •
-  <a href="#-principais-recursos">Recursos</a> •
+  <a href="#-como-funciona-para-cada-perfil">Como Funciona</a> •
+  <a href="#-demonstra%C3%A7%C3%A3o-visual--gifs">GIFs & Demonstrações</a> •
+  <a href="#-recursos-e-funcionalidades">Recursos</a> •
   <a href="#-tecnologias-usadas">Tecnologias</a> •
-  <a href="#-como-rodar-o-projeto">Como Rodar</a>
+  <a href="#-executar-e-configurar-localmente">Executar Localmente</a>
 </p>
 
 <p align="center">
@@ -19,6 +19,7 @@
   <img alt="React 19" src="https://img.shields.io/badge/React-19-61DAFB?style=for-the-badge&logo=react&logoColor=black"/>
   <img alt="MUI v7" src="https://img.shields.io/badge/UI-Material--UI%20v7-1E7EC8?style=for-the-badge&logo=mui&logoColor=white"/>
   <img alt="Status" src="https://img.shields.io/badge/Status-Ativo%20em%20Produ%C3%A7%C3%A3o-brightgreen?style=for-the-badge"/>
+  <img alt="Licença" src="https://img.shields.io/badge/Licen%C3%A7a-Propriet%C3%A1ria%20%2F%20Comercial-red?style=for-the-badge"/>
 </p>
 
 <p align="center">
@@ -33,84 +34,118 @@ Em faculdades e universidades, conseguir um laboratório para dar aula, fazer pr
 
 O **CronoLab** resolve tudo isso! Funciona como uma **agenda digital inteligente**:
 - 🚫 **Impede horários duplicados automaticamente**: O sistema não deixa duas pessoas reservarem o mesmo laboratório no mesmo horário.
-- 📱 **Funciona no Celular e Computador**: Acesse de qualquer lugar com visualização clara e adaptada.
-- 🔔 **Notificações em Tempo Real**: Receba avisos no seu navegador/área de trabalho quando uma aula for aprovada ou alterada.
-- 📄 **Exportação Fácil**: Baixe a programação em Excel, PDF ou adicione direto à sua agenda (Google Agenda, Outlook, Apple Calendar).
+- 📱 **100% Responsivo no Celular e Computador**: Acesse de qualquer dispositivo com interface totalmente adaptada.
+- 🔔 **Notificações em Tempo Real**: Receba avisos no seu navegador/área de trabalho quando uma aula for proposta, aprovada ou alterada.
+- 📄 **Exportação Fácil**: Baixe a programação em Excel, PDF ou sincronize direto com o Google Agenda, Outlook e Apple Calendar.
 
 ---
 
-## 👥 Como Funciona para Cada Pessoa?
+## 👥 Como Funciona para Cada Perfil?
 
 | Perfil | O que pode fazer no CronoLab? |
 | :--- | :--- |
-| **🎓 Alunos e Visitantes** | Consultam o horário das aulas de qualquer curso ou laboratório livremente, sem precisar de senha ou cadastro. |
-| **🧑‍🔬 Professores e Técnicos** | Enviam propostas de aulas, revisões e provas, escolhem laboratórios favoritos e acompanham suas solicitações. |
-| **👨‍💼 Coordenadores** | Aprova ou rejeita propostas em 1 clique, gerencia bloqueios para manutenção/feriados e emite relatórios institucionais. |
+| **🎓 Alunos e Visitantes** | Consultam a grade de aulas de qualquer curso ou laboratório livremente no modo visitante seguro, sem precisar de senha ou cadastro. |
+| **🧑‍🔬 Professores e Técnicos** | Agendam aulas práticas, enviam solicitações de revisões/provas, gerenciam laboratórios favoritos e acompanham a liberação de bancadas. |
+| **👨‍💼 Coordenadores** | Central unificada para aprovar/rejeitar solicitações em 1 clique, cadastrar avisos, gerenciar manutenções/feriados e emitir relatórios institucionais. |
 
 ---
 
-## 🎬 Demonstração em Vídeos / GIFs
-
-### 1. Visão do Aluno / Visitante (Desktop & Celular)
-Navegação direta sem necessidade de login, consulta por dia/semana e busca rápida de salas:
-
-| Desktop | Celular |
-| :---: | :---: |
-| ![Modo Visitante Desktop](./src/assets/gifs/visitante.gif) | ![Modo Visitante Celular](./src/assets/gifs/visitante-cel.gif) |
+## 🎬 Demonstração Visual & GIFs
 
 ---
 
-### 2. Proposta de Aulas e Agendamentos
-Envio simples de solicitações com validação automática de disponibilidade e colisão de turmas:
+### 💻 NAVEGADOR DESKTOP (Computador)
 
-![Agendamento de Aulas](./src/assets/gifs/agendamento%20de%20aula.gif)
+#### 1. Modo Visitante (Acesso Público e Consulta de Aulas)
+Visualização sem necessidade de login para consulta de turmas e horários:
+![Modo Visitante Desktop](./src/assets/gifs/visitante.gif)
 
----
+#### 2. Tela Inicial do Técnico
+Painel inicial do técnico para acompanhamento rápido dos laboratórios favoritos:
+![Inicial do Técnico](./src/assets/gifs/inicial%20do%20tecnico.gif)
 
-### 3. Painel do Coordenador & Gerenciador de Propostas
-Visualização unificada de solicitações pendentes com aprovação instantânea:
+#### 3. Propor e Agendar Aulas Práticas
+Formulário de proposta com seleção de cursos, laboratórios e horários padronizados:
+![Propor Aulas Técnico](./src/assets/gifs/propor%20aulas%20tecnico.gif)
+![Agendamento de Aula](./src/assets/gifs/agendamento%20de%20aula.gif)
 
+#### 4. Calendário do Próprio Técnico
+Visão dedicada do técnico para controle das suas disciplinas e horários:
+![Calendário Próprio do Técnico](./src/assets/gifs/calendario%20proprio%20tecnico.gif)
+
+#### 5. Dashboard do Técnico
+Painel operacional para acompanhamento geral das atividades técnicas:
+![Dashboard do Técnico](./src/assets/gifs/dashboard%20tecnico.gif)
+
+#### 6. Dashboard e Calendário do Coordenador
+Visão executiva do coordenador para gestão completa dos laboratórios:
 ![Dashboard do Coordenador](./src/assets/gifs/dashboard%20coordenador.gif)
+![Calendário do Coordenador](./src/assets/gifs/calendario%20coordenador.gif)
+
+#### 7. Central e Gerenciador de Propostas
+Aprovação ou rejeição de agendamentos solicitados pelos professores/técnicos:
+![Gerenciador de Propostas](./src/assets/gifs/gerenciador%20de%20propostas.gif)
+
+#### 8. Cadastro de Feriados e Manutenções Preventivas
+Bloqueio de laboratórios durante manutenções ou datas festivas:
+![Bloqueio de Feriados e Manutenção](./src/assets/gifs/feriados.gif)
+
+#### 9. Relatórios & Download do Cronograma
+Exportação personalizada em Excel, PDF e arquivos iCal (.ics):
+![Download de Relatórios](./src/assets/gifs/download%20relatorios.gif)
+
+#### 10. Central de Ajuda & FAQ
+Base de conhecimento integrada para sanar dúvidas da equipe:
+![FAQ e Central de Ajuda](./src/assets/gifs/faq.gif)
+
+#### 11. Cadastro de Usuários & Configurações de Perfil
+Gerenciamento do perfil de usuário, foto e preferências de horário silencioso:
+![Cadastro de Usuários](./src/assets/gifs/cadastro.gif)
+![Configurações de Perfil](./src/assets/gifs/perfil.gif)
 
 ---
 
-### 4. Notificações Nativas e Configuração de Perfil
-Configuração de alertas nativos do navegador e definição de horários silenciosos:
+### 📱 NAVEGADOR MOBILE (Dispositivos Móveis / Smartphone)
 
-![Notificações e Perfil](./docs/assets/notificacoes_demo.png)
+#### 1. Modo Visitante no Celular
+Interface mobile fluida para consulta rápida por alunos e professores:
+![Modo Visitante no Celular](./src/assets/gifs/visitante-cel.gif)
+
+#### 2. Painel de Coordenadores e Técnicos no Celular
+Gestão ágil de aprovações e agendamentos na palma da mão:
+![Coordenador e Técnico no Celular](./src/assets/gifs/coordenadoretecnico-cel.gif)
 
 ---
 
-## 🚀 Principais Recursos
+## 🚀 Recursos e Funcionalidades
 
-- 📅 **Calendário Interativo de Ocupação**: Visualização por blocos de horários (Matutino, Vespertino e Noturno).
-- 📝 **Tipos de Atividades com Cores Exclusivas**:
-  - 🎓 **Aula Normal**: Azul institucional.
-  - 📖 **Revisão / Reforço**: Roxo.
-  - 📝 **Prova / Avaliação**: Vermelho em destaque.
-- 🔒 **Modo Visitante Seguro**: Visitantes visualizam as informações sem permissão de alterar ou excluir dados.
+- 📅 **Calendário Interativo de Ocupação**: Blocos padronizados de horários (Matutino, Vespertino e Noturno).
+- 📝 **Modos de Atividade Distintos**:
+  - 🎓 **Aula Normal**: Identificação em azul institucional.
+  - 📖 **Revisão / Reforço**: Identificação em roxo.
+  - 📝 **Prova / Avaliação**: Identificação em vermelho de alto contraste.
+- 🔒 **Modo Visitante Seguro**: Permite que qualquer pessoa consulte os horários sem risco de alterar ou excluir dados.
+- 🔔 **Notificações Nativas do Navegador**: Alertas instantâneos de aprovação no computador e celular, imunes a bloqueadores de anúncios.
 - 📊 **Importação & Exportação**:
-  - Importe cronogramas inteiros via planilhas Excel (`.xlsx`) ou documentos (`.docx`).
-  - Exporte relatórios organizados em **PDF**, **Excel** ou arquivo de calendário **iCal (.ics)**.
-- 🤖 **Assistente de Inteligência Artificial**: Diagnóstico inteligente de choque de turmas e sugestões de otimização de espaço.
+  - Importação de cronogramas em planilhas Excel (`.xlsx`) ou documentos Word (`.docx`).
+  - Exportação em **PDF**, **Excel** ou arquivo de calendário **iCal (.ics)**.
+- 🤖 **Assistente de Inteligência Artificial**: Análise e diagnóstico inteligente de choques de horário.
 
 ---
 
 ## 🛠️ Tecnologias Usadas (Para Desenvolvedores)
 
-O projeto foi construído com a stack web moderna focada em desempenho, tipografia ergonômica (Sora & Inter) e acessibilidade:
-
 - **Frontend**: [React 19](https://react.dev/), [Vite 7](https://vitejs.dev/), [Material-UI (MUI v7)](https://mui.com/), [Dayjs](https://day.js.org/)
 - **Backend & Banco de Dados**: [Supabase](https://supabase.com/) (PostgreSQL + Auth PKCE Flow + Realtime Subscriptions + Storage)
 - **Hospedagem & CDN**: [Vercel](https://vercel.com/)
 - **Inteligência Artificial**: LangChain.js & Groq API (`llama-3.3-70b-versatile`)
-- **Documentos & Manipulação de Dados**: ExcelJS, SheetJS (`xlsx`), jsPDF, Tesseract.js (OCR)
+- **Documentos & Dados**: ExcelJS, SheetJS (`xlsx`), jsPDF, Tesseract.js (OCR)
 
 ---
 
-## 💻 Como Rodar o Projeto Localmente
+## 💻 Executar e Configurar Localmente
 
-Se você é desenvolvedor e deseja testar ou contribuir com o projeto na sua máquina:
+Passos para executar o projeto em ambiente de desenvolvimento local ou homologação:
 
 ### 1. Clonar o Repositório
 ```bash
@@ -124,7 +159,7 @@ npm install
 ```
 
 ### 3. Configurar as Variáveis de Ambiente
-Crie um arquivo `.env` na raiz do projeto com as chaves do seu banco Supabase:
+Crie um arquivo `.env` na raiz do projeto com as credenciais do Supabase:
 
 ```env
 VITE_SUPABASE_URL=https://seu_projeto.supabase.co
@@ -136,10 +171,11 @@ VITE_GROQ_API_KEY=sua_chave_groq_opcional
 ```bash
 npm run dev
 ```
-O projeto estará rodando no endereço `http://localhost:5173`.
+O projeto estará disponível no endereço `http://localhost:5173`.
 
 ---
 
-## 📄 Licença
+## 🔒 Licença e Direitos Comerciais
 
-Este projeto é de propriedade privada. Todos os direitos reservados.
+Este software é um produto **Proprietário e Comercial**. Todos os direitos reservados ao desenvolvedor.  
+Proibida a reprodução, cópia, distribuição ou comercialização não autorizada do código-fonte ou de suas partes. Para licenciamento corporativo ou aquisição de direitos de uso para instituições de ensino, entre em contato.
