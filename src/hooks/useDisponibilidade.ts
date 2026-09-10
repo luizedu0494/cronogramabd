@@ -79,7 +79,7 @@ export function useDisponibilidade() {
       const startIso = startDt.toISOString();
       const endIso = endDt.toISOString();
 
-      const [resAulas, resEventos] = await Promise.all([
+      const [resAulas, resEventos, resPeriodos] = await Promise.all([
         supabase
           .from('aulas')
           .select('*')
@@ -90,11 +90,17 @@ export function useDisponibilidade() {
           .from('eventos_manutencao')
           .select('*')
           .gte('data_inicio', startIso)
+          .lte('data_inicio', endIso),
+        supabase
+          .from('periodos_sem_atividade')
+          .select('*')
           .lte('data_inicio', endIso)
+          .gte('data_fim', startIso)
       ]);
 
       const aulas = resAulas.data || [];
       const eventos = resEventos.data || [];
+      const periodos = resPeriodos.data || [];
 
       // Mapeamento local dos ocupados por: "YYYY-MM-DD_HORARIO_LAB"
       const ocupadosMap = new Map<string, ConflitoItem[]>();
@@ -170,6 +176,13 @@ export function useDisponibilidade() {
       const listaResultados: ResultadoDataDisponibilidade[] = datasAlvo.map(dt => {
         const dateObj = dayjs(dt);
         const dateKey = dateObj.format('YYYY-MM-DD');
+
+        const periodoInativo = periodos.find(p => {
+          const pStart = dayjs(p.data_inicio).startOf('day');
+          const pEnd = dayjs(p.data_fim).endOf('day');
+          return dateObj.isBetween(pStart, pEnd, 'day', '[]');
+        });
+
         const slotsStatus: SlotDisponibilidade[] = [];
         const conflitosData: ConflitoItem[] = [];
 
@@ -186,7 +199,18 @@ export function useDisponibilidade() {
             const cTodos = ocupadosMap.get(keyTodos) || [];
             const conflitosCombinados = [...cEspecificos, ...cTodos];
 
-            const isLivre = conflitosCombinados.length === 0;
+            if (periodoInativo) {
+              conflitosCombinados.unshift({
+                id: `periodo_${periodoInativo.id}`,
+                tipo: 'evento',
+                laboratorio: lab,
+                horario: slot,
+                titulo: `🚫 ${periodoInativo.descricao}`,
+                detalhe: `Período Sem Atividade (${periodoInativo.tipo || 'Feriado/Inativo'})`
+              });
+            }
+
+            const isLivre = !periodoInativo && conflitosCombinados.length === 0;
 
             if (isLivre) {
               slotsLivresCount++;

@@ -301,6 +301,12 @@ function ProporAulaForm({ userInfo, currentUser, initialDate, onSuccess, onCance
                 }));
                 setEventosDoMesState(eventosDoMes);
 
+                const { data: periodosRes } = await supabase
+                    .from('periodos_sem_atividade')
+                    .select('*')
+                    .lte('data_inicio', fimDoMesIso)
+                    .gte('data_fim', inicioDoMesIso);
+
                 const ocupacaoPorDia = {};
                 aulasDoMes.forEach(aula => {
                     const dia = dayjs(aula.dataInicio).format('YYYY-MM-DD');
@@ -321,6 +327,21 @@ function ProporAulaForm({ userInfo, currentUser, initialDate, onSuccess, onCance
                         BLOCOS_HORARIO.forEach(bloco => {
                             ocupacaoPorDia[dia].add(`${evento.laboratorio}-${bloco.value}`);
                         });
+                    }
+                });
+
+                (periodosRes || []).forEach(periodo => {
+                    let cursor = dayjs(periodo.data_inicio).startOf('day');
+                    const limit = dayjs(periodo.data_fim).endOf('day');
+                    while (cursor.isBefore(limit)) {
+                        const dia = cursor.format('YYYY-MM-DD');
+                        if (!ocupacaoPorDia[dia]) ocupacaoPorDia[dia] = new Set();
+                        LISTA_LABORATORIOS.forEach(lab => {
+                            BLOCOS_HORARIO.forEach(bloco => {
+                                ocupacaoPorDia[dia].add(`${lab.name}-${bloco.value}`);
+                            });
+                        });
+                        cursor = cursor.add(1, 'day');
                     }
                 });
 
@@ -384,6 +405,13 @@ function ProporAulaForm({ userInfo, currentUser, initialDate, onSuccess, onCance
                     .gte('data_inicio', inicioIso)
                     .lte('data_inicio', diaSelecionado.endOf('day').toISOString());
 
+                // 3. Busca Períodos sem atividade
+                const { data: periodosRes } = await supabase
+                    .from('periodos_sem_atividade')
+                    .select('*')
+                    .lte('data_inicio', fimIso)
+                    .gte('data_fim', inicioIso);
+
                 const ocupacaoMap = {};
 
                 (aulasRes || []).forEach(data => {
@@ -408,6 +436,19 @@ function ProporAulaForm({ userInfo, currentUser, initialDate, onSuccess, onCance
                                 status: 'evento'
                             };
                         }
+                    }
+                });
+
+                (periodosRes || []).forEach(p => {
+                    const pStart = dayjs(p.data_inicio).startOf('day');
+                    const pEnd = dayjs(p.data_fim).endOf('day');
+                    if (diaSelecionado.isBetween(pStart, pEnd, 'day', '[]')) {
+                        BLOCOS_HORARIO.forEach(bloco => {
+                            ocupacaoMap[bloco.value] = {
+                                assunto: `🚫 Período Inativo: ${p.descricao}`,
+                                status: 'evento'
+                            };
+                        });
                     }
                 });
                 

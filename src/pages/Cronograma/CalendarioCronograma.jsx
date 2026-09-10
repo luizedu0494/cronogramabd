@@ -365,67 +365,81 @@ const DayColumn = ({ day, viewMode, aulasFiltradas, eventosFiltrados, periodosBl
                         )}
                         {isBlocked && (
                             <Box sx={{ textAlign: 'center', mt: 0.5 }}>
-                                <Chip label={periodoInativo.descricao} size="small" color="error" variant="outlined" sx={{ height: 20, fontSize: '0.65rem' }} />
+                                <Chip 
+                                    label={`🚫 ${periodoInativo.descricao}`} 
+                                    size="small" 
+                                    color="error" 
+                                    sx={{ 
+                                        height: 'auto', 
+                                        py: 0.5, 
+                                        fontSize: '0.68rem', 
+                                        fontWeight: 'bold', 
+                                        whiteSpace: 'normal',
+                                        '& .MuiChip-label': { px: 1, whiteSpace: 'normal' } 
+                                    }} 
+                                />
                             </Box>
                         )}
                     </Box>
                 </Tooltip>
                 <Divider sx={{ mb: 1.5 }} />
                 
-                {!isBlocked && (
-                    <>
-                        <Box sx={isDayMode
-                            ? { display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 2 }
-                            : { display: 'flex', flexDirection: 'column', gap: 1 }
-                        }>
-                            {eventosVisiveis.map(evento => (
-                                <EventoCard 
-                                    key={evento.id} evento={evento}
-                                    isCoordenador={userInfo?.role === 'coordenador'}
-                                    onEdit={() => { setEventoParaAcao(evento); setIsEventModalOpen(true); }}
-                                    onDelete={async () => {
-                                        if(window.confirm("Excluir evento?")) {
-                                            await supabase.from('eventos_manutencao').delete().eq('id', evento.id);
-                                            fetchDados();
-                                        }
-                                    }}
-                                    isSelectionMode={isSelectionMode}
-                                    isSelected={selectedEventosIds.includes(evento.id)}
-                                    onToggleSelect={(id) => setSelectedEventosIds(prev => prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id])}
-                                />
-                            ))}
-                            {aulasVisiveis.map(aula => (
-                                <AulaCard 
-                                    key={aula.id} aula={aula}
-                                    isCoordenador={userInfo?.role === 'coordenador'}
-                                    onEdit={(a) => { setAulaParaAcao(a); setIsEditModalOpen(true); }}
-                                    onDelete={(a) => { setAulaParaAcao(a); setIsDeleteModalOpen(true); }}
-                                    isSelectionMode={isSelectionMode} 
-                                    isSelected={selectedAulasIds.includes(aula.id)}
-                                    onToggleSelect={(id) => setSelectedAulasIds(prev => prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id])}
-                                />
-                            ))}
-                        </Box>
+                {isBlocked && totalItens === 0 && (
+                    <Box sx={{ p: 1, textAlign: 'center', color: 'error.main', fontSize: '0.75rem', fontWeight: 600 }}>
+                        Sem expediente / Atividade suspensa
+                    </Box>
+                )}
 
-                        {compactar && ocultos > 0 && (
-                            <Box
-                                onClick={() => setExpandidoColuna(v => !v)}
-                                sx={{
-                                    mt: 1, py: 0.8, px: 1,
-                                    display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 0.5,
-                                    cursor: 'pointer', borderRadius: 1,
-                                    bgcolor: 'action.hover',
-                                    '&:hover': { bgcolor: 'action.selected' },
-                                    transition: 'background-color 0.15s',
-                                }}
-                            >
-                                <ExpandMoreIcon sx={{ fontSize: 14, color: 'text.secondary', transform: expandidoColuna ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }} />
-                                <Typography variant="caption" color="text.secondary">
-                                    {expandidoColuna ? 'Ver menos' : `+${ocultos} mais`}
-                                </Typography>
-                            </Box>
-                        )}
-                    </>
+                <Box sx={isDayMode
+                    ? { display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 2 }
+                    : { display: 'flex', flexDirection: 'column', gap: 1 }
+                }>
+                    {eventosVisiveis.map(evento => (
+                        <EventoCard 
+                            key={evento.id} evento={evento}
+                            isCoordenador={userInfo?.role === 'coordenador'}
+                            onEdit={() => { setEventoParaAcao(evento); setIsEventModalOpen(true); }}
+                            onDelete={async () => {
+                                if(window.confirm("Excluir evento?")) {
+                                    await supabase.from('eventos_manutencao').delete().eq('id', evento.id);
+                                    fetchDados();
+                                }
+                            }}
+                            isSelectionMode={isSelectionMode}
+                            isSelected={selectedEventosIds.includes(evento.id)}
+                            onToggleSelect={(id) => setSelectedEventosIds(prev => prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id])}
+                        />
+                    ))}
+                    {aulasVisiveis.map(aula => (
+                        <AulaCard 
+                            key={aula.id} aula={aula}
+                            isCoordenador={userInfo?.role === 'coordenador'}
+                            onEdit={(a) => { setAulaParaAcao(a); setIsEditModalOpen(true); }}
+                            onDelete={(a) => { setAulaParaAcao(a); setIsDeleteModalOpen(true); }}
+                            isSelectionMode={isSelectionMode} 
+                            isSelected={selectedAulasIds.includes(aula.id)}
+                            onToggleSelect={(id) => setSelectedAulasIds(prev => prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id])}
+                        />
+                    ))}
+                </Box>
+
+                {compactar && ocultos > 0 && (
+                    <Box
+                        onClick={() => setExpandidoColuna(v => !v)}
+                        sx={{
+                            mt: 1, py: 0.8, px: 1,
+                            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 0.5,
+                            cursor: 'pointer', borderRadius: 1,
+                            bgcolor: 'action.hover',
+                            '&:hover': { bgcolor: 'action.selected' },
+                            transition: 'background-color 0.15s',
+                        }}
+                    >
+                        <ExpandMoreIcon sx={{ fontSize: 14, color: 'text.secondary', transform: expandidoColuna ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }} />
+                        <Typography variant="caption" color="text.secondary">
+                            {expandidoColuna ? 'Ver menos' : `+${ocultos} mais`}
+                        </Typography>
+                    </Box>
                 )}
                 
                 {userInfo?.role === 'coordenador' && !isBlocked && !isSelectionMode && (
@@ -524,7 +538,7 @@ function CalendarioCronograma({ userInfo }) {
         const endISO = weekEnd.toISOString();
         
         try {
-            const [aulasRes, eventosRes] = await Promise.all([
+            const [aulasRes, eventosRes, periodosRes] = await Promise.all([
                 supabase.from('aulas')
                     .select('*, aula_cursos(curso)')
                     .gte('data_inicio', startISO)
@@ -533,7 +547,11 @@ function CalendarioCronograma({ userInfo }) {
                 supabase.from('eventos_manutencao')
                     .select('*')
                     .gte('data_inicio', startISO)
+                    .lte('data_inicio', endISO),
+                supabase.from('periodos_sem_atividade')
+                    .select('*')
                     .lte('data_inicio', endISO)
+                    .gte('data_fim', startISO)
             ]);
 
             const aulasData = aulasRes.data || [];
@@ -564,7 +582,14 @@ function CalendarioCronograma({ userInfo }) {
                 end: new Date(d.data_fim)
             })));
             
-            setPeriodosBloqueio([]);
+            const periodosData = (periodosRes.data || []).map(p => ({
+                id: p.id,
+                descricao: p.descricao,
+                start: dayjs(p.data_inicio).startOf('day'),
+                end: dayjs(p.data_fim).endOf('day'),
+                tipo: p.tipo
+            }));
+            setPeriodosBloqueio(periodosData);
         } catch (err) { 
             console.warn('Aviso ao carregar dados do calendário:', err.message); 
         } finally { 

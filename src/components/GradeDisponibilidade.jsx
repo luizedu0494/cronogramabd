@@ -1,16 +1,17 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import {
   Table, TableBody, TableCell, TableContainer,
   TableHead, TableRow, Paper, Chip, Tooltip, Typography, Box,
   Dialog, DialogTitle, DialogContent, DialogActions, Button, Divider,
   Accordion, AccordionSummary, AccordionDetails, useMediaQuery, useTheme,
-  ToggleButtonGroup, ToggleButton, FormControlLabel, Switch
+  ToggleButtonGroup, ToggleButton, FormControlLabel, Switch, Alert
 } from '@mui/material';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import CalendarTodayIcon from '@mui/icons-material/CalendarToday';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
 import dayjs from 'dayjs';
+import { supabase } from '../supabaseConfig';
 import { LISTA_LABORATORIOS } from '../constants/laboratorios';
 import { toDataLocal, toHorariosArray } from '../utils/dateHelper';
 
@@ -26,16 +27,11 @@ const BLOCOS = [
 
 /**
  * GradeDisponibilidade
- * @param {Array}  aulas      - Aulas do dia/semana já carregadas
- * @param {string} dataFoco   - Data inicial foco ('YYYY-MM-DD')
- * @param {Array}  tiposLab   - Filtro opcional de tipos de laboratório
- * @param {string} perspectivaFiltro - 'todos' | 'livres' | 'ocupados'
- * @param {Function} onCelulaClick - Callback quando o usuário clica em uma célula
- * @param {Array}  horariosDestacados - Lista de horarios selecionados para destacar
  */
 export default function GradeDisponibilidade({
   aulas = [],
   eventos = [],
+  periodosBloqueio = [],
   dataFoco = dayjs().format('YYYY-MM-DD'),
   tiposLab = [],
   perspectivaFiltro = 'todos',
@@ -50,8 +46,44 @@ export default function GradeDisponibilidade({
   const [modalDetalhes, setModalDetalhes] = useState(null);
   const [dataSelecionada, setDataSelecionada] = useState(dataFoco);
   const [apenasComVaga, setApenasComVaga] = useState(false);
+  const [periodosInativos, setPeriodosInativos] = useState(periodosBloqueio || []);
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+
+  useEffect(() => {
+    if (periodosBloqueio && periodosBloqueio.length > 0) {
+      setPeriodosInativos(periodosBloqueio);
+      return;
+    }
+    const fetchPeriodos = async () => {
+      try {
+        const { data } = await supabase.from('periodos_sem_atividade').select('*');
+        if (data) {
+          setPeriodosInativos(data.map(p => ({
+            id: p.id,
+            descricao: p.descricao,
+            start: dayjs(p.data_inicio).startOf('day'),
+            end: dayjs(p.data_fim).endOf('day'),
+            tipo: p.tipo
+          })));
+        }
+      } catch (err) {
+        console.warn("Erro ao buscar períodos sem atividade:", err);
+      }
+    };
+    fetchPeriodos();
+  }, [periodosBloqueio]);
+
+  // Verificar se a data selecionada está dentro de um período inativo / feriado
+  const periodoInativoAtual = useMemo(() => {
+    if (!dataSelecionada || !periodosInativos.length) return null;
+    const target = dayjs(dataSelecionada);
+    return periodosInativos.find(p => {
+      const pStart = p.start ? dayjs(p.start) : dayjs(p.data_inicio).startOf('day');
+      const pEnd = p.end ? dayjs(p.end) : dayjs(p.data_fim).endOf('day');
+      return target.isBetween(pStart, pEnd, 'day', '[]');
+    });
+  }, [dataSelecionada, periodosInativos]);
 
   // Gerar os 6 dias da semana (Segunda a Sábado) baseados na data foco
   const diasDaSemana = useMemo(() => {
@@ -129,10 +161,22 @@ export default function GradeDisponibilidade({
   }, [aulas, eventos, dataSelecionada]);
 
   const getAulasDaCelula = (lab, horario) => {
-    return mapaDetalhes[lab.id]?.[horario] || mapaDetalhes[lab.name]?.[horario] || [];
+    const existentes = mapaDetalhes[lab.id]?.[horario] || mapaDetalhes[lab.name]?.[horario] || [];
+    if (periodoInativoAtual && existentes.length === 0) {
+      return [{
+        id: `periodo_${periodoInativoAtual.id}`,
+        title: `🚫 ${periodoInativoAtual.descricao}`,
+        titulo: `🚫 ${periodoInativoAtual.descricao}`,
+        observacoes: `Dia sem atividade / expediente (${periodoInativoAtual.tipo || 'Feriado/Inativo'})`,
+        origem: 'evento',
+        tipo: 'Feriado / Inativo'
+      }];
+    }
+    return existentes;
   };
 
   const getStatusCelula = (lab, horario) => {
+    if (periodoInativoAtual) return 'ocupado';
     const itens = getAulasDaCelula(lab, horario);
     if (!itens || itens.length === 0) return 'livre';
     const temConfirmado = itens.some(i => i.origem === 'evento' || !i.status || i.status === 'aprovada');
@@ -174,6 +218,12 @@ export default function GradeDisponibilidade({
 
   return (
     <Box sx={{ mt: 1 }}>
+      {periodoInativoAtual && (
+        <Alert severity="error" sx={{ mb: 2, fontWeight: 'bold' }}>
+          🚫 Data sem Atividade / Feriado ({dayjs(dataSelecionada).format('DD/MM/YYYY')}): {periodoInativoAtual.descricao}. Todos os horários da grade estão bloqueados nesta data.
+        </Alert>
+      )}
+
       {/* Legenda visual de cores */}
       <Box sx={{ display: 'flex', gap: 2, mb: 1.5, flexWrap: 'wrap', alignItems: 'center' }}>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
