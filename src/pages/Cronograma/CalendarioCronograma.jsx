@@ -547,7 +547,8 @@ function CalendarioCronograma({ userInfo }) {
                     cursos: d.aula_cursos?.map(c => c.curso) || [],
                     start: new Date(d.data_inicio),
                     end: new Date(d.data_fim),
-                    isRevisao: d.is_revisao
+                    isRevisao: d.is_revisao,
+                    isProva: d.is_prova
                 }))
                 .filter(aula => {
                     if (!aula.status || aula.status === 'aprovada') return true;
@@ -687,6 +688,7 @@ function CalendarioCronograma({ userInfo }) {
             if (bulkEditFields.tipoAula && bulkEditTarget === 'aula') {
                 updates.tipo_atividade = bulkEditFields.tipoAula;
                 updates.is_revisao     = bulkEditFields.tipoAula === 'revisao';
+                updates.is_prova       = bulkEditFields.tipoAula === 'prova';
             }
 
             const mudandoData        = !!bulkEditFields.dataInicio;
