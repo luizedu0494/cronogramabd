@@ -90,3 +90,33 @@ export const registrarLogEvento = async (
   }
 };
 
+export const registrarLogEdicao = async (
+  itemData: AulaLogData,
+  usuario: UserLog,
+  colecaoOrigem: string = 'aulas'
+) => {
+  try {
+    const assunto = itemData.title || itemData.assunto || 'Sem assunto';
+    const cursosStr = itemData.cursos && itemData.cursos.length > 0 ? itemData.cursos.join(', ') : 'Geral';
+    const acaoVerbo = colecaoOrigem === 'eventos_manutencao' ? 'editou o evento' : 'editou a aula';
+    
+    const descricao = `${usuario.nome || usuario.displayName || usuario.name || 'Usuário'} ${acaoVerbo} "${assunto}" (${cursosStr})`;
+
+    await supabase.from('logs').insert([{
+      type: 'UPDATE',
+      collection: colecaoOrigem,
+      user_uid: usuario.uid || null,
+      user_nome: usuario.nome || usuario.displayName || usuario.name || 'Anônimo',
+      payload: {
+        descricao,
+        item: itemData
+      },
+      created_at: new Date().toISOString()
+    }]);
+
+    console.log(`[LOG] Log de edição registrado com sucesso para a coleção ${colecaoOrigem}.`);
+  } catch (error) {
+    console.error(`[LOG ERRO] Falha ao registrar log de edição:`, error);
+  }
+};
+

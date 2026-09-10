@@ -35,7 +35,7 @@ import EventoCard from '../../components/EventoCard';
 import GradeDisponibilidade from '../../components/GradeDisponibilidade';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { notificadorTelegram } from '../../services/NotificadorTelegram';
-import { registrarLogExclusao } from '../../services/loggerService';
+import { registrarLogExclusao, registrarLogEdicao } from '../../services/loggerService';
 
 const BLOCOS_HORARIO = [
     { value: "07:00-09:10", label: "07:00 - 09:10" },
@@ -730,6 +730,8 @@ function CalendarioCronograma({ userInfo }) {
                     const { error: updErr } = await supabase.from('aulas').update(aulaUpdates).eq('id', aula.id);
                     if (updErr) throw updErr;
 
+                    await registrarLogEdicao(aula, userInfo, 'aulas');
+
                     if (bulkEditFields.cursos && bulkEditFields.cursos.length > 0) {
                         await supabase.from('aula_cursos').delete().eq('aula_id', aula.id);
                         await supabase.from('aula_cursos').insert(
@@ -769,6 +771,7 @@ function CalendarioCronograma({ userInfo }) {
                     if (Object.keys(eventoUpdates).length > 0) {
                         const { error: evErr } = await supabase.from('eventos_manutencao').update(eventoUpdates).eq('id', evento.id);
                         if (evErr) throw evErr;
+                        await registrarLogEdicao({ title: evento.titulo, assunto: evento.titulo, laboratorio: evento.laboratorio }, userInfo, 'eventos_manutencao');
                     }
                 }
             }

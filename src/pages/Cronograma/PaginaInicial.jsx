@@ -29,6 +29,7 @@ import calendarioAcademico from '../../assets/images/destaque-calendario.jpeg';
 
 // Componentes
 import UltimasAulasCard from '../../components/UltimasAulasCard';
+import UltimasEdicoesCard from '../../components/UltimasEdicoesCard';
 import UltimasExclusoesCard from '../../components/UltimasExclusoesCard';
 import AssistenteIA from '../IA/AssistenteIA'; 
 import UploadImagem from '../../componentes/comuns/UploadImagem'; 
@@ -973,8 +974,9 @@ const PaginaInicial = ({ userInfo }) => {
                 <Box role="tabpanel" hidden={tabValue !== 0} sx={{ p: 2 }}>
                     {tabValue === 0 && (
                         <Grid container spacing={2}>
-                            <Grid item xs={12} md={6}><UltimasAulasCard /></Grid>
-                            <Grid item xs={12} md={6}><UltimasExclusoesCard /></Grid>
+                            <Grid item xs={12} md={4}><UltimasAulasCard /></Grid>
+                            <Grid item xs={12} md={4}><UltimasEdicoesCard /></Grid>
+                            <Grid item xs={12} md={4}><UltimasExclusoesCard /></Grid>
                         </Grid>
                     )}
                 </Box>

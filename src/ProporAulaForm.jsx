@@ -24,6 +24,7 @@ import { notificadorTelegram } from './services/NotificadorTelegram';
 import { toDataLocal } from './utils/dateHelper';
 import { buscarAulasPorDia } from './utils/aulaQueries';
 import { autoRejeitarPendentesConflitantes } from './utils/conflitoUtils';
+import { registrarLogEdicao } from './services/loggerService';
 
 dayjs.locale('pt-br');
 
@@ -699,6 +700,8 @@ function ProporAulaForm({ userInfo, currentUser, initialDate, onSuccess, onCance
                 };
                 const { error } = await supabase.from('aulas').update(finalData).eq('id', aulaId);
                 if (error) throw error;
+
+                await registrarLogEdicao({ ...aula, title: aula.assunto }, userInfo || { uid: currentUser?.uid }, 'aulas');
 
                 // Atualizar relacionamento de cursos na edição
                 if (aula.cursos) {
