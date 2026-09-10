@@ -569,7 +569,8 @@ const PaginaInicial = ({ userInfo }) => {
     );
 
     return (
-        <Container maxWidth="xl" sx={{ mt: 2, mb: 4, mx: 'auto', px: { xs: 2, sm: 3, md: 4 } }}>
+        <Box sx={{ width: '100%', display: 'flex', justifyContent: 'center' }}>
+            <Container maxWidth="lg" sx={{ mt: 2, mb: 4, width: '100%' }}>
 
             {/* ── ONBOARDING DO TÉCNICO (apenas primeira vez neste dispositivo) ── */}
             {userInfo?.role === 'tecnico' && onboardingStep !== null && <OnboardingTecnico />}
@@ -1277,6 +1278,7 @@ const PaginaInicial = ({ userInfo }) => {
             </>)} {/* fim do bloco condicional — conteúdo normal */}
 
         </Container>
+        </Box>
     );
 };
 
