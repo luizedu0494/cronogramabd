@@ -104,6 +104,7 @@ const ListagemCompletaAulas = () => {
             setError("Não foi possível carregar as aulas.");
         } finally {
             setLoading(false);
+        }
     }, [filtroStatus, filtroAutor, construirFiltroData]);
 
     // Executar busca quando filtros mudam
