@@ -141,12 +141,7 @@ function ConfiguracoesPerfil() {
                     setSnackbarMessage('✅ Notificações de Área de Trabalho / Navegador ativadas com sucesso!');
                     setSnackbarSeverity('success');
 
-                    // Tentar registrar Web Push secundariamente sem bloquear se falhar por AdBlock/VAPID
-                    if (userProfile?.uid) {
-                        registrarWebPush(userProfile.uid).catch(() => {});
-                    }
-
-                    // Teste imediato de notificação
+                    // Disparar teste imediato de notificação
                     try {
                         new Notification('🔔 CronoLab Notificações Ativas', {
                             body: 'Você receberá alertas instantâneos diretamente no seu computador ou dispositivo!',

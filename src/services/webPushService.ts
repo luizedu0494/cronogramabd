@@ -66,10 +66,9 @@ export async function registrarWebPush(userUid: string): Promise<{ sucesso: bool
     return { sucesso: true };
   } catch (err: any) {
     if (err?.name === 'AbortError' || err?.message?.includes('push service error')) {
-      console.warn('Serviço de Push indisponível temporariamente:', err);
       return { 
         sucesso: false, 
-        mensagem: 'O serviço de Push do navegador falhou temporariamente (Push Service Error). Tente reiniciar a aba do navegador ou verificar se não está em janela anônima.' 
+        mensagem: 'O serviço de Push do navegador falhou temporariamente (Push Service Error).' 
       };
     }
     console.error('Erro ao registrar Web Push:', err);
