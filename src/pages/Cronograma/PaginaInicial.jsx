@@ -116,7 +116,7 @@ const PaginaInicial = ({ userInfo }) => {
             }
         };
         contarAvisosNaoLidos();
-    }, [userInfo]);
+    }, [userInfo?.uid]);
 
     const fetchData = useCallback(async () => {
         setError(null);
@@ -232,13 +232,12 @@ const PaginaInicial = ({ userInfo }) => {
         } finally {
             setLoading(false);
         }
-    }, [userInfo]);
+    }, [userInfo?.uid, userInfo?.role]);
 
     useEffect(() => {
-        setLoading(true);
-        if (userInfo) fetchData();
+        if (userInfo?.uid) fetchData();
         else setLoading(false);
-    }, [fetchData, userInfo]);
+    }, [fetchData, userInfo?.uid]);
 
     const handleToggleCalendarStatus = (checked) => {
         setIsCalendarEnabled(checked);
