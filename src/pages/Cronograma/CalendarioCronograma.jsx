@@ -286,17 +286,21 @@ const AulaCard = ({ aula, onEdit, onDelete, isCoordenador, isSelectionMode, isSe
                         </Box>
                     )}
 
-                    <Divider />
-                    <Box sx={{ display: 'flex', gap: 1 }}>
-                        <Button fullWidth variant="outlined" startIcon={<EditIcon />}
-                            onClick={() => { setDrawerOpen(false); onEdit(aula); }}>
-                            Editar
-                        </Button>
-                        <Button fullWidth variant="outlined" color="error" startIcon={<DeleteIcon />}
-                            onClick={() => { setDrawerOpen(false); onDelete(aula); }}>
-                            Excluir
-                        </Button>
-                    </Box>
+                    {isCoordenador && (
+                        <>
+                            <Divider />
+                            <Box sx={{ display: 'flex', gap: 1 }}>
+                                <Button fullWidth variant="outlined" startIcon={<EditIcon />}
+                                    onClick={() => { setDrawerOpen(false); onEdit(aula); }}>
+                                    Editar
+                                </Button>
+                                <Button fullWidth variant="outlined" color="error" startIcon={<DeleteIcon />}
+                                    onClick={() => { setDrawerOpen(false); onDelete(aula); }}>
+                                    Excluir
+                                </Button>
+                            </Box>
+                        </>
+                    )}
                 </Box>
             </SwipeableDrawer>
         </>
