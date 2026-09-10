@@ -51,14 +51,8 @@ function ConfiguracoesPerfil() {
                     setError("Sessão do usuário não identificada.");
                 }
 
-                if ('serviceWorker' in navigator && 'PushManager' in window) {
-                    const reg = await navigator.serviceWorker.getRegistration('/sw.js');
-                    if (reg) {
-                        const sub = await reg.pushManager.getSubscription();
-                        setPushAtivo(!!sub);
-                    } else {
-                        setPushAtivo(false);
-                    }
+                if ('Notification' in window) {
+                    setPushAtivo(Notification.permission === 'granted');
                 }
             } catch (err) {
                 console.error("Erro ao carregar perfil:", err);
