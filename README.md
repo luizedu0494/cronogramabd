@@ -1,16 +1,16 @@
-# 🔬 CronoLab — Sistema de Gestão de Cronogramas de Laboratórios
+# CronoLab — Sistema de Gestão de Cronogramas de Laboratórios
 
 > **Plataforma web proprietária, intuitiva e moderna** desenvolvida para simplificar o agendamento de laboratórios acadêmicos em Universidades e Instituições de Ensino Superior (IES). Conecta alunos, professores, técnicos e coordenadores em um só ambiente organizado.
 
 ![Banner CronoLab](./imgbanner.png)
 
 <p align="center">
-  <a href="#-sobre-o-projeto--origem">Sobre & Origem</a> •
-  <a href="#-como-funciona-para-cada-perfil">Como Funciona</a> •
-  <a href="#-demonstra%C3%A7%C3%A3o-visual--gifs">GIFs & Demonstrações</a> •
-  <a href="#-recursos-e-funcionalidades">Recursos</a> •
-  <a href="#-tecnologias-usadas">Tecnologias</a> •
-  <a href="#-executar-e-configurar-localmente">Executar Localmente</a>
+  <a href="#sobre-o-projeto--origem">Sobre & Origem</a> •
+  <a href="#fluxo-operacional-por-perfil">Fluxo Operacional</a> •
+  <a href="#demonstração-visual--gifs">Demonstrações</a> •
+  <a href="#recursos-e-funcionalidades">Recursos</a> •
+  <a href="#tecnologias-usadas">Tecnologias</a> •
+  <a href="#executar-e-configurar-localmente">Executar Localmente</a>
 </p>
 
 <p align="center">
@@ -28,35 +28,38 @@
 
 ---
 
-## 💡 Sobre o Projeto & Origem
+## <img src="https://api.iconify.design/lucide:microscope.svg?color=%231E7EC8" width="26" height="26" align="center" /> Sobre o Projeto & Origem
 
-A ideia do **CronoLab** nasceu diretamente da **vivência prática**. Atuando no dia a dia como **auxiliar de laboratório e apoiando a coordenação acadêmica**, vivenciei de perto os grandes desafios na gestão dos espaços físicos: trocas de mensagens dispersas, papéis perdidos e o retrabalho constante causado por choque de horários entre disciplinas.
+> [!NOTE]
+> **VIVÊNCIA PRÁTICA NO AMBIENTE ACADÊMICO**  
+> A ideia do **CronoLab** nasceu diretamente da rotina operacional. Atuando no dia a dia como **auxiliar de laboratório e apoiando a coordenação acadêmica**, vivenciei de perto os grandes desafios na gestão dos espaços físicos: trocas de mensagens dispersas, papéis perdidos e o retrabalho constante causado por choque de horários entre disciplinas.
 
 Percebendo essa necessidade real, projetei o **CronoLab**: um sistema inteligente, transparente e robusto feito sob medida para facilitar a rotina dos **colegas técnicos**, dar previsibilidade à **coordenação** e garantir acesso rápido para **professores e alunos**.
 
-### O que o CronoLab proporciona:
-- 🚫 **Validação Automática contra Conflitos**: Bloqueia no ato qualquer tentativa de agendamento duplicado para a mesma sala e horário.
-- 📱 **Acessibilidade Multiplataforma**: Experiência fluida tanto no computador de bancada quanto no smartphone.
-- 🔔 **Comunicação Ativa & Notificações**: Alertas no navegador/área de trabalho assim que uma aula é proposta, aprovada ou ajustada.
-- 📄 **Integração de Relatórios**: Exportação direta para Excel, PDF e calendários corporativos (Google Agenda, Outlook, Apple Calendar).
+### <img src="https://api.iconify.design/lucide:check-circle-2.svg?color=%233ECF8E" width="20" height="20" align="center" /> Pilares Operacionais
+
+- **Validação Automática contra Conflitos**: Bloqueio em tempo real de qualquer tentativa de agendamento duplicado para a mesma sala e horário.
+- **Acessibilidade Multiplataforma**: Experiência fluida no computador de bancada e no smartphone.
+- **Comunicação Ativa & Notificações**: Alertas nativos no navegador/área de trabalho assim que uma aula é proposta, aprovada ou ajustada.
+- **Integração de Relatórios**: Exportação direta para Excel, PDF e calendários corporativos (Google Agenda, Outlook, Apple Calendar).
 
 ---
 
-## 👥 Como Funciona para Cada Perfil?
+## <img src="https://api.iconify.design/lucide:users.svg?color=%231E7EC8" width="26" height="26" align="center" /> Fluxo Operacional por Perfil
 
-| Perfil | O que pode fazer no CronoLab? |
+| Perfil | Atribuições no CronoLab |
 | :--- | :--- |
-| **🎓 Alunos e Visitantes** | Consultam a grade de aulas de qualquer curso ou laboratório livremente no modo visitante seguro, sem precisar de senha ou cadastro. |
-| **🧑‍🔬 Professores e Técnicos** | Agendam aulas práticas, enviam solicitações de revisões/provas, gerenciam laboratórios favoritos e acompanham a liberação de bancadas. |
-| **👨‍💼 Coordenadores** | Central unificada para aprovar/rejeitar solicitações em 1 clique, cadastrar avisos, gerenciar manutenções/feriados e emitir relatórios institucionais. |
+| **Alunos e Visitantes** | Consulta pública da grade de aulas de qualquer curso ou laboratório em modo visitante seguro, sem necessidade de login. |
+| **Professores e Técnicos** | Agendamento de aulas práticas, envio de solicitações de revisões/provas, gestão de laboratórios favoritos e acompanhamento de bancadas. |
+| **Coordenadores** | Central unificada para aprovar/rejeitar solicitações em 1 clique, cadastro de avisos, gestão de manutenções/feriados e relatórios institucionais. |
 
 ---
 
-## 🎬 Demonstração Visual & GIFs
+## <img src="https://api.iconify.design/lucide:monitor-play.svg?color=%231E7EC8" width="26" height="26" align="center" /> Demonstração Visual & GIFs
 
 ---
 
-### 💻 NAVEGADOR DESKTOP (Computador)
+### <img src="https://api.iconify.design/lucide:monitor.svg?color=%23646CFF" width="22" height="22" align="center" /> NAVEGADOR DESKTOP (Computador)
 
 #### 1. Modo Visitante (Acesso Público e Consulta de Aulas)
 Visualização sem necessidade de login para consulta de turmas e horários:
@@ -107,7 +110,7 @@ Gerenciamento do perfil de usuário, foto e preferências de horário silencioso
 
 ---
 
-### 📱 NAVEGADOR MOBILE (Dispositivos Móveis / Smartphone)
+### <img src="https://api.iconify.design/lucide:smartphone.svg?color=%23646CFF" width="22" height="22" align="center" /> NAVEGADOR MOBILE (Dispositivos Móveis / Smartphone)
 
 #### 1. Modo Visitante no Celular
 Interface mobile fluida para consulta rápida por alunos e professores:
@@ -119,23 +122,23 @@ Gestão ágil de aprovações e agendamentos na palma da mão:
 
 ---
 
-## 🚀 Recursos e Funcionalidades
+## <img src="https://api.iconify.design/lucide:layers.svg?color=%231E7EC8" width="26" height="26" align="center" /> Recursos e Funcionalidades
 
-- 📅 **Calendário Interativo de Ocupação**: Blocos padronizados de horários (Matutino, Vespertino e Noturno).
-- 📝 **Modos de Atividade Distintos**:
-  - 🎓 **Aula Normal**: Identificação em azul institucional.
-  - 📖 **Revisão / Reforço**: Identificação em roxo.
-  - 📝 **Prova / Avaliação**: Identificação em vermelho de alto contraste.
-- 🔒 **Modo Visitante Seguro**: Permite que qualquer pessoa consulte os horários sem risco de alterar ou excluir dados.
-- 🔔 **Notificações Nativas do Navegador**: Alertas instantâneos de aprovação no computador e celular, imunes a bloqueadores de anúncios.
-- 📊 **Importação & Exportação**:
-  - Importação de cronogramas em planilhas Excel (`.xlsx`) ou documentos Word (`.docx`).
-  - Exportação em **PDF**, **Excel** ou arquivo de calendário **iCal (.ics)**.
-- 🤖 **Assistente de Inteligência Artificial**: Análise e diagnóstico inteligente de choques de horário.
+- **Calendário Interativo de Ocupação**: Blocos padronizados de horários (Matutino, Vespertino e Noturno).
+- **Categorização Visual Distinta**:
+  - **Aula Normal**: Identificação em azul institucional.
+  - **Revisão / Reforço**: Identificação em roxo.
+  - **Prova / Avaliação**: Identificação em vermelho de alto contraste.
+- **Modo Visitante Seguro**: Permite consulta de horários sem permissão de edição ou exclusão de dados.
+- **Notificações Nativas do Navegador**: Alertas instantâneos no computador e celular imunes a adblockers.
+- **Importação & Exportação**:
+  - Importação de cronogramas em planilhas Excel (`.xlsx`) e documentos Word (`.docx`).
+  - Exportação em **PDF**, **Excel** e arquivos de calendário **iCal (.ics)**.
+- **Assistente de Inteligência Artificial**: Análise e diagnóstico inteligente de choques de horário.
 
 ---
 
-## 🛠️ Tecnologias Usadas (Para Desenvolvedores)
+## <img src="https://api.iconify.design/lucide:cpu.svg?color=%231E7EC8" width="26" height="26" align="center" /> Tecnologias Usadas
 
 - **Frontend**: [React 19](https://react.dev/), [Vite 7](https://vitejs.dev/), [Material-UI (MUI v7)](https://mui.com/), [Dayjs](https://day.js.org/)
 - **Backend & Banco de Dados**: [Supabase](https://supabase.com/) (PostgreSQL + Auth PKCE Flow + Realtime Subscriptions + Storage)
@@ -145,7 +148,7 @@ Gestão ágil de aprovações e agendamentos na palma da mão:
 
 ---
 
-## 💻 Executar e Configurar Localmente
+## <img src="https://api.iconify.design/lucide:terminal.svg?color=%231E7EC8" width="26" height="26" align="center" /> Executar e Configurar Localmente
 
 Passos para executar o projeto em ambiente de desenvolvimento local ou homologação:
 
@@ -177,7 +180,9 @@ O projeto estará disponível no endereço `http://localhost:5173`.
 
 ---
 
-## 🔒 Licença e Direitos Comerciais
+## <img src="https://api.iconify.design/lucide:shield-check.svg?color=%231E7EC8" width="26" height="26" align="center" /> Licença e Direitos Comerciais
 
-Este software é um produto **Proprietário e Comercial**. Todos os direitos reservados ao desenvolvedor.  
-Proibida a reprodução, cópia, distribuição ou comercialização não autorizada do código-fonte ou de suas partes. Para licenciamento corporativo ou aquisição de direitos de uso para instituições de ensino, entre em contato.
+> [!IMPORTANT]
+> **PRODUTO COMERCIAL PROPRIETÁRIO**  
+> Este software é um produto **Proprietário e Comercial**. Todos os direitos reservados ao desenvolvedor.  
+> Proibida a reprodução, cópia, distribuição ou comercialização não autorizada do código-fonte ou de suas partes. Para licenciamento corporativo ou aquisição de direitos de uso para instituições de ensino, entre em contato.
