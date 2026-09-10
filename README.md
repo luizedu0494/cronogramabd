@@ -32,9 +32,9 @@
 
 > [!NOTE]
 > **VIVÊNCIA PRÁTICA NO AMBIENTE ACADÊMICO**  
-> A ideia do **CronoLab** nasceu diretamente da rotina operacional. Atuando no dia a dia como **auxiliar de laboratório e apoiando a coordenação acadêmica**, vivenciei de perto os grandes desafios na gestão dos espaços físicos: trocas de mensagens dispersas, papéis perdidos e o retrabalho constante causado por choque de horários entre disciplinas.
+> A ideia do **CronoLab** nasceu diretamente da rotina operacional. Atuando no dia a dia como **Auxiliar de Laboratório no Centro Universitário CESMAC e apoiando ativamente a coordenação**, vivenciei na prática os grandes desafios na gestão dos espaços físicos: trocas de mensagens dispersas, papéis perdidos e o retrabalho constante causado por choque de horários entre disciplinas.
 
-Percebendo essa necessidade real, projetei o **CronoLab**: um sistema inteligente, transparente e robusto feito sob medida para facilitar a rotina dos **colegas técnicos**, dar previsibilidade à **coordenação** e garantir acesso rápido para **professores e alunos**.
+Percebendo essa necessidade real, desenvolvi e apliquei o **CronoLab** diretamente no ambiente de trabalho: um sistema inteligente, transparente e robusto feito sob medida para facilitar o dia a dia dos **meus colegas técnicos**, dar previsibilidade à **coordenação** e garantir acesso rápido para **professores e alunos**.
 
 ### <img src="https://api.iconify.design/lucide:check-circle-2.svg?color=%233ECF8E" width="20" height="20" align="center" /> Pilares Operacionais
 
