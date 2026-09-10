@@ -480,6 +480,7 @@ function CalendarioCronograma({ userInfo }) {
     const [isEventModalOpen, setIsEventModalOpen] = useState(false);
     const [isBulkDeleteModalOpen, setIsBulkDeleteModalOpen] = useState(false);
     const [isBulkEditModalOpen, setIsBulkEditModalOpen] = useState(false);
+    const [bulkEditTarget, setBulkEditTarget] = useState('aula'); // 'aula' | 'evento'
     const [bulkEditFields, setBulkEditFields] = useState({
         assunto: '', observacoes: '', cursos: [],
         dataInicio: null, laboratorio: '', horario: '',
@@ -682,7 +683,7 @@ function CalendarioCronograma({ userInfo }) {
             const updates = {};
             if (bulkEditFields.assunto.trim())     updates.assunto = bulkEditFields.assunto.trim();
             if (bulkEditFields.observacoes.trim()) updates.observacoes = bulkEditFields.observacoes.trim();
-            if (bulkEditFields.tipoAula) {
+            if (bulkEditFields.tipoAula && bulkEditTarget === 'aula') {
                 updates.tipo_atividade = bulkEditFields.tipoAula;
                 updates.is_revisao     = bulkEditFields.tipoAula === 'revisao';
             }
@@ -692,13 +693,13 @@ function CalendarioCronograma({ userInfo }) {
             const mudandoHorario     = !!bulkEditFields.horario;
             const mudandoAgendamento = mudandoData || mudandoLab || mudandoHorario;
 
-            if (Object.keys(updates).length === 0 && !mudandoAgendamento) {
+            if (Object.keys(updates).length === 0 && !mudandoAgendamento && (bulkEditTarget !== 'aula' || !bulkEditFields.cursos?.length)) {
                 setFeedback({ open: true, message: 'Preencha pelo menos um campo para editar.', severity: 'warning' });
                 setBulkEditLoading(false);
                 return;
             }
 
-            if (selectedAulasIds.length > 0) {
+            if (bulkEditTarget === 'aula' && selectedAulasIds.length > 0) {
                 const { data: aulasAtuais } = await supabase
                     .from('aulas')
                     .select('*')
@@ -734,9 +735,7 @@ function CalendarioCronograma({ userInfo }) {
                         );
                     }
                 }
-            }
-
-            if (selectedEventosIds.length > 0) {
+            } else if (bulkEditTarget === 'evento' && selectedEventosIds.length > 0) {
                 const { data: eventosAtuais } = await supabase
                     .from('eventos_manutencao')
                     .select('*')
@@ -771,18 +770,22 @@ function CalendarioCronograma({ userInfo }) {
                 }
             }
 
-            const totalAlterados = selectedAulasIds.length + selectedEventosIds.length;
-            setFeedback({ open: true, message: `${totalAlterados} item(ns) atualizado(s) com sucesso!`, severity: 'success' });
+            const totalAlterados = bulkEditTarget === 'aula' ? selectedAulasIds.length : selectedEventosIds.length;
+            setFeedback({ open: true, message: `${totalAlterados} ${bulkEditTarget === 'aula' ? 'aula(s)' : 'evento(s)'} atualizado(s) com sucesso!`, severity: 'success' });
             setIsBulkEditModalOpen(false);
             setBulkEditFields({ assunto: '', observacoes: '', cursos: [], dataInicio: null, laboratorio: '', horario: '', tipoAula: '' });
             setBulkEditConflitos([]);
-            setIsSelectionMode(false);
-            setSelectedAulasIds([]);
-            setSelectedEventosIds([]);
+            if (bulkEditTarget === 'aula') setSelectedAulasIds([]);
+            else setSelectedEventosIds([]);
+            
+            // se não restou nada selecionado, sai do modo seleção
+            if ((bulkEditTarget === 'aula' ? 0 : selectedAulasIds.length) + (bulkEditTarget === 'evento' ? 0 : selectedEventosIds.length) === 0) {
+                setIsSelectionMode(false);
+            }
             fetchDados();
         } catch (e) {
             console.error(e);
-            setFeedback({ open: true, message: 'Erro ao editar aulas.', severity: 'error' });
+            setFeedback({ open: true, message: `Erro ao editar ${bulkEditTarget === 'aula' ? 'aulas' : 'eventos'}.`, severity: 'error' });
         } finally {
             setBulkEditLoading(false);
         }
@@ -899,11 +902,45 @@ function CalendarioCronograma({ userInfo }) {
                                 {selectedAulasIds.length + selectedEventosIds.length} item(ns) selecionado(s)
                                 {selectedAulasIds.length > 0 && selectedEventosIds.length > 0 && ` (${selectedAulasIds.length} aula(s), ${selectedEventosIds.length} evento(s))`}
                             </Typography>
-                            <Box sx={{ display: 'flex', gap: 1 }}>
-                                <Button size="small" variant="outlined" color="primary" startIcon={<EditIcon />} disabled={(selectedAulasIds.length + selectedEventosIds.length) === 0} onClick={() => { setBulkEditFields({ assunto: '', observacoes: '', cursos: [], dataInicio: null, laboratorio: '', horario: '', tipoAula: '' }); setBulkEditConflitos([]); setIsBulkEditModalOpen(true); }}>
-                                    Editar Selecionados ({selectedAulasIds.length + selectedEventosIds.length})
+                            <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
+                                <Button 
+                                    size="small" 
+                                    variant="outlined" 
+                                    color="primary" 
+                                    startIcon={<EditIcon />} 
+                                    disabled={selectedAulasIds.length === 0} 
+                                    onClick={() => { 
+                                        setBulkEditTarget('aula');
+                                        setBulkEditFields({ assunto: '', observacoes: '', cursos: [], dataInicio: null, laboratorio: '', horario: '', tipoAula: '' }); 
+                                        setBulkEditConflitos([]); 
+                                        setIsBulkEditModalOpen(true); 
+                                    }}
+                                >
+                                    Editar Aulas ({selectedAulasIds.length})
                                 </Button>
-                                <Button size="small" variant="contained" color="error" startIcon={<DeleteIcon />} disabled={(selectedAulasIds.length + selectedEventosIds.length) === 0} onClick={() => setIsBulkDeleteModalOpen(true)}>
+                                <Button 
+                                    size="small" 
+                                    variant="outlined" 
+                                    color="secondary" 
+                                    startIcon={<EventIcon />} 
+                                    disabled={selectedEventosIds.length === 0} 
+                                    onClick={() => { 
+                                        setBulkEditTarget('evento');
+                                        setBulkEditFields({ assunto: '', observacoes: '', cursos: [], dataInicio: null, laboratorio: '', horario: '', tipoAula: '' }); 
+                                        setBulkEditConflitos([]); 
+                                        setIsBulkEditModalOpen(true); 
+                                    }}
+                                >
+                                    Editar Eventos ({selectedEventosIds.length})
+                                </Button>
+                                <Button 
+                                    size="small" 
+                                    variant="contained" 
+                                    color="error" 
+                                    startIcon={<DeleteIcon />} 
+                                    disabled={(selectedAulasIds.length + selectedEventosIds.length) === 0} 
+                                    onClick={() => setIsBulkDeleteModalOpen(true)}
+                                >
                                     Excluir Selecionados ({selectedAulasIds.length + selectedEventosIds.length})
                                 </Button>
                             </Box>
@@ -1226,12 +1263,16 @@ function CalendarioCronograma({ userInfo }) {
                 {/* ── Modal Edição em Lote ── */}
                 <Dialog open={isBulkEditModalOpen} onClose={() => { setIsBulkEditModalOpen(false); setBulkEditConflitos([]); }} maxWidth="sm" fullWidth>
                     <DialogTitle>
-                        Editar {selectedAulasIds.length} Aula(s) Selecionada(s)
+                        {bulkEditTarget === 'aula' 
+                            ? `Editar ${selectedAulasIds.length} Aula(s) Selecionada(s)` 
+                            : `Editar ${selectedEventosIds.length} Evento(s) Selecionado(s)`}
                     </DialogTitle>
                     <DialogContent>
                         <DialogContentText sx={{ mb: 2 }}>
                             Preencha apenas os campos que deseja alterar. Campos em branco <strong>não serão modificados</strong>.
-                            Data, laboratório e horário serão aplicados iguais a todas as aulas — serão verificados conflitos antes de salvar.
+                            {bulkEditTarget === 'aula'
+                                ? ' Data, laboratório e horário serão aplicados iguais a todas as aulas.'
+                                : ' Data, laboratório e horário serão aplicados iguais a todos os eventos.'}
                         </DialogContentText>
 
                         {/* Alerta de conflitos encontrados */}
@@ -1253,51 +1294,55 @@ function CalendarioCronograma({ userInfo }) {
                                 <Typography variant="caption" color="text.secondary" fontWeight="bold">CONTEÚDO</Typography>
                             </Grid>
                             <Grid item xs={12}>
-                                <TextField fullWidth size="small" label="Novo Assunto (opcional)"
+                                <TextField fullWidth size="small" label={bulkEditTarget === 'aula' ? "Novo Assunto (opcional)" : "Novo Título (opcional)"}
                                     value={bulkEditFields.assunto}
                                     onChange={(e) => setBulkEditFields(p => ({ ...p, assunto: e.target.value }))}
                                     placeholder="Deixe vazio para não alterar" />
                             </Grid>
                             <Grid item xs={12}>
-                                <TextField fullWidth size="small" label="Observações (opcional)" multiline rows={2}
+                                <TextField fullWidth size="small" label={bulkEditTarget === 'aula' ? "Observações (opcional)" : "Descrição (opcional)"} multiline rows={2}
                                     value={bulkEditFields.observacoes}
                                     onChange={(e) => setBulkEditFields(p => ({ ...p, observacoes: e.target.value }))}
                                     placeholder="Deixe vazio para não alterar" />
                             </Grid>
-                            <Grid item xs={12}>
-                                <FormControl fullWidth size="small">
-                                    <InputLabel>Cursos (opcional)</InputLabel>
-                                    <Select multiple value={bulkEditFields.cursos}
-                                        onChange={(e) => setBulkEditFields(p => ({ ...p, cursos: e.target.value }))}
-                                        input={<OutlinedInput label="Cursos (opcional)" />}
-                                        renderValue={(selected) => (
-                                            <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
-                                                {selected.map(v => <Chip key={v} label={LISTA_CURSOS.find(c => c.value === v)?.label || v} size="small" />)}
-                                            </Box>
-                                        )}>
-                                        {LISTA_CURSOS.map(c => <MenuItem key={c.value} value={c.value}>{c.label}</MenuItem>)}
-                                    </Select>
-                                </FormControl>
-                            </Grid>
-                            <Grid item xs={12}>
-                                <FormControl fullWidth size="small">
-                                    <InputLabel>Tipo (opcional)</InputLabel>
-                                    <Select value={bulkEditFields.tipoAula}
-                                        onChange={(e) => setBulkEditFields(p => ({ ...p, tipoAula: e.target.value }))}
-                                        label="Tipo (opcional)">
-                                        <MenuItem value=""><em>Não alterar</em></MenuItem>
-                                        <MenuItem value="aula">📅 Aula Normal</MenuItem>
-                                        <MenuItem value="revisao">📖 Revisão / Reforço</MenuItem>
-                                        <MenuItem value="prova">📝 Prova</MenuItem>
-                                    </Select>
-                                </FormControl>
-                            </Grid>
+                            {bulkEditTarget === 'aula' && (
+                                <>
+                                    <Grid item xs={12}>
+                                        <FormControl fullWidth size="small">
+                                            <InputLabel>Cursos (opcional)</InputLabel>
+                                            <Select multiple value={bulkEditFields.cursos}
+                                                onChange={(e) => setBulkEditFields(p => ({ ...p, cursos: e.target.value }))}
+                                                input={<OutlinedInput label="Cursos (opcional)" />}
+                                                renderValue={(selected) => (
+                                                    <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
+                                                        {selected.map(v => <Chip key={v} label={LISTA_CURSOS.find(c => c.value === v)?.label || v} size="small" />)}
+                                                    </Box>
+                                                )}>
+                                                {LISTA_CURSOS.map(c => <MenuItem key={c.value} value={c.value}>{c.label}</MenuItem>)}
+                                            </Select>
+                                        </FormControl>
+                                    </Grid>
+                                    <Grid item xs={12}>
+                                        <FormControl fullWidth size="small">
+                                            <InputLabel>Tipo (opcional)</InputLabel>
+                                            <Select value={bulkEditFields.tipoAula}
+                                                onChange={(e) => setBulkEditFields(p => ({ ...p, tipoAula: e.target.value }))}
+                                                label="Tipo (opcional)">
+                                                <MenuItem value=""><em>Não alterar</em></MenuItem>
+                                                <MenuItem value="aula">📅 Aula Normal</MenuItem>
+                                                <MenuItem value="revisao">📖 Revisão / Reforço</MenuItem>
+                                                <MenuItem value="prova">📝 Prova</MenuItem>
+                                            </Select>
+                                        </FormControl>
+                                    </Grid>
+                                </>
+                            )}
 
                             {/* Campos de agendamento */}
                             <Grid item xs={12} sx={{ mt: 1 }}>
                                 <Divider />
                                 <Typography variant="caption" color="text.secondary" fontWeight="bold" sx={{ mt: 1, display: 'block' }}>
-                                    AGENDAMENTO — aplicado a todas as aulas selecionadas
+                                    AGENDAMENTO — aplicado a {bulkEditTarget === 'aula' ? `todas as ${selectedAulasIds.length} aula(s)` : `todos os ${selectedEventosIds.length} evento(s)`}
                                 </Typography>
                             </Grid>
                             <Grid item xs={12}>
@@ -1335,7 +1380,9 @@ function CalendarioCronograma({ userInfo }) {
                     <DialogActions>
                         <Button onClick={() => { setIsBulkEditModalOpen(false); setBulkEditConflitos([]); }} disabled={bulkEditLoading}>Cancelar</Button>
                         <Button onClick={handleBulkEdit} variant="contained" disabled={bulkEditLoading}>
-                            {bulkEditLoading ? <CircularProgress size={22} /> : `Salvar em ${selectedAulasIds.length} Aula(s)`}
+                            {bulkEditLoading 
+                                ? <CircularProgress size={22} /> 
+                                : `Salvar em ${bulkEditTarget === 'aula' ? `${selectedAulasIds.length} Aula(s)` : `${selectedEventosIds.length} Evento(s)`}`}
                         </Button>
                     </DialogActions>
                 </Dialog>
