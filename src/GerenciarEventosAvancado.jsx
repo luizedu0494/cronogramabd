@@ -286,14 +286,18 @@ export default function GerenciarEventosAvancado({ userInfo }) {
             updated_at: new Date().toISOString(),
           };
 
-          const { data: inserted, error: insertErr } = await supabase
+          const { error: insertErr } = await supabase
             .from('eventos_manutencao')
-            .insert([payload])
-            .select()
-            .single();
+            .insert([payload]);
 
-          if (insertErr) throw insertErr;
-          novosEventosLog.push({ ...payload, id: inserted?.id });
+          if (insertErr) {
+            if (insertErr.code === '23505' || insertErr.message?.includes('duplicate key')) {
+              console.warn('Conflito de manutenção ignorado para horário duplicado:', slot);
+              continue;
+            }
+            throw insertErr;
+          }
+          novosEventosLog.push({ ...payload });
         }
       }
 

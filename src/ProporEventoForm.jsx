@@ -467,14 +467,20 @@ function ProporEventoForm({ userInfo, currentUser, initialDate, onSuccess, onCan
                         created_at: new Date().toISOString(),
                         updated_at: new Date().toISOString()
                     };
-                    const { data: inserted, error: insertErr } = await supabase
+                    const { error: insertErr } = await supabase
                         .from('eventos_manutencao')
-                        .insert([finalData])
-                        .select()
-                        .single();
+                        .insert([finalData]);
 
-                    if (insertErr) throw insertErr;
-                    finalizadas.push({ ...ev, id: inserted?.id });
+                    if (insertErr) {
+                        if (insertErr.code === '23505' || insertErr.message?.includes('duplicate key') || insertErr.message?.includes('409')) {
+                            setSnackbarMessage('⚠️ Conflito de Manutenção: Já existe um evento registrado para este mesmo laboratório, data e horário.');
+                            setSnackbarSeverity('warning');
+                            setOpenSnackbar(true);
+                            return;
+                        }
+                        throw insertErr;
+                    }
+                    finalizadas.push({ ...ev });
                 }
             }
 
