@@ -34,7 +34,6 @@ import { CURSO_COLORS } from '../../constants/cursoColors';
 import EventoCard from '../../components/EventoCard';
 import GradeDisponibilidade from '../../components/GradeDisponibilidade';
 import { useSearchParams, useNavigate } from 'react-router-dom';
-import { notificadorTelegram } from '../../services/NotificadorTelegram';
 import { registrarLogExclusao, registrarLogEdicao } from '../../services/loggerService';
 
 const BLOCOS_HORARIO = [
@@ -1252,15 +1251,6 @@ function CalendarioCronograma({ userInfo }) {
                     onConfirm={async () => { 
                         setActionLoading(true); 
                         try {
-                            await notificadorTelegram.enviarNotificacao(import.meta.env.VITE_TELEGRAM_CHAT_ID, { 
-                                assunto:          aulaParaAcao.title || aulaParaAcao.assunto,
-                                laboratorio:      aulaParaAcao.laboratorio || aulaParaAcao.laboratorioSelecionado,
-                                data:             dayjs(aulaParaAcao.start).format('DD/MM/YYYY'),
-                                horario:          aulaParaAcao.horarioSlotString || '',
-                                cursos:           aulaParaAcao.cursos || [],
-                                isRevisao:        aulaParaAcao.isRevisao || false,
-                                tipoRevisaoLabel: aulaParaAcao.tipoRevisaoLabel || '',
-                            }, 'excluir');
                             await registrarLogExclusao(aulaParaAcao, userInfo);
                             await supabase.from('aulas').delete().eq('id', aulaParaAcao.id); 
                             setIsDeleteModalOpen(false); 

@@ -20,7 +20,6 @@ import { LISTA_CURSOS as LISTA_CURSOS_CONSTANTS } from './constants/cursos';
 import PropTypes from 'prop-types';
 import DialogConfirmacao from './components/DialogConfirmacao';
 import GradeDisponibilidade from './components/GradeDisponibilidade';
-import { notificadorTelegram } from './services/NotificadorTelegram';
 import { toDataLocal } from './utils/dateHelper';
 import { buscarAulasPorDia } from './utils/aulaQueries';
 import { autoRejeitarPendentesConflitantes } from './utils/conflitoUtils';
@@ -45,8 +44,6 @@ const TIPOS_REVISAO = [
     { value: 'monitoria',         label: 'Monitoria',            icon: '🎓' },
     { value: 'outro',             label: 'Outro',                icon: '📌' },
 ];
-
-const TELEGRAM_CHAT_ID = import.meta.env.VITE_TELEGRAM_CHAT_ID;
 
 function ProporAulaForm({ userInfo, currentUser, initialDate, onSuccess, onCancel, isModal, formTitle, aulaId: propAulaId }) {
     const theme = useTheme();
@@ -251,47 +248,6 @@ function ProporAulaForm({ userInfo, currentUser, initialDate, onSuccess, onCance
         }));
         setInfoOcupacao({});
     }, [formData.dataInicio, isEditMode]);
-
-    const notificarTelegramBatch = useCallback(async (aulas, tipoAcao) => {
-        if (!TELEGRAM_CHAT_ID) return;
-        for (const aula of aulas) {
-            let dataFormatada = 'N/A';
-            let dataISO = null;
-            
-            const dateObj = dayjs(aula.dataInicio.toDate ? aula.dataInicio.toDate() : aula.dataInicio);
-            if (dateObj.isValid()) {
-                dataFormatada = dateObj.format('DD/MM/YYYY');
-                dataISO = dateObj.format('YYYY-MM-DD');
-            }
-
-            const dadosNotificacao = {
-                assunto: aula.assunto,
-                data: dataFormatada,
-                dataISO: dataISO,
-                horario: aula.horarioSlotString,
-                laboratorio: aula.laboratorioSelecionado,
-                cursos: aula.cursos,
-                observacoes: aula.observacoes,
-                propostoPorNome: aula.propostoPorNome || '',
-                isRevisao: aula.isRevisao || false,
-                tipoRevisaoLabel: aula.tipoRevisaoLabel || '',
-            };
-
-            let tipoFinal;
-            if (tipoAcao === 'adicionar') {
-                tipoFinal = (!isCoordenador) ? 'pendente' : 'adicionar';
-            } else if (tipoAcao === 'editar') {
-                tipoFinal = 'editar';
-            } else {
-                tipoFinal = tipoAcao;
-            }
-
-            // Passa flag isProva para o notificador
-            dadosNotificacao.isProva = aula.isProva || false;
-
-            await notificadorTelegram.enviarNotificacao(TELEGRAM_CHAT_ID, dadosNotificacao, tipoFinal);
-        }
-    }, [isCoordenador]);
 
     useEffect(() => {
         if (aulaId) {
@@ -761,30 +717,7 @@ function ProporAulaForm({ userInfo, currentUser, initialDate, onSuccess, onCance
                 }
             }
 
-            try {
-                if (TELEGRAM_CHAT_ID) {
-                    for (const aula of finalizadas) {
-                        const dateObj = dayjs(aula.dataInicio);
-                        const dadosNotificacao = {
-                            assunto: aula.assunto,
-                            data: dateObj.isValid() ? dateObj.format('DD/MM/YYYY') : 'N/A',
-                            dataISO: dateObj.isValid() ? dateObj.format('YYYY-MM-DD') : null,
-                            horario: aula.horarioSlotString,
-                            laboratorio: aula.laboratorioSelecionado,
-                            cursos: aula.cursos,
-                            observacoes: aula.observacoes,
-                            propostoPorNome: aula.propostoPorNome || '',
-                            isRevisao: aula.isRevisao || false,
-                            tipoRevisaoLabel: aula.tipoRevisaoLabel || '',
-                            isProva: aula.isProva || false,
-                        };
-                        const tipoFinal = isEditMode ? 'editar' : (!isCoordenador ? 'pendente' : 'adicionar');
-                        await notificadorTelegram.enviarNotificacao(TELEGRAM_CHAT_ID, dadosNotificacao, tipoFinal);
-                    }
-                }
-            } catch (errTelegram) {
-                console.warn('Alerta Telegram não enviado:', errTelegram);
-            }
+
 
             // Atualiza imediatamente a ocupação local para refletir os novos agendamentos sem requerer navegação de data
             if (formData.dataInicio && dayjs(formData.dataInicio).isValid()) {
@@ -992,7 +925,7 @@ function ProporAulaForm({ userInfo, currentUser, initialDate, onSuccess, onCance
                         <Box component="ul" sx={{ m: 0, pl: 2.5, fontSize: '0.85rem', color: isDarkMode ? '#e1bee7' : '#4a148c' }}>
                             <li>Permite classificar o tipo de revisão (Pré-Prova, Reforço, Prática Extra, Monitoria).</li>
                             <li>Permite registrar o professor/monitor responsável pela condução.</li>
-                            <li>{!isCoordenador && !isEditMode ? 'Envia notificação via Telegram identificando a proposta como Revisão.' : 'Notificação no Telegram parametrizada para Revisão.'}</li>
+                            <li>Notificação no sistema ativada para Revisão.</li>
                         </Box>
                     </Paper>
                 )}
@@ -1021,7 +954,7 @@ function ProporAulaForm({ userInfo, currentUser, initialDate, onSuccess, onCance
                         <Box component="ul" sx={{ m: 0, pl: 2.5, fontSize: '0.85rem', color: isDarkMode ? '#ffcc80' : '#bf360c' }}>
                             <li>Agendamento com destaque de prioridade no cronograma geral dos laboratórios.</li>
                             <li>Identificado em relatórios para alocação preferencial de equipamentos e insumos.</li>
-                            <li>Notificação de alta prioridade enviada ao Telegram da equipe.</li>
+                            <li>Sinalização destacada no sistema para toda a equipe.</li>
                         </Box>
                     </Paper>
                 )}

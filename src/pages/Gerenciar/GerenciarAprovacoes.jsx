@@ -17,12 +17,7 @@ import dayjs from 'dayjs';
 import 'dayjs/locale/pt-br';
 import { supabase } from '../../supabaseConfig';
 import { LISTA_CURSOS } from '../../constants/cursos';
-import { notificadorTelegram } from '../../services/NotificadorTelegram';
 import { autoRejeitarPendentesConflitantes } from '../../utils/conflitoUtils';
-import Checkbox from '@mui/material/Checkbox';
-import PlaylistAddCheckIcon from '@mui/icons-material/PlaylistAddCheck';
-
-const TELEGRAM_CHAT_ID = import.meta.env.VITE_TELEGRAM_CHAT_ID;
 
 dayjs.locale('pt-br');
 
@@ -339,30 +334,6 @@ function GerenciarAprovacoes() {
                     idAgendamentoIgnorar: aula.id,
                 });
             }
-
-            if (TELEGRAM_CHAT_ID) {
-                const dataObj = aula.dataInicio?.toDate ? dayjs(aula.dataInicio.toDate()) : dayjs(aula.dataInicio);
-                const dadosNotif = {
-                    assunto:        aula.assunto,
-                    data:           dataObj.isValid() ? dataObj.format('DD/MM/YYYY') : 'N/A',
-                    dataISO:        dataObj.isValid() ? dataObj.format('YYYY-MM-DD') : null,
-                    horario:        aula.horarioSlotString,
-                    laboratorio:    aula.laboratorioSelecionado,
-                    cursos:         aula.cursos,
-                    observacoes:    aula.observacoes,
-                    propostoPorNome: aula.propostoPorNome || aula.professorNome || '',
-                    isRevisao:      aula.isRevisao || false,
-                    tipoRevisaoLabel: aula.tipoRevisaoLabel || '',
-                    isProva:        aula.isProva || false,
-                    motivoRejeicao: acao === 'rejeitada' ? motivoRejeicao.trim() : null
-                };
-                await notificadorTelegram.enviarNotificacao(
-                    TELEGRAM_CHAT_ID,
-                    dadosNotif,
-                    acao === 'aprovada' ? 'aprovada' : 'rejeitada'
-                );
-            }
-
             setSnackbar({
                 open: true,
                 severity: 'success',

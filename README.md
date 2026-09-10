@@ -34,7 +34,7 @@
 
 O **CronoLab** foi concebido a partir de um princípio fundamental: **colocar as necessidades dos usuários reais no centro de cada decisão**. No ambiente acadêmico, a alocação de laboratórios frequentemente envolve conflitos de horários, burocracia excessiva e desinformação entre diferentes setores.
 
-A plataforma resolve esse problema conectando de forma harmoniosa e intuitiva cada perfil da instituição — de alunos a coordenadores —, oferecendo dados em tempo real, verificação automática de choques de grade, análises com Inteligência Artificial e notificações diretas via Telegram e Web Push.
+A plataforma resolve esse problema conectando de forma harmoniosa e intuitiva cada perfil da instituição — de alunos a coordenadores —, oferecendo dados em tempo real, verificação automática de choques de grade, análises com Inteligência Artificial e sistema unificado de notificações Web Push e nativas no sistema.
 
 ---
 
@@ -84,9 +84,9 @@ O sistema foi desenhado respeitando as particularidades e responsabilidades de c
 - Verificação instantânea de conflitos e colisão de turmas no Supabase (PostgreSQL).
 - Suporte a múltiplas turmas e disciplinas simultâneas com cálculo dinâmico de ocupação.
 
-### 🔔 Notificações Unificadas (Telegram & Web Push VAPID)
-- **Bot do Telegram**: Vinculação em 1 clique com geração de código temporário e alertas de alterações na grade em tempo real.
-- **Web Push (VAPID)**: Notificações no navegador para desktop e dispositivos móveis sem dependência de serviços legados.
+### 🔔 Notificações Unificadas (Web Push VAPID & In-App)
+- **Web Push (VAPID)**: Notificações nativas diretamente no navegador para desktop e dispositivos móveis sem dependência de serviços externos legados.
+- **Central de Notificações Interna**: Alertas de aprovação, alteração de grade e avisos institucionais integrados ao sistema.
 
 ### 📥 Importação e Exportação Flexível
 - Suporte a importação automática via planilhas Excel, CSV, JSON e documentos Word (.docx).
@@ -97,11 +97,11 @@ O sistema foi desenhado respeitando as particularidades e responsabilidades de c
 ## Tecnologias & Arquitetura
 
 - **Frontend**: React 19, Vite 7, Material UI (MUI v7), Lucide Icons, Emotion
-- **Backend & Banco de Dados**: Supabase PostgreSQL, Supabase Auth (PKCE Flow), Supabase Realtime
+- **Backend & Banco de Dados**: Supabase PostgreSQL, Supabase Auth (PKCE Flow), Supabase Realtime, Supabase Storage (`cronolab-media`)
 - **Hospedagem & CDN**: Vercel Serverless
 - **Inteligência Artificial**: LangChain.js & Groq API (`llama-3.3-70b-versatile` / `groq/compound`)
-- **Notificações**: Telegram Bot API (`node-telegram-bot-api`), Web Push VAPID API
-- **Documentos & OCR**: ExcelJS, SheetJS (`xlsx`), Tesseract.js (OCR), jsPDF, Cloudinary
+- **Notificações**: Web Push VAPID API e Notificações In-App
+- **Documentos & OCR**: ExcelJS, SheetJS (`xlsx`), Tesseract.js (OCR), jsPDF
 
 ---
 
@@ -120,14 +120,9 @@ Execute os scripts SQL disponibilizados no **SQL Editor** do seu projeto Supabas
 Crie um arquivo `.env` na raiz do projeto com base no modelo:
 
 ```env
-# Supabase PostgreSQL
+# Supabase PostgreSQL & Storage
 VITE_SUPABASE_URL=https://seu_projeto.supabase.co
 VITE_SUPABASE_ANON_KEY=sua_chave_anonima_supabase
-
-# Telegram Bot
-VITE_TELEGRAM_BOT_TOKEN=seu_bot_token
-VITE_TELEGRAM_CHAT_ID=seu_chat_id
-VITE_TELEGRAM_BOT_USERNAME=seu_bot_username
 
 # Web Push Notifications (VAPID)
 VITE_VAPID_PUBLIC_KEY=sua_chave_publica_vapid
@@ -135,10 +130,6 @@ VAPID_PRIVATE_KEY=sua_chave_privada_vapid
 
 # Groq IA API
 VITE_GROQ_API_KEY=sua_chave_groq
-
-# Cloudinary (Imagens)
-VITE_CLOUDINARY_CLOUD_NAME=seu_cloud_name
-VITE_CLOUDINARY_UPLOAD_PRESET=seu_upload_preset
 ```
 
 ### 4. Executar Localmente

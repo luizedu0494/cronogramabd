@@ -1,8 +1,5 @@
 import dayjs from 'dayjs';
 import { supabase } from '../supabaseConfig';
-import { notificadorTelegram } from '../services/NotificadorTelegram';
-
-const TELEGRAM_CHAT_ID = import.meta.env.VITE_TELEGRAM_CHAT_ID;
 
 /**
  * Converte string de horário "HH:mm-HH:mm" ou similares em minutos para comparação.
@@ -28,8 +25,7 @@ function verificarColisao(inicio1, fim1, inicio2, fim2) {
 }
 
 /**
- * Busca propostas pendentes no mesmo laboratório e horário e altera status para 'rejeitada',
- * enviando notificação no Telegram.
+ * Busca propostas pendentes no mesmo laboratório e horário e altera status para 'rejeitada'.
  */
 export async function autoRejeitarPendentesConflitantes({
   laboratorioSelecionado,
@@ -100,26 +96,6 @@ export async function autoRejeitarPendentesConflitantes({
             updated_at: new Date().toISOString()
           })
           .eq('id', pData.id);
-
-        if (TELEGRAM_CHAT_ID) {
-          const dtNotif = dayjs(pData.data_inicio);
-          await notificadorTelegram.enviarNotificacao(
-            TELEGRAM_CHAT_ID,
-            {
-              assunto: pData.assunto,
-              data: dtNotif.isValid() ? dtNotif.format('DD/MM/YYYY') : 'N/A',
-              dataISO: dtNotif.isValid() ? dtNotif.format('YYYY-MM-DD') : null,
-              horario: pData.horario_slot || `${pInicio}-${pFim}`,
-              laboratorio: pData.laboratorio || laboratorioSelecionado,
-              cursos: pData.cursos || [],
-              observacoes: `Proposta cancelada devido ao agendamento de "${assuntoAgendamento || 'Aula/Evento'}" pelo coordenador.`,
-              propostoPorNome: pData.proposto_por_nome || 'Técnico',
-              isRevisao: pData.is_revisao || false,
-              isProva: pData.is_prova || false,
-            },
-            'rejeitada'
-          );
-        }
 
         pendentesRejeitadas.push({ id: pData.id, ...pData });
       }

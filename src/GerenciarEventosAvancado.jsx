@@ -17,13 +17,12 @@ import AddIcon from '@mui/icons-material/Add';
 import CalendarTodayIcon from '@mui/icons-material/CalendarToday';
 import { LISTA_LABORATORIOS, TIPOS_LABORATORIO } from './constants/laboratorios';
 import { registrarLogEvento } from './services/loggerService';
-import { notificadorTelegram } from './services/NotificadorTelegram';
+
 
 dayjs.locale('pt-br');
 
 const EVENT_TYPES = ['Manutenção', 'Feriado', 'Evento', 'Giro', 'Outro'];
 const STATUS_EVENTO = ['aprovado', 'pendente', 'cancelado'];
-const TELEGRAM_CHAT_ID = import.meta.env.VITE_TELEGRAM_CHAT_ID;
 
 const EmptyState = ({ title, description }) => (
   <Paper sx={{ p: 4, textAlign: 'center', bgcolor: 'background.default', borderRadius: 2 }}>
@@ -164,22 +163,7 @@ export default function GerenciarEventosAvancado({ userInfo }) {
 
   const [feedback, setFeedback] = useState({ open: false, message: '', severity: 'info' });
 
-  const notificarTelegram = async (evento, tipoAcao) => {
-    if (!TELEGRAM_CHAT_ID) return;
-    try {
-      const dadosNotificacao = {
-        titulo: evento.titulo,
-        tipoEvento: evento.tipo,
-        laboratorio: evento.laboratorio,
-        dataInicio: dayjs(evento.dataInicio instanceof Timestamp ? evento.dataInicio.toDate() : evento.dataInicio).format('DD/MM/YYYY HH:mm'),
-        dataFim: dayjs(evento.dataFim instanceof Timestamp ? evento.dataFim.toDate() : evento.dataFim).format('DD/MM/YYYY HH:mm'),
-        descricao: evento.descricao || '',
-      };
-      await notificadorTelegram.enviarNotificacao(TELEGRAM_CHAT_ID, dadosNotificacao, `evento_${tipoAcao}`);
-    } catch (e) {
-      console.error("Erro ao enviar notificação Telegram:", e);
-    }
-  };
+
 
   const handleSearch = useCallback(async () => {
     setLoading(true);
@@ -333,7 +317,6 @@ export default function GerenciarEventosAvancado({ userInfo }) {
 
       for (const evLog of novosEventosLog) {
         await registrarLogEvento('criacao', evLog, userInfo);
-        await notificarTelegram(evLog, 'criado');
       }
 
       setFeedback({ open: true, message: `${novosEventosLog.length} evento(s) criado(s) com sucesso!`, severity: 'success' });
@@ -417,7 +400,6 @@ export default function GerenciarEventosAvancado({ userInfo }) {
         const evOriginal = eventos.find(e => e.id === id);
         if (evOriginal) {
           await registrarLogEvento('exclusao', evOriginal, userInfo);
-          await notificarTelegram(evOriginal, 'excluido');
         }
       }
 

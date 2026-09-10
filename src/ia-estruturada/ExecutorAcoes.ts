@@ -1,7 +1,5 @@
 import { supabase } from '../supabaseConfig';
 import dayjs from 'dayjs';
-import 'dayjs/locale/pt-br';
-import { notificadorTelegram } from '../services/NotificadorTelegram';
 import { registrarLogExclusao } from '../services/loggerService';
 import { LISTA_LABORATORIOS } from '../constants/laboratorios';
 import { CriteriosBusca, DadosNovos, ResultadoProcessador } from './ProcessadorConsultas';
@@ -688,35 +686,8 @@ export class ExecutorAcoes {
     };
   }
 
-  async notificar(
-    dados: any,
-    horarios: string | string[],
-    laboratorios: string | string[],
-    tipo: string,
-    dataISO: string | null
-  ) {
-    try {
-      const ID = import.meta.env.VITE_TELEGRAM_CHAT_ID;
-      if (ID) {
-        await notificadorTelegram.enviarNotificacao(
-          ID,
-          {
-            assunto: dados.assunto,
-            data:
-              dados.data ||
-              (dados.dataInicio ? dayjs(dados.dataInicio.toDate()).format('DD/MM/YYYY') : 'N/A'),
-            dataISO: dataISO,
-            horario: Array.isArray(horarios) ? horarios.join(', ') : horarios,
-            laboratorio: Array.isArray(laboratorios) ? laboratorios.join(', ') : laboratorios,
-            cursos: dados.cursos || [],
-            observacoes: dados.observacoes,
-          },
-          tipo
-        );
-      }
-    } catch (e) {
-      console.error(e);
-    }
+  async notificar() {
+    // No-op - Telegram desativado
   }
 }
 

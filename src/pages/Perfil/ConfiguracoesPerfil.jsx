@@ -8,7 +8,6 @@ import {
 } from '@mui/material';
 import EditIcon from '@mui/icons-material/Edit';
 import NotificationsIcon from '@mui/icons-material/Notifications';
-import TelegramIcon from '@mui/icons-material/Telegram';
 import UploadImagem from '../../componentes/comuns/UploadImagem';
 
 function ConfiguracoesPerfil() {
@@ -22,9 +21,6 @@ function ConfiguracoesPerfil() {
     const [snackbarMessage, setSnackbarMessage] = useState('');
     const [snackbarSeverity, setSnackbarSeverity] = useState('success');
     
-    const [telegramChatId, setTelegramChatId] = useState('');
-    const [codigoTelegram, setCodigoTelegram] = useState(null);
-    const [gerandoCodigo, setGerandoCodigo] = useState(false);
     const [pushAtivo, setPushAtivo] = useState(false);
     const [pushLoading, setPushLoading] = useState(false);
 
@@ -47,7 +43,6 @@ function ConfiguracoesPerfil() {
                     if (data) {
                         setUserProfile(data);
                         setEditedName(data.name || '');
-                        setTelegramChatId(data.telegram_chat_id || data.telegramChatId || '');
                         setPhotoURL(data.photo_url || data.photoURL || '');
                     } else {
                         setError("Perfil não encontrado no banco de dados.");
@@ -69,34 +64,6 @@ function ConfiguracoesPerfil() {
         fetchProfileAndPushStatus();
     }, []);
 
-    const handleGerarCodigoTelegram = async () => {
-        if (!userProfile?.uid) return;
-        setGerandoCodigo(true);
-        try {
-            const numAleatorio = Math.floor(1000 + Math.random() * 9000);
-            const novoCodigo = `CRN-${numAleatorio}`;
-
-            const { error } = await supabase.from('telegram_vinculos_pendentes').insert({
-                user_uid: userProfile.uid,
-                codigo: novoCodigo,
-            });
-
-            if (error) throw error;
-
-            setCodigoTelegram(novoCodigo);
-            setSnackbarMessage('Código de vinculação gerado! Envie-o para o Bot no Telegram.');
-            setSnackbarSeverity('info');
-            setOpenSnackbar(true);
-        } catch (err) {
-            console.error('Erro ao gerar código Telegram:', err);
-            setSnackbarMessage('Erro ao gerar código temporário.');
-            setSnackbarSeverity('error');
-            setOpenSnackbar(true);
-        } finally {
-            setGerandoCodigo(false);
-        }
-    };
-
     const handleSaveProfile = async () => {
         setLoading(true);
         try {
@@ -105,14 +72,13 @@ function ConfiguracoesPerfil() {
                     .from('users')
                     .update({
                         name: editedName,
-                        telegram_chat_id: telegramChatId,
                         photo_url: photoURL
                     })
                     .eq('email', userProfile.email);
 
                 if (error) throw error;
 
-                const updated = { ...userProfile, name: editedName, telegram_chat_id: telegramChatId, photo_url: photoURL };
+                const updated = { ...userProfile, name: editedName, photo_url: photoURL };
                 setUserProfile(updated);
                 localStorage.setItem('cronolab_user_session', JSON.stringify(updated));
 
@@ -208,57 +174,7 @@ function ConfiguracoesPerfil() {
                     <Grid item xs={12} sm={6}><TextField fullWidth label="Email" value={userProfile.email} disabled /></Grid>
                     <Grid item xs={12} sm={6}><TextField fullWidth label="Cargo" value={userProfile.role || 'Pendente'} disabled /></Grid>
                     
-                    <Grid item xs={12}>
-                        <Divider sx={{ my: 1 }} />
-                        <Typography variant="h6" sx={{ mt: 2, mb: 1, display: 'flex', alignItems: 'center', gap: 1 }}>
-                            <TelegramIcon color="primary" /> Conectar Bot do Telegram
-                        </Typography>
 
-                        <Card variant="outlined" sx={{ p: 2.5, bgcolor: 'background.paper', borderRadius: 2 }}>
-                            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 2 }}>
-                                <Box display="flex" alignItems="center" gap={1}>
-                                    <Typography variant="subtitle1" fontWeight="bold">Status:</Typography>
-                                    {telegramChatId ? <Chip label="Conectado ✓" color="success" size="small" /> : <Chip label="Não vinculado" color="default" size="small" />}
-                                    {telegramChatId && (
-                                        <Typography variant="caption" color="text.secondary">Chat ID: {telegramChatId}</Typography>
-                                    )}
-                                </Box>
-                                <Button
-                                    variant="contained"
-                                    color="primary"
-                                    startIcon={<TelegramIcon />}
-                                    onClick={handleGerarCodigoTelegram}
-                                    disabled={gerandoCodigo}
-                                >
-                                    {gerandoCodigo ? 'Gerando...' : '1. Gerar Código de Vinculação'}
-                                </Button>
-                            </Box>
-
-                            {codigoTelegram && (
-                                <Box sx={{ mt: 2, p: 2, bgcolor: 'action.hover', borderRadius: 2, border: '1px solid', borderColor: 'primary.main' }}>
-                                    <Typography variant="subtitle2" fontWeight="bold" color="primary" gutterBottom>
-                                        🔑 Código Gerado: <code>{codigoTelegram}</code>
-                                    </Typography>
-                                    <Typography variant="body2" color="text.secondary" paragraph sx={{ mb: 1.5 }}>
-                                        <strong>Passo a passo para conectar:</strong><br />
-                                        1. Clique no botão abaixo para abrir o chat do Bot no Telegram.<br />
-                                        2. No Telegram, pressione o botão <strong>COMEÇAR / START</strong> ou envie a mensagem: <code>/vincular {codigoTelegram}</code>
-                                    </Typography>
-                                    <Button
-                                        variant="contained"
-                                        color="secondary"
-                                        startIcon={<TelegramIcon />}
-                                        component="a"
-                                        href={`https://t.me/${import.meta.env.VITE_TELEGRAM_BOT_USERNAME || 'cronolab_bot'}?start=${codigoTelegram}`}
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                    >
-                                        2. Abrir Bot no Telegram
-                                    </Button>
-                                </Box>
-                            )}
-                        </Card>
-                    </Grid>
 
                     <Grid item xs={12}>
                         <Divider sx={{ my: 1 }} />

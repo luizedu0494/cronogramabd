@@ -19,7 +19,6 @@ import isBetween from 'dayjs/plugin/isBetween';
 import { LISTA_LABORATORIOS, TIPOS_LABORATORIO } from './constants/laboratorios';
 import PropTypes from 'prop-types';
 import DialogConfirmacao from './components/DialogConfirmacao';
-import { notificadorTelegram } from './services/NotificadorTelegram';
 import GradeDisponibilidade from './components/GradeDisponibilidade';
 import { useDisponibilidade } from './hooks/useDisponibilidade';
 import { autoRejeitarPendentesConflitantes } from './utils/conflitoUtils';
@@ -37,7 +36,6 @@ const BLOCOS_HORARIO = [
     { "value": "20:30-22:00", "label": "20:30 - 22:00", "turno": "Noturno" },
 ];
 
-const TELEGRAM_CHAT_ID = import.meta.env.VITE_TELEGRAM_CHAT_ID;
 
 const safeDayjs = (val) => {
     if (!val) return null;
@@ -504,24 +502,6 @@ function ProporEventoForm({ userInfo, currentUser, initialDate, onSuccess, onCan
                 ...prev,
                 eventos: [...prev.eventos, ...novosConflitosEventos]
             }));
-
-            if (TELEGRAM_CHAT_ID) {
-                for (const ev of finalizadas) {
-                    const dInicio = dayjs(ev.dataInicio.toDate ? ev.dataInicio.toDate() : ev.dataInicio);
-                    const dFim = dayjs(ev.dataFim.toDate ? ev.dataFim.toDate() : ev.dataFim);
-
-                    const payload = {
-                        titulo: ev.titulo,
-                        tipoEvento: ev.tipo,
-                        laboratorio: ev.laboratorio, 
-                        dataInicio: dInicio.format('DD/MM/YYYY HH:mm'),
-                        dataFim: dFim.format('DD/MM/YYYY HH:mm'),
-                        dataISO: dInicio.format('YYYY-MM-DD'),
-                        descricao: ev.descricao
-                    };
-                    await notificadorTelegram.enviarNotificacao(TELEGRAM_CHAT_ID, payload, isEditMode ? 'evento_editar' : 'evento_adicionar');
-                }
-            }
 
             setSnackbarMessage(isEditMode ? 'Evento atualizado!' : 'Evento(s) criado(s) com sucesso!');
             setSnackbarSeverity('success');

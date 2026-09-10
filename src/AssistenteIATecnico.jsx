@@ -27,10 +27,7 @@ const GROQ_MODEL = import.meta.env.VITE_GROQ_MODEL_LIGHT || 'groq/compound-mini'
 
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import SendTimeExtensionIcon from '@mui/icons-material/SendTimeExtension';
-import { notificadorTelegram } from './services/NotificadorTelegram';
 import { langchainService } from './services/langchainService';
-
-const TELEGRAM_CHAT_ID = import.meta.env.VITE_TELEGRAM_CHAT_ID;
 
 // PROMPT EXPANDIDO PARA O TÉCNICO (CONSULTA + PROPOR AULAS/EVENTOS)
 const PROMPT_TECNICO_ASSISTENTE = `Você é o Assistente IA do Técnico do CronoLab CESMAC.
@@ -197,18 +194,7 @@ function AssistenteIATecnico({ userInfo, currentUser, mode }) {
 
             await addDoc(collection(db, 'aulas'), novaProposta);
 
-            if (TELEGRAM_CHAT_ID) {
-                await notificadorTelegram.enviarNotificacao(TELEGRAM_CHAT_ID, {
-                    assunto: novaProposta.assunto,
-                    data: dataObj.format('DD/MM/YYYY'),
-                    dataISO: dataObj.format('YYYY-MM-DD'),
-                    horario: novaProposta.horarioSlotString,
-                    laboratorio: novaProposta.laboratorioSelecionado,
-                    cursos: novaProposta.cursos,
-                    observacoes: novaProposta.observacoes,
-                    propostoPorNome: novaProposta.propostoPorNome,
-                }, 'pendente');
-            }
+
 
             setSnackbarMessage('✅ Proposta enviada com sucesso para a fila de aprovação!');
             setSnackbarSeverity('success');

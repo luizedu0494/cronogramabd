@@ -18,12 +18,10 @@ import EmptyState from './components/EmptyState';
 import { LISTA_LABORATORIOS, TIPOS_LABORATORIO } from './constants/laboratorios';
 import { CalendarOff } from 'lucide-react';
 import DialogConfirmacao from './components/DialogConfirmacao';
-import { notificadorTelegram } from './services/NotificadorTelegram';
 
 dayjs.locale('pt-br');
 
 const EVENT_TYPES = ['Manutenção', 'Feriado', 'Evento', 'Giro', 'Outro'];
-const TELEGRAM_CHAT_ID = import.meta.env.VITE_TELEGRAM_CHAT_ID;
 
 const BLOCOS_HORARIO = [
     { "value": "07:00-09:10", "label": "07:00 - 09:10", "turno": "Matutino" },
@@ -103,20 +101,7 @@ function EventosManutencao() {
     };
   }, []);
 
-  const notificarTelegramEvento = async (evento, tipoAcao) => {
-    if (!TELEGRAM_CHAT_ID) return;
-    
-    const dadosNotificacao = {
-      titulo: evento.titulo,
-      tipoEvento: evento.tipo,
-      laboratorio: evento.laboratorio,
-      dataInicio: dayjs(evento.dataInicio).format('DD/MM/YYYY HH:mm'),
-      dataFim: dayjs(evento.dataFim).format('DD/MM/YYYY HH:mm'),
-      descricao: evento.descricao
-    };
 
-    await notificadorTelegram.enviarNotificacao(TELEGRAM_CHAT_ID, dadosNotificacao, `evento_${tipoAcao}`);
-  };
 
   const resetForm = () => {
     setFormData({
@@ -204,14 +189,12 @@ function EventosManutencao() {
             .eq('id', eventoParaEditar.id);
 
           if (updateErr) throw updateErr;
-          await notificarTelegramEvento({ ...eventoData, dataInicio: finalStart.toDate(), dataFim: finalEnd.toDate(), laboratorio: formData.laboratorio }, 'editar');
         } else {
           const { error: insertErr } = await supabase
             .from('eventos_manutencao')
             .insert([eventoData]);
 
           if (insertErr) throw insertErr;
-          await notificarTelegramEvento({ ...eventoData, dataInicio: finalStart.toDate(), dataFim: finalEnd.toDate(), laboratorio: formData.laboratorio }, 'adicionar');
         }
       }
 
@@ -245,8 +228,6 @@ function EventosManutencao() {
         .eq('id', eventoParaExcluir.id);
 
       if (deleteErr) throw deleteErr;
-
-      await notificarTelegramEvento(eventoParaExcluir, 'excluir');
       setFeedback({ open: true, message: 'Evento excluído com sucesso!', severity: 'success' });
       setOpenDeleteDialog(false);
       setEventoParaExcluir(null);
