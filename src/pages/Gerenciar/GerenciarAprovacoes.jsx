@@ -442,7 +442,7 @@ function GerenciarAprovacoes() {
                                             {MONTHS.map(m => <MenuItem key={m.value} value={m.value}>{m.label}</MenuItem>)}
                                         </Select>
                                     </FormControl>
-                                    <FormControl sx={{ minWidth: 100 }} size="small">
+                                    <FormControl sx={{ minWidth: 120 }} size="small">
                                         <InputLabel>Ano</InputLabel>
                                         <Select value={selectedYear} label="Ano" onChange={e => setSelectedYear(e.target.value)}>
                                             {YEARS.map(y => <MenuItem key={y} value={y}>{y}</MenuItem>)}

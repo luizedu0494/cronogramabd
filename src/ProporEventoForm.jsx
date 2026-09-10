@@ -747,19 +747,20 @@ function ProporEventoForm({ userInfo, currentUser, initialDate, onSuccess, onCan
                                         <Grid container spacing={1} key={index} sx={{ mt: index > 0 ? 1 : 0, alignItems: 'center' }}>
                                             <Grid item xs={5}>
                                                 <FormControl sx={{ minWidth: 120 }} size="small" fullWidth disabled={!secaoDataCompleta && !isEditMode}>
-                                                    <InputLabel shrink>Tipo *</InputLabel>
-                                                    <Select value={labSelection.tipo || ''} onChange={(e) => handleLabTipoChange(index, e.target.value)}>
+                                                    <InputLabel shrink notched>Tipo *</InputLabel>
+                                                    <Select value={labSelection.tipo || ''} onChange={(e) => handleLabTipoChange(index, e.target.value)} input={<OutlinedInput notched label="Tipo *" />}>
                                                         {TIPOS_LABORATORIO.map(t => <MenuItem key={t.id} value={t.id}>{t.name}</MenuItem>)}
                                                     </Select>
                                                 </FormControl>
                                             </Grid>
                                             <Grid item xs={6}>
-                                                <FormControl sx={{ minWidth: 140 }} size="small" fullWidth disabled={!labSelection.tipo || (!secaoDataCompleta && !isEditMode)}>
-                                                    <InputLabel shrink>Lab(s) *</InputLabel>
+                                                <FormControl sx={{ minWidth: 160 }} size="small" fullWidth disabled={!labSelection.tipo || (!secaoDataCompleta && !isEditMode)}>
+                                                    <InputLabel shrink notched>Laboratório(s) *</InputLabel>
                                                     <Select
                                                         multiple
                                                         value={labSelection.laboratorios || []}
                                                         onChange={(e) => handleLabSelectionChange(index, e.target.value)}
+                                                        input={<OutlinedInput notched label="Laboratório(s) *" />}
                                                         renderValue={(selected) => (
                                                             <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
                                                                 {selected.map((value) => <Chip key={value} label={value} size="small" />)}

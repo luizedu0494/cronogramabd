@@ -331,12 +331,13 @@ const HistoricoAulas = () => {
                     </Grid>
 
                     <Grid item xs={12} sm={6} md={3}>
-                        <FormControl fullWidth size="small" variant="outlined">
-                            <InputLabel shrink>Curso/Tipo</InputLabel>
+                        <FormControl fullWidth size="small" variant="outlined" sx={{ minWidth: 140 }}>
+                            <InputLabel shrink notched>Curso/Tipo</InputLabel>
                             <Select
                                 value={filtroCurso}
                                 onChange={(e) => setFiltroCurso(e.target.value)}
                                 label="Curso/Tipo"
+                                input={<OutlinedInput notched label="Curso/Tipo" />}
                             >
                                 <MenuItem value="">Todos</MenuItem>
                                 {cursos.map(curso => (
@@ -347,12 +348,13 @@ const HistoricoAulas = () => {
                     </Grid>
 
                     <Grid item xs={12} sm={6} md={3}>
-                        <FormControl fullWidth size="small" variant="outlined">
-                            <InputLabel shrink>Ano</InputLabel>
+                        <FormControl fullWidth size="small" variant="outlined" sx={{ minWidth: 120 }}>
+                            <InputLabel shrink notched>Ano</InputLabel>
                             <Select
                                 value={filtroAno}
                                 onChange={(e) => setFiltroAno(e.target.value)}
                                 label="Ano"
+                                input={<OutlinedInput notched label="Ano" />}
                             >
                                 <MenuItem value="">Todos</MenuItem>
                                 {anos.map(ano => (
@@ -363,8 +365,8 @@ const HistoricoAulas = () => {
                     </Grid>
 
                     <Grid item xs={12} sm={6} md={3}>
-                        <FormControl fullWidth size="small" variant="outlined">
-                            <InputLabel shrink>Status</InputLabel>
+                        <FormControl fullWidth size="small" variant="outlined" sx={{ minWidth: 140 }}>
+                            <InputLabel shrink notched>Status</InputLabel>
                             <Select
                                 value={filtroStatus}
                                 onChange={(e) => setFiltroStatus(e.target.value)}

@@ -1247,17 +1247,17 @@ function ProporAulaForm({ userInfo, currentUser, initialDate, onSuccess, onCance
                                 {isEditMode ? (
                                     <Grid container spacing={1} sx={{ mt: 0.5 }}>
                                         <Grid item xs={5}>
-                                            <FormControl fullWidth size="small">
-                                                <InputLabel>Tipo *</InputLabel>
-                                                <Select value={formData.dynamicLabs[0]?.tipo || ''} onChange={(e) => handleLabTipoChange(0, e.target.value)}>
+                                            <FormControl fullWidth size="small" sx={{ minWidth: 120 }}>
+                                                <InputLabel shrink notched>Tipo *</InputLabel>
+                                                <Select value={formData.dynamicLabs[0]?.tipo || ''} onChange={(e) => handleLabTipoChange(0, e.target.value)} input={<OutlinedInput notched label="Tipo *" />}>
                                                     {TIPOS_LABORATORIO.map(t => <MenuItem key={t.id} value={t.id}>{t.name}</MenuItem>)}
                                                 </Select>
                                             </FormControl>
                                         </Grid>
                                         <Grid item xs={7}>
-                                            <FormControl fullWidth size="small">
-                                                <InputLabel>Laboratório *</InputLabel>
-                                                <Select value={formData.dynamicLabs[0]?.laboratorios[0] || ''} onChange={(e) => handleLabSelectionChange(0, [e.target.value])}>
+                                            <FormControl fullWidth size="small" sx={{ minWidth: 160 }}>
+                                                <InputLabel shrink notched>Laboratório *</InputLabel>
+                                                <Select value={formData.dynamicLabs[0]?.laboratorios[0] || ''} onChange={(e) => handleLabSelectionChange(0, [e.target.value])} input={<OutlinedInput notched label="Laboratório *" />}>
                                                     {LISTA_LABORATORIOS.filter(l => l.tipo === formData.dynamicLabs[0]?.tipo).map(l => (
                                                         <MenuItem key={l.id} value={l.name}>{l.name}</MenuItem>
                                                     ))}
@@ -1269,20 +1269,21 @@ function ProporAulaForm({ userInfo, currentUser, initialDate, onSuccess, onCance
                                     formData.dynamicLabs.map((labSelection, index) => (
                                         <Grid container spacing={1} key={index} alignItems="center" sx={{ mb: 2 }}>
                                             <Grid item xs={5}>
-                                                <FormControl fullWidth size="small" disabled={!secaoDataCompleta}>
-                                                    <InputLabel>Tipo *</InputLabel>
-                                                    <Select value={labSelection.tipo} onChange={(e) => handleLabTipoChange(index, e.target.value)}>
+                                                <FormControl fullWidth size="small" disabled={!secaoDataCompleta} sx={{ minWidth: 120 }}>
+                                                    <InputLabel shrink notched>Tipo *</InputLabel>
+                                                    <Select value={labSelection.tipo} onChange={(e) => handleLabTipoChange(index, e.target.value)} input={<OutlinedInput notched label="Tipo *" />}>
                                                         {TIPOS_LABORATORIO.map(t => <MenuItem key={t.id} value={t.id}>{t.name}</MenuItem>)}
                                                     </Select>
                                                 </FormControl>
                                             </Grid>
                                             <Grid item xs={6}>
-                                                <FormControl fullWidth size="small" disabled={!labSelection.tipo || !secaoDataCompleta}>
-                                                    <InputLabel>Laboratório(s) *</InputLabel>
+                                                <FormControl fullWidth size="small" disabled={!labSelection.tipo || !secaoDataCompleta} sx={{ minWidth: 160 }}>
+                                                    <InputLabel shrink notched>Laboratório(s) *</InputLabel>
                                                     <Select
                                                         multiple
                                                         value={labSelection.laboratorios || []}
                                                         onChange={(e) => handleLabSelectionChange(index, e.target.value)}
+                                                        input={<OutlinedInput notched label="Laboratório(s) *" />}
                                                         renderValue={(selected) => (
                                                             <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
                                                                 {selected.map((value) => <Chip key={value} label={value} size="small" />)}
