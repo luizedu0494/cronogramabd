@@ -12,7 +12,7 @@ import 'dayjs/locale/pt-br';
 
 dayjs.locale('pt-br');
 
-const MinhasPropostas = () => {
+const MinhasPropostas = ({ userInfo }) => {
     const [propostas, setPropostas] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
@@ -23,17 +23,32 @@ const MinhasPropostas = () => {
             setError(null);
 
             try {
-                const { data: { user } } = await supabase.auth.getUser();
-                if (!user) {
+                const { data: authData } = await supabase.auth.getUser();
+                const user = authData?.user;
+                
+                const localSessionStr = localStorage.getItem('cronolab_user_session');
+                const localSession = localSessionStr ? JSON.parse(localSessionStr) : null;
+
+                const uid = user?.id || userInfo?.uid || userInfo?.id || localSession?.uid;
+                const email = user?.email || userInfo?.email || localSession?.email;
+
+                if (!uid && !email) {
                     setLoading(false);
                     return;
                 }
 
-                const { data, error } = await supabase
-                    .from('aulas')
-                    .select('*')
-                    .eq('proposto_por_uid', user.id)
-                    .order('created_at', { ascending: false });
+                // Busca propostas filtrando por UID ou por E-mail do proponente
+                let query = supabase.from('aulas').select('*');
+                
+                if (uid && email) {
+                    query = query.or(`proposto_por_uid.eq.${uid},proposto_por_uid.eq.${email}`);
+                } else if (uid) {
+                    query = query.eq('proposto_por_uid', uid);
+                } else {
+                    query = query.eq('proposto_por_uid', email);
+                }
+
+                const { data, error } = await query.order('created_at', { ascending: false });
 
                 if (error) throw error;
 
@@ -56,7 +71,7 @@ const MinhasPropostas = () => {
         };
 
         fetchPropostas();
-    }, []);
+    }, [userInfo]);
 
     const getChipProps = (status) => {
         switch (status) {

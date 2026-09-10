@@ -1122,7 +1122,7 @@ function App() {
                                     <Route path="/ajuda" element={<AjudaFAQ userInfo={userProfileData} />} />
                                     <Route path="/perfil" element={role === 'visualizador' ? <Navigate to="/calendario" replace /> : <ConfiguracoesPerfil />} />
                                     <Route path="/consulta-disponibilidade" element={<ConsultaDisponibilidade />} />
-                                    {role === 'tecnico' && (<><Route path="/minhas-propostas" element={<MinhasPropostas />} /><Route path="/minhas-designacoes" element={<MinhasDesignacoes />} /><Route path="/revisoes" element={<CalendarioRevisoesTecnico userInfo={userProfileData} />} /></>)}
+                                    {role === 'tecnico' && (<><Route path="/minhas-propostas" element={<MinhasPropostas userInfo={userProfileData} />} /><Route path="/minhas-designacoes" element={<MinhasDesignacoes />} /><Route path="/revisoes" element={<CalendarioRevisoesTecnico userInfo={userProfileData} />} /></>)}
                                     {role === 'coordenador' && (<>
                                         <Route path="/gerenciar-aprovacoes" element={<GerenciarAprovacoes />} />
                                         <Route path="/gerenciar-usuarios" element={<GerenciarUsuarios />} />
