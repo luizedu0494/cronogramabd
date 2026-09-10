@@ -1,5 +1,13 @@
 // Service Worker Puro (W3C Web Push API Nativa com VAPID - sem SDK Firebase)
 
+self.addEventListener('install', (event) => {
+  self.skipWaiting();
+});
+
+self.addEventListener('activate', (event) => {
+  event.waitUntil(self.clients.claim());
+});
+
 self.addEventListener('push', (event) => {
   if (!event.data) return;
 
