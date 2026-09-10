@@ -123,31 +123,50 @@ function ConfiguracoesPerfil() {
         } catch (err) {
             console.error('Erro ao atualizar foto de perfil:', err);
         }
-    };
-
-    const handleTogglePush = async () => {
-        if (!userProfile?.uid) return;
+    };    const handleTogglePush = async () => {
         setPushLoading(true);
         try {
             if (pushAtivo) {
-                await revogarWebPush(userProfile.uid);
+                if (userProfile?.uid) {
+                    await revogarWebPush(userProfile.uid);
+                }
                 setPushAtivo(false);
-                setSnackbarMessage('Notificações Web Push desativadas neste dispositivo.');
+                setSnackbarMessage('Notificações nativas do navegador desativadas.');
                 setSnackbarSeverity('info');
             } else {
-                const resultado = await registrarWebPush(userProfile.uid);
-                if (resultado.sucesso) {
+                if (!('Notification' in window)) {
+                    setSnackbarMessage('Notificações não são suportadas neste navegador.');
+                    setSnackbarSeverity('warning');
+                    setOpenSnackbar(true);
+                    return;
+                }
+
+                const perm = await Notification.requestPermission();
+                if (perm === 'granted') {
                     setPushAtivo(true);
-                    setSnackbarMessage('Notificações Web Push (VAPID) ativadas com sucesso!');
+                    setSnackbarMessage('✅ Notificações de Área de Trabalho / Navegador ativadas com sucesso!');
                     setSnackbarSeverity('success');
+
+                    // Tentar registrar Web Push secundariamente sem bloquear se falhar por AdBlock/VAPID
+                    if (userProfile?.uid) {
+                        registrarWebPush(userProfile.uid).catch(() => {});
+                    }
+
+                    // Teste imediato de notificação
+                    try {
+                        new Notification('🔔 CronoLab Notificações Ativas', {
+                            body: 'Você receberá alertas instantâneos diretamente no seu computador ou dispositivo!',
+                            icon: '/icons/icon-192x192.png'
+                        });
+                    } catch (e) {}
                 } else {
-                    setSnackbarMessage(resultado.mensagem || 'Não foi possível ativar as notificações.');
+                    setSnackbarMessage('Permissão de notificação negada no navegador. Ative as permissões ao lado da barra de endereço.');
                     setSnackbarSeverity('warning');
                 }
             }
             setOpenSnackbar(true);
         } catch (err) {
-            console.error('Erro ao alterar Web Push:', err);
+            console.error('Erro ao alterar Notificações:', err);
         } finally {
             setPushLoading(false);
         }
@@ -181,16 +200,15 @@ function ConfiguracoesPerfil() {
                     <Grid item xs={12} sm={6}><TextField fullWidth label="Cargo" value={userProfile.role || 'Pendente'} disabled /></Grid>
                     
 
-
                     <Grid item xs={12}>
                         <Divider sx={{ my: 1 }} />
                         <Typography variant="h6" sx={{ mt: 2, mb: 1, display: 'flex', alignItems: 'center', gap: 1 }}>
-                            <NotificationsIcon color="action" /> Notificações Push no Navegador (VAPID)
+                            <NotificationsIcon color="action" /> Notificações do Navegador / Área de Trabalho
                         </Typography>
                         <Alert severity={pushAtivo ? "success" : "info"} sx={{ mb: 2 }}>
                             {pushAtivo 
-                              ? "Notificações Web Push nativas VAPID estão ativas neste dispositivo."
-                              : "Ative notificações nativas para receber alertas instantâneos diretamente na sua área de trabalho ou dispositivo móvel."
+                              ? "✅ Notificações nativas do navegador estão ativas. Você receberá alertas em tempo real."
+                              : "Ative as notificações para receber alertas em tempo real sobre propostas, aprovações e trocas diretamente na sua área de trabalho."
                             }
                         </Alert>
                         <Button
@@ -204,8 +222,8 @@ function ConfiguracoesPerfil() {
                             {pushLoading 
                               ? 'Processando...' 
                               : pushAtivo 
-                                ? 'Desativar Notificações Web Push neste Dispositivo' 
-                                : 'Ativar Notificações Web Push Nativas (VAPID)'
+                                ? 'Desativar Notificações do Navegador' 
+                                : 'Ativar Notificações do Navegador (Sem necessidade de Push Externo)'
                             }
                         </Button>
                     </Grid>
