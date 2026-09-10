@@ -486,22 +486,32 @@ function ProporAulaForm({ userInfo, currentUser, initialDate, onSuccess, onCance
                 try {
                     const { data, error } = await supabase
                         .from('aulas')
-                        .select('*')
+                        .select('*, aula_cursos(curso)')
                         .eq('id', aulaId)
                         .single();
 
                     if (!error && data) {
                         const labNome = data.laboratorio || data.laboratorioSelecionado;
                         const labObj = LISTA_LABORATORIOS.find(l => l.name === labNome);
-                        if (data.is_revisao || data.isRevisao) setTipoEntrada('revisao');
-                        else if (data.is_prova || data.isProva) setTipoEntrada('prova');
+                        
+                        // Sincronizar Modo da Atividade (Aula Normal, Revisão, Prova)
+                        if (data.is_revisao || data.isRevisao || data.tipo_atividade === 'revisao') {
+                            setTipoEntrada('revisao');
+                        } else if (data.is_prova || data.isProva || data.tipo_atividade === 'prova') {
+                            setTipoEntrada('prova');
+                        } else {
+                            setTipoEntrada('aula');
+                        }
+
                         const slot = data.horario_slot || data.horarioSlotString;
+                        const cursosRel = Array.isArray(data.aula_cursos) ? data.aula_cursos.map(c => c.curso) : [];
+                        const cursosCarregados = (data.cursos && data.cursos.length) ? data.cursos : cursosRel;
 
                         setFormData({
                             assunto: data.assunto || '',
                             observacoes: data.observacoes || '',
-                            tipoAtividade: data.tipo_atividade || data.tipoAtividade || '',
-                            cursos: data.cursos || [],
+                            tipoAtividade: data.tipo_atividade || data.tipoAtividade || 'aula',
+                            cursos: cursosCarregados,
                             liga: data.liga || '',
                             dataInicio: dayjs(data.data_inicio || data.dataInicio),
                             horarioSlotString: Array.isArray(slot) ? slot : [slot],

@@ -1354,24 +1354,24 @@ function CalendarioCronograma({ userInfo }) {
 
                         <Grid container spacing={2}>
                             {/* Campos de conteúdo */}
-                            <Grid item xs={12}>
+                            <Grid size={{ xs: 12 }}>
                                 <Typography variant="caption" color="text.secondary" fontWeight="bold">CONTEÚDO</Typography>
                             </Grid>
-                            <Grid item xs={12}>
+                            <Grid size={{ xs: 12, sm: 6 }}>
                                 <TextField fullWidth size="small" label={bulkEditTarget === 'aula' ? "Novo Assunto (opcional)" : "Novo Título (opcional)"}
                                     value={bulkEditFields.assunto}
                                     onChange={(e) => setBulkEditFields(p => ({ ...p, assunto: e.target.value }))}
                                     placeholder="Deixe vazio para não alterar" />
                             </Grid>
-                            <Grid item xs={12}>
-                                <TextField fullWidth size="small" label={bulkEditTarget === 'aula' ? "Observações (opcional)" : "Descrição (opcional)"} multiline rows={2}
+                            <Grid size={{ xs: 12, sm: 6 }}>
+                                <TextField fullWidth size="small" label={bulkEditTarget === 'aula' ? "Observações (opcional)" : "Descrição (opcional)"} multiline rows={1}
                                     value={bulkEditFields.observacoes}
                                     onChange={(e) => setBulkEditFields(p => ({ ...p, observacoes: e.target.value }))}
                                     placeholder="Deixe vazio para não alterar" />
                             </Grid>
                             {bulkEditTarget === 'aula' ? (
                                 <>
-                                    <Grid item xs={12}>
+                                    <Grid size={{ xs: 12, sm: 6 }}>
                                         <FormControl fullWidth size="small">
                                             <InputLabel>Cursos (opcional)</InputLabel>
                                             <Select multiple value={bulkEditFields.cursos}
@@ -1386,12 +1386,12 @@ function CalendarioCronograma({ userInfo }) {
                                             </Select>
                                         </FormControl>
                                     </Grid>
-                                    <Grid item xs={12}>
+                                    <Grid size={{ xs: 12, sm: 6 }}>
                                         <FormControl fullWidth size="small">
-                                            <InputLabel>Tipo (opcional)</InputLabel>
+                                            <InputLabel>Tipo de Atividade (opcional)</InputLabel>
                                             <Select value={bulkEditFields.tipoAula}
                                                 onChange={(e) => setBulkEditFields(p => ({ ...p, tipoAula: e.target.value }))}
-                                                label="Tipo (opcional)">
+                                                label="Tipo de Atividade (opcional)">
                                                 <MenuItem value=""><em>Não alterar</em></MenuItem>
                                                 <MenuItem value="aula">📅 Aula Normal</MenuItem>
                                                 <MenuItem value="revisao">📖 Revisão / Reforço</MenuItem>
@@ -1401,7 +1401,7 @@ function CalendarioCronograma({ userInfo }) {
                                     </Grid>
                                 </>
                             ) : (
-                                <Grid item xs={12}>
+                                <Grid size={{ xs: 12, sm: 6 }}>
                                     <FormControl fullWidth size="small">
                                         <InputLabel>Tipo do Evento (opcional)</InputLabel>
                                         <Select value={bulkEditFields.tipoEvento}
@@ -1419,21 +1419,21 @@ function CalendarioCronograma({ userInfo }) {
                             )}
 
                             {/* Campos de agendamento */}
-                            <Grid item xs={12} sx={{ mt: 1 }}>
+                            <Grid size={{ xs: 12 }} sx={{ mt: 1 }}>
                                 <Divider />
                                 <Typography variant="caption" color="text.secondary" fontWeight="bold" sx={{ mt: 1, display: 'block' }}>
                                     AGENDAMENTO — aplicado a {bulkEditTarget === 'aula' ? `todas as ${selectedAulasIds.length} aula(s)` : `todos os ${selectedEventosIds.length} evento(s)`}
                                 </Typography>
                             </Grid>
-                            <Grid item xs={12}>
+                            <Grid size={{ xs: 12, sm: 4 }}>
                                 <LocalizationProvider dateAdapter={AdapterDayjs} adapterLocale="pt-br">
                                     <DatePicker label="Nova Data (opcional)"
                                         value={bulkEditFields.dataInicio}
                                         onChange={(v) => setBulkEditFields(p => ({ ...p, dataInicio: v }))}
-                                        slotProps={{ textField: { fullWidth: true, size: 'small', placeholder: 'Deixe vazio para não alterar' } }} />
+                                        slotProps={{ textField: { fullWidth: true, size: 'small', placeholder: 'Não alterar' } }} />
                                 </LocalizationProvider>
                             </Grid>
-                            <Grid item xs={12} sm={6}>
+                            <Grid size={{ xs: 12, sm: 4 }}>
                                 <FormControl fullWidth size="small">
                                     <InputLabel>Novo Laboratório (opcional)</InputLabel>
                                     <Select value={bulkEditFields.laboratorio}
@@ -1444,7 +1444,7 @@ function CalendarioCronograma({ userInfo }) {
                                     </Select>
                                 </FormControl>
                             </Grid>
-                            <Grid item xs={12} sm={6}>
+                            <Grid size={{ xs: 12, sm: 4 }}>
                                 <FormControl fullWidth size="small">
                                     <InputLabel>Novo Horário (opcional)</InputLabel>
                                     <Select value={bulkEditFields.horario}
