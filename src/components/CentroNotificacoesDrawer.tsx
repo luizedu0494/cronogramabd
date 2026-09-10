@@ -100,7 +100,6 @@ export const CentroNotificacoesDrawer: React.FC<CentroNotificacoesDrawerProps> =
             {notificacoes.map((item) => (
               <React.Fragment key={item.id}>
                 <ListItem
-                  button
                   onClick={() => handleItemClick(item)}
                   sx={{
                     flexDirection: 'column',

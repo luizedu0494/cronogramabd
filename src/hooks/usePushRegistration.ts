@@ -17,7 +17,8 @@ export function usePushRegistration(uid?: string) {
               const DEFAULT_VAPID_PUBLIC_KEY = 'BLjEhLkPJrJlWbtKRvyGR2fZhFQvm9SEj-zm0aulM55fDJVkjJsZMGwe95sAVs6IGyFyFA_t0fFfhfQNijH66I4';
               const vapidKey = import.meta.env.VITE_VAPID_PUBLIC_KEY || process.env.EXPO_PUBLIC_VAPID_KEY || DEFAULT_VAPID_PUBLIC_KEY;
               if (vapidKey) {
-                const subscription = await registration.pushManager.subscribe({
+                const reg = await navigator.serviceWorker.ready;
+                const subscription = await reg.pushManager.subscribe({
                   userVisibleOnly: true,
                   applicationServerKey: vapidKey,
                 });

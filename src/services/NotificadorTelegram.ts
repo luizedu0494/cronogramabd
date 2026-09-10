@@ -1,5 +1,14 @@
-import { notificationService } from './notificationService';
-import { DadosNotificacaoTelegram } from './NotificadorTelegram';
+export interface DadosNotificacaoTelegram {
+  assunto?: string;
+  titulo?: string;
+  laboratorio?: string | string[];
+  data?: string;
+  horario?: string | string[];
+  cursos?: string[];
+  isRevisao?: boolean;
+  tipoRevisaoLabel?: string;
+  isProva?: boolean;
+}
 
 /**
  * NotificadorUnificado - Substitui a dependência direta do Telegram

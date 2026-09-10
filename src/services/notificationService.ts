@@ -65,5 +65,32 @@ export const notificationService = {
       throw error;
     }
     return data;
+  },
+
+  /**
+   * Disparar notificações para múltiplos destinatários
+   */
+  async disparar(
+    dados: { tipo: Notificacao['tipo']; titulo: string; corpo: string; aula_id?: string; evento_id?: string; aviso_id?: string },
+    destinatariosUids: string[]
+  ): Promise<void> {
+    if (!destinatariosUids || destinatariosUids.length === 0) return;
+    const registros = destinatariosUids.map(uid => ({
+      destinatario_uid: uid,
+      tipo: dados.tipo,
+      titulo: dados.titulo,
+      corpo: dados.corpo,
+      aula_id: dados.aula_id || null,
+      evento_id: dados.evento_id || null,
+      aviso_id: dados.aviso_id || null,
+      lida: false,
+      criada_em: new Date().toISOString()
+    }));
+
+    const { error } = await supabase.from('notificacoes').insert(registros);
+    if (error) {
+      console.error('Erro ao disparar notificações para grupo:', error);
+      throw error;
+    }
   }
 };
