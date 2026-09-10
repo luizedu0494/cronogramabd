@@ -16,7 +16,7 @@ import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import 'dayjs/locale/pt-br';
 import AccountCircle from '@mui/icons-material/AccountCircle';
 import {
-    Menu as MenuIcon, Sun, Moon, LogOut, User, HelpCircle, UserCheck, Users, CalendarOff, Settings, Bell, ListTodo, Calendar, LayoutDashboard, ThumbsUp, PlusCircle, Download, BarChart, Bug, History, Bot, FlaskConical, Search, ChevronDown, ChevronUp
+    Menu as MenuIcon, Sun, Moon, LogOut, User, HelpCircle, UserCheck, Users, CalendarOff, Settings, Bell, ListTodo, Calendar, LayoutDashboard, ThumbsUp, PlusCircle, Download, BarChart, Bug, History, Bot, FlaskConical, Search, ChevronDown, ChevronUp, Database
 } from 'lucide-react';
 
 
@@ -67,6 +67,8 @@ const CalendarioRevisoesTecnico = lazyWithRetry(() => import('./pages/Cronograma
 const UploadCronogramaExterno = lazyWithRetry(() => import('./UploadCronogramaExterno'));
 const GerenciarEventosAvancado = lazyWithRetry(() => import('./GerenciarEventosAvancado'));
 const ConsultaDisponibilidade = lazyWithRetry(() => import('./ConsultaDisponibilidade'));
+const BackupSistema = lazyWithRetry(() => import('./pages/Gerenciar/BackupSistema'));
+
 
 const LoadingFallback = () => (<Box display="flex" justifyContent="center" alignItems="center" height="80vh"><CircularProgress /></Box>);
 const MainLayout = () => (<Container maxWidth="xl" sx={{ mt: { xs: 1.5, sm: 4 }, mb: { xs: 8, sm: 4 }, px: { xs: 1.5, sm: 3 } }}><Outlet /></Container>);
@@ -558,6 +560,7 @@ function App() {
             <MenuItem key="importar-externo" component={Link} to="/importar-cronograma-externo" onClick={handleMenuClose}><ListItemIcon><Download size={18} /></ListItemIcon><ListItemText primary="Importar Cronograma" primaryTypographyProps={{ noWrap: true }} /></MenuItem>,
             <MenuItem key="periodos" component={Link} to="/gerenciar-periodos" onClick={handleMenuClose}><ListItemIcon><CalendarOff size={18} /></ListItemIcon><ListItemText primary="Períodos Eventos" primaryTypographyProps={{ noWrap: true }} /></MenuItem>,
             <MenuItem key="gerenciar-avisos" component={Link} to="/gerenciar-avisos" onClick={handleMenuClose}><ListItemIcon><Settings size={18} /></ListItemIcon><ListItemText primary="Gerenciar Avisos" primaryTypographyProps={{ noWrap: true }} /></MenuItem>,
+            <MenuItem key="backup-sistema" component={Link} to="/backup-sistema" onClick={handleMenuClose}><ListItemIcon><Database size={18} /></ListItemIcon><ListItemText primary="Backup do Sistema" primaryTypographyProps={{ noWrap: true }} /></MenuItem>,
         ] : []),
         ...(role === 'tecnico' && !approvalPending ? [
             <MenuItem key="aula" component={Link} to="/propor-aula" onClick={handleMenuClose}><ListItemIcon><PlusCircle size={18} /></ListItemIcon><ListItemText primary="Propor Atividade" primaryTypographyProps={{ noWrap: true }} /></MenuItem>,
@@ -1009,6 +1012,7 @@ function App() {
                                         <Route path="/analise-eventos" element={<AnaliseEventos />} />
                                         <Route path="/verificar-integridade" element={<VerificarIntegridadeDados />} />
                                         <Route path="/importar-cronograma-externo" element={<UploadCronogramaExterno />} />
+                                        <Route path="/backup-sistema" element={<BackupSistema userProfile={userProfileData} />} />
                                     </>)}
                                     <Route path="/assistente-ia" element={role === 'visualizador' ? <Navigate to="/calendario" replace /> : <AssistenteIA userInfo={userProfileData} currentUser={user} mode={darkMode ? 'dark' : 'light'} />} />
                                     <Route path="/download-cronograma" element={<DownloadCronograma />} />
