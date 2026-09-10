@@ -5,9 +5,9 @@
 ![Banner CronoLab](./imgbanner.png)
 
 <p align="center">
-  <a href="#sobre-o-projeto--origem">Sobre & Origem</a> •
+  <a href="#sobre-o-projeto-e-origem">Sobre & Origem</a> •
   <a href="#fluxo-operacional-por-perfil">Fluxo Operacional</a> •
-  <a href="#demonstração-visual--gifs">Demonstrações</a> •
+  <a href="#demonstracao-visual-e-gifs">Demonstrações</a> •
   <a href="#recursos-e-funcionalidades">Recursos</a> •
   <a href="#tecnologias-usadas">Tecnologias</a> •
   <a href="#executar-e-configurar-localmente">Executar Localmente</a>
@@ -28,7 +28,7 @@
 
 ---
 
-## <img src="https://api.iconify.design/lucide:microscope.svg?color=%231E7EC8" width="22" height="22" style="vertical-align: sub;" /> Sobre o Projeto & Origem
+## <a id="sobre-o-projeto-e-origem"></a><img src="https://api.iconify.design/lucide:microscope.svg?color=%231E7EC8" width="24" height="24" style="vertical-align: sub;" /> Sobre o Projeto & Origem
 
 > [!NOTE]
 > **VIVÊNCIA PRÁTICA NO AMBIENTE ACADÊMICO**  
@@ -45,7 +45,7 @@ Percebendo essa necessidade real, desenvolvi e apliquei o **CronoLab** diretamen
 
 ---
 
-## <img src="https://api.iconify.design/lucide:users.svg?color=%231E7EC8" width="22" height="22" style="vertical-align: sub;" /> Fluxo Operacional por Perfil
+## <a id="fluxo-operacional-por-perfil"></a><img src="https://api.iconify.design/lucide:users.svg?color=%231E7EC8" width="24" height="24" style="vertical-align: sub;" /> Fluxo Operacional por Perfil
 
 | Perfil | Atribuições no CronoLab |
 | :--- | :--- |
@@ -55,7 +55,7 @@ Percebendo essa necessidade real, desenvolvi e apliquei o **CronoLab** diretamen
 
 ---
 
-## <img src="https://api.iconify.design/lucide:monitor-play.svg?color=%231E7EC8" width="22" height="22" style="vertical-align: sub;" /> Demonstração Visual & GIFs
+## <a id="demonstracao-visual-e-gifs"></a><img src="https://api.iconify.design/lucide:monitor-play.svg?color=%231E7EC8" width="24" height="24" style="vertical-align: sub;" /> Demonstração Visual & GIFs
 
 ---
 
@@ -122,7 +122,7 @@ Gestão ágil de aprovações e agendamentos na palma da mão:
 
 ---
 
-## <img src="https://api.iconify.design/lucide:layers.svg?color=%231E7EC8" width="22" height="22" style="vertical-align: sub;" /> Recursos e Funcionalidades
+## <a id="recursos-e-funcionalidades"></a><img src="https://api.iconify.design/lucide:layers.svg?color=%231E7EC8" width="22" height="22" style="vertical-align: sub;" /> Recursos e Funcionalidades
 
 - **Calendário Interativo de Ocupação**: Blocos padronizados de horários (Matutino, Vespertino e Noturno).
 - **Categorização Visual Distinta**:
@@ -138,7 +138,7 @@ Gestão ágil de aprovações e agendamentos na palma da mão:
 
 ---
 
-## <img src="https://api.iconify.design/lucide:cpu.svg?color=%231E7EC8" width="22" height="22" style="vertical-align: sub;" /> Tecnologias Usadas
+## <a id="tecnologias-usadas"></a><img src="https://api.iconify.design/lucide:cpu.svg?color=%231E7EC8" width="22" height="22" style="vertical-align: sub;" /> Tecnologias Usadas
 
 - **Frontend**: [React 19](https://react.dev/), [Vite 7](https://vitejs.dev/), [Material-UI (MUI v7)](https://mui.com/), [Dayjs](https://day.js.org/)
 - **Backend & Banco de Dados**: [Supabase](https://supabase.com/) (PostgreSQL + Auth PKCE Flow + Realtime Subscriptions + Storage)
@@ -148,7 +148,7 @@ Gestão ágil de aprovações e agendamentos na palma da mão:
 
 ---
 
-## <img src="https://api.iconify.design/lucide:terminal.svg?color=%231E7EC8" width="22" height="22" style="vertical-align: sub;" /> Executar e Configurar Localmente
+## <a id="executar-e-configurar-localmente"></a><img src="https://api.iconify.design/lucide:terminal.svg?color=%231E7EC8" width="22" height="22" style="vertical-align: sub;" /> Executar e Configurar Localmente
 
 Passos para executar o projeto em ambiente de desenvolvimento local ou homologação:
 
@@ -180,7 +180,7 @@ O projeto estará disponível no endereço `http://localhost:5173`.
 
 ---
 
-## <img src="https://api.iconify.design/lucide:shield-check.svg?color=%231E7EC8" width="22" height="22" style="vertical-align: sub;" /> Licença e Direitos Comerciais
+## <a id="licenca-e-direitos-comerciais"></a><img src="https://api.iconify.design/lucide:shield-check.svg?color=%231E7EC8" width="22" height="22" style="vertical-align: sub;" /> Licença e Direitos Comerciais
 
 > [!IMPORTANT]
 > **PRODUTO COMERCIAL PROPRIETÁRIO**  
