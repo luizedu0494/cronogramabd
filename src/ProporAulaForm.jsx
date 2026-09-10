@@ -90,9 +90,17 @@ function ProporAulaForm({ userInfo, currentUser, initialDate, onSuccess, onCance
     const [gradeAberta, setGradeAberta] = useState(false);
     const [aulasDoMesState, setAulasDoMesState] = useState([]);
     const [eventosDoMesState, setEventosDoMesState] = useState([]);
+    const [periodosBloqueados, setPeriodosBloqueados] = useState([]);
+
+    const isDayBlocked = useCallback((day) => {
+        if (!day || !dayjs(day).isValid()) return false;
+        const target = dayjs(day);
+        return periodosBloqueados.some(p => target.isBetween(p.start, p.end, 'day', '[]'));
+    }, [periodosBloqueados]);
 
     const statusLab = useCallback((labParam) => {
         if (!formData.dataInicio) return 'indefinido';
+        if (isDayBlocked(formData.dataInicio)) return 'ocupado';
         const dataStr = dayjs(formData.dataInicio).format('YYYY-MM-DD');
         const horariosForm = formData.horarioSlotString || [];
 
@@ -121,7 +129,7 @@ function ProporAulaForm({ userInfo, currentUser, initialDate, onSuccess, onCance
 
         const temConflito = horariosForm.some(h => horariosOcupadosLab.includes(h));
         return temConflito ? 'ocupado' : 'livre';
-    }, [formData.dataInicio, formData.horarioSlotString, aulasDoMesState]);
+    }, [formData.dataInicio, formData.horarioSlotString, aulasDoMesState, isDayBlocked]);
 
     const navigate = useNavigate();
     const location = useLocation();
@@ -306,6 +314,14 @@ function ProporAulaForm({ userInfo, currentUser, initialDate, onSuccess, onCance
                     .select('*')
                     .lte('data_inicio', fimDoMesIso)
                     .gte('data_fim', inicioDoMesIso);
+
+                const periodosList = (periodosRes || []).map(p => ({
+                    id: p.id,
+                    ...p,
+                    start: dayjs(p.data_inicio).startOf('day'),
+                    end: dayjs(p.data_fim).endOf('day')
+                }));
+                setPeriodosBloqueados(periodosList);
 
                 const ocupacaoPorDia = {};
                 aulasDoMes.forEach(aula => {
@@ -1141,12 +1157,14 @@ function ProporAulaForm({ userInfo, currentUser, initialDate, onSuccess, onCance
                                                 if (errors.dataInicio) setErrors(prev => ({ ...prev, dataInicio: null }));
                                             }}
                                             disabled={!secao1Completa && !isEditMode}
+                                            shouldDisableDate={isDayBlocked}
                                             slotProps={{
                                                 textField: { fullWidth: true, error: !!errors.dataInicio, helperText: errors.dataInicio },
                                                 day: {
                                                     sx: (day) => {
                                                         const dateObj = dayjs(day);
                                                         if (!dateObj.isValid()) return {};
+                                                        if (isDayBlocked(dateObj)) return { backgroundColor: 'rgba(244, 67, 54, 0.25)', color: '#d32f2f', fontWeight: 'bold', pointerEvents: 'none', borderRadius: '50%' };
                                                         const dateStr = dateObj.format('YYYY-MM-DD');
                                                         if (diasTotalmenteOcupados.includes(dateStr)) return { backgroundColor: 'rgba(244, 67, 54, 0.2)', borderRadius: '50%' };
                                                         if (diasParcialmenteOcupados.includes(dateStr)) return { border: '1px solid #1976d2', borderRadius: '50%' };

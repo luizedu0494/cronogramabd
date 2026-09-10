@@ -502,7 +502,7 @@ export default function GradeDisponibilidade({
                     {idx > 0 && <Divider sx={{ my: 1 }} />}
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
                       <Chip
-                        label={isEvento ? 'Evento' : 'Aula'}
+                        label={isEvento ? (item.tipo && item.tipo !== 'evento' ? item.tipo : 'Evento/Manutenção') : (item.isProva ? 'Prova' : item.isRevisao ? 'Revisão' : 'Aula')}
                         color={isEvento ? 'warning' : 'primary'}
                         size="small"
                         sx={{ height: 20, fontSize: '0.65rem', fontWeight: 600 }}
