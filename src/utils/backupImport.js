@@ -222,10 +222,26 @@ export async function importarSomenteNovos(relatorio, userProfile) {
       return linhaFinal;
     });
 
-    // Insere em lotes de 500 registros
-    for (let i = 0; i < linhas.length; i += 500) {
-      const lote = linhas.slice(i, i + 500);
-      const { error } = await supabase.from(tabela).insert(lote);
+    // Insere em lotes de 200 registros (para evitar limites de payload e header HTTP)
+    for (let i = 0; i < linhas.length; i += 200) {
+      const loteBruto = linhas.slice(i, i + 200);
+
+      // Coleta a união de todas as chaves presentes em pelo menos 1 registro do lote
+      const chavesDoLote = new Set();
+      loteBruto.forEach((obj) => {
+        Object.keys(obj).forEach((k) => chavesDoLote.add(k));
+      });
+
+      // Padroniza todos os objetos do lote para terem exatamente o mesmo conjunto de chaves (usando null se ausente)
+      const loteHomogeneo = loteBruto.map((obj) => {
+        const itemPadrao = {};
+        chavesDoLote.forEach((k) => {
+          itemPadrao[k] = obj[k] !== undefined ? obj[k] : null;
+        });
+        return itemPadrao;
+      });
+
+      const { error } = await supabase.from(tabela).insert(loteHomogeneo);
       if (error) {
         throw new Error(`Falha ao importar registros em ${tabela}: ${error.message}`);
       }
