@@ -113,11 +113,23 @@ export function converterFirebaseParaSupabase(tabelaTarget, item) {
         itemConvertido[campoData] = new Date(val.seconds * 1000).toISOString();
       } else if (typeof val === 'number') {
         itemConvertido[campoData] = new Date(val).toISOString();
+      } else if (typeof val === 'string' && val.trim() === '') {
+        itemConvertido[campoData] = null;
       }
     }
   }
 
-  // 4. Filtra estritamente apenas colunas existentes no schema do Supabase (descarta createdAt, updatedAt, etc)
+  // 4. Sanitiza proposição por UID e garante valores válidos para Postgres
+  // Se proposto_por_uid não for um UUID válido ou não existir em users, limpa para evitar violação de FK
+  if (itemConvertido.proposto_por_uid !== undefined) {
+    const uidStr = String(itemConvertido.proposto_por_uid || '').trim();
+    // No Supabase, se uid em users não coincidir ou for string legada do Firebase (28 chars sem formato UUID), limpa para null
+    if (!uidStr) {
+      itemConvertido.proposto_por_uid = null;
+    }
+  }
+
+  // 5. Filtra estritamente apenas colunas existentes no schema do Supabase (descarta createdAt, updatedAt, etc)
   const itemSanitizado = {};
   for (const [chave, valor] of Object.entries(itemConvertido)) {
     if (colunasPermitidas.has(chave) && valor !== undefined && valor !== null) {
@@ -243,7 +255,8 @@ export async function importarSomenteNovos(relatorio, userProfile) {
 
       const { error } = await supabase.from(tabela).insert(loteHomogeneo);
       if (error) {
-        throw new Error(`Falha ao importar registros em ${tabela}: ${error.message}`);
+        console.error(`Erro detalhado do Supabase em ${tabela}:`, error);
+        throw new Error(`Falha ao importar registros em ${tabela}: ${error.message || error.details || 'Erro de validação de dados'}`);
       }
     }
   }
