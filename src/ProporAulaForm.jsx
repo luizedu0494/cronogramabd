@@ -693,13 +693,16 @@ function ProporAulaForm({ userInfo, currentUser, initialDate, onSuccess, onCance
             const finalizadas = [];
             if (isEditMode && aulaId) {
                 const aula = aulasParaConfirmar[0];
+                const dtInicioIso = dayjs(aula.dataInicio).isValid() ? dayjs(aula.dataInicio).toISOString() : new Date(aula.dataInicio).toISOString();
+                const dtFimIso = dayjs(aula.dataFim).isValid() ? dayjs(aula.dataFim).toISOString() : new Date(aula.dataFim).toISOString();
+
                 const finalData = {
                     assunto: aula.assunto,
                     tipo_atividade: aula.tipoAtividade || 'aula',
                     laboratorio: aula.laboratorioSelecionado || aula.laboratorio,
                     horario_slot: aula.horarioSlotString,
-                    data_inicio: aula.dataInicio.toISOString(),
-                    data_fim: aula.dataFim.toISOString(),
+                    data_inicio: dtInicioIso,
+                    data_fim: dtFimIso,
                     status: aula.status,
                     proposto_por_uid: aula.propostoPorUid,
                     proposto_por_nome: aula.propostoPorNome,
@@ -734,13 +737,16 @@ function ProporAulaForm({ userInfo, currentUser, initialDate, onSuccess, onCance
                 finalizadas.push({ ...aula, id: aulaId });
             } else {
                 for (const aula of aulasParaConfirmar) {
+                    const dtInicioIso = dayjs(aula.dataInicio).isValid() ? dayjs(aula.dataInicio).toISOString() : new Date(aula.dataInicio).toISOString();
+                    const dtFimIso = dayjs(aula.dataFim).isValid() ? dayjs(aula.dataFim).toISOString() : new Date(aula.dataFim).toISOString();
+
                     const finalData = {
                         assunto: aula.assunto,
                         tipo_atividade: aula.tipoAtividade || 'aula',
                         laboratorio: aula.laboratorioSelecionado || aula.laboratorio,
                         horario_slot: aula.horarioSlotString,
-                        data_inicio: aula.dataInicio.toISOString(),
-                        data_fim: aula.dataFim.toISOString(),
+                        data_inicio: dtInicioIso,
+                        data_fim: dtFimIso,
                         status: aula.status,
                         proposto_por_uid: aula.propostoPorUid,
                         proposto_por_nome: aula.propostoPorNome,
