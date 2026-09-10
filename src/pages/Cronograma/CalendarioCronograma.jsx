@@ -384,62 +384,74 @@ const DayColumn = ({ day, viewMode, aulasFiltradas, eventosFiltrados, periodosBl
                 </Tooltip>
                 <Divider sx={{ mb: 1.5 }} />
                 
-                {isBlocked && totalItens === 0 && (
-                    <Box sx={{ p: 1, textAlign: 'center', color: 'error.main', fontSize: '0.75rem', fontWeight: 600 }}>
-                        Sem expediente / Atividade suspensa
-                    </Box>
-                )}
-
-                <Box sx={isDayMode
-                    ? { display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 2 }
-                    : { display: 'flex', flexDirection: 'column', gap: 1 }
-                }>
-                    {eventosVisiveis.map(evento => (
-                        <EventoCard 
-                            key={evento.id} evento={evento}
-                            isCoordenador={userInfo?.role === 'coordenador'}
-                            onEdit={() => { setEventoParaAcao(evento); setIsEventModalOpen(true); }}
-                            onDelete={async () => {
-                                if(window.confirm("Excluir evento?")) {
-                                    await supabase.from('eventos_manutencao').delete().eq('id', evento.id);
-                                    fetchDados();
-                                }
-                            }}
-                            isSelectionMode={isSelectionMode}
-                            isSelected={selectedEventosIds.includes(evento.id)}
-                            onToggleSelect={(id) => setSelectedEventosIds(prev => prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id])}
-                        />
-                    ))}
-                    {aulasVisiveis.map(aula => (
-                        <AulaCard 
-                            key={aula.id} aula={aula}
-                            isCoordenador={userInfo?.role === 'coordenador'}
-                            onEdit={(a) => { setAulaParaAcao(a); setIsEditModalOpen(true); }}
-                            onDelete={(a) => { setAulaParaAcao(a); setIsDeleteModalOpen(true); }}
-                            isSelectionMode={isSelectionMode} 
-                            isSelected={selectedAulasIds.includes(aula.id)}
-                            onToggleSelect={(id) => setSelectedAulasIds(prev => prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id])}
-                        />
-                    ))}
-                </Box>
-
-                {compactar && ocultos > 0 && (
-                    <Box
-                        onClick={() => setExpandidoColuna(v => !v)}
-                        sx={{
-                            mt: 1, py: 0.8, px: 1,
-                            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 0.5,
-                            cursor: 'pointer', borderRadius: 1,
-                            bgcolor: 'action.hover',
-                            '&:hover': { bgcolor: 'action.selected' },
-                            transition: 'background-color 0.15s',
-                        }}
-                    >
-                        <ExpandMoreIcon sx={{ fontSize: 14, color: 'text.secondary', transform: expandidoColuna ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }} />
-                        <Typography variant="caption" color="text.secondary">
-                            {expandidoColuna ? 'Ver menos' : `+${ocultos} mais`}
+                {isBlocked ? (
+                    <Box sx={{ p: 1.5, textAlign: 'center', bgcolor: 'rgba(244, 67, 54, 0.08)', borderRadius: 1.5, border: '1px dashed rgba(244, 67, 54, 0.4)', my: 1 }}>
+                        <Typography variant="body2" color="error.main" fontWeight="bold">
+                            🚫 Sem Expediente
                         </Typography>
+                        <Typography variant="caption" color="text.secondary" display="block" sx={{ mt: 0.5 }}>
+                            Atividades suspensas / Feriado nesta data.
+                        </Typography>
+                        {totalItens > 0 && (
+                            <Typography variant="caption" color="error.dark" sx={{ display: 'block', mt: 1, fontWeight: 700, bgcolor: 'rgba(244, 67, 54, 0.12)', p: 0.5, borderRadius: 1 }}>
+                                ⚠️ {totalItens} agendamento(s) suspenso(s)
+                            </Typography>
+                        )}
                     </Box>
+                ) : (
+                    <>
+                        <Box sx={isDayMode
+                            ? { display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 2 }
+                            : { display: 'flex', flexDirection: 'column', gap: 1 }
+                        }>
+                            {eventosVisiveis.map(evento => (
+                                <EventoCard 
+                                    key={evento.id} evento={evento}
+                                    isCoordenador={userInfo?.role === 'coordenador'}
+                                    onEdit={() => { setEventoParaAcao(evento); setIsEventModalOpen(true); }}
+                                    onDelete={async () => {
+                                        if(window.confirm("Excluir evento?")) {
+                                            await supabase.from('eventos_manutencao').delete().eq('id', evento.id);
+                                            fetchDados();
+                                        }
+                                    }}
+                                    isSelectionMode={isSelectionMode}
+                                    isSelected={selectedEventosIds.includes(evento.id)}
+                                    onToggleSelect={(id) => setSelectedEventosIds(prev => prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id])}
+                                />
+                            ))}
+                            {aulasVisiveis.map(aula => (
+                                <AulaCard 
+                                    key={aula.id} aula={aula}
+                                    isCoordenador={userInfo?.role === 'coordenador'}
+                                    onEdit={(a) => { setAulaParaAcao(a); setIsEditModalOpen(true); }}
+                                    onDelete={(a) => { setAulaParaAcao(a); setIsDeleteModalOpen(true); }}
+                                    isSelectionMode={isSelectionMode} 
+                                    isSelected={selectedAulasIds.includes(aula.id)}
+                                    onToggleSelect={(id) => setSelectedAulasIds(prev => prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id])}
+                                />
+                            ))}
+                        </Box>
+
+                        {compactar && ocultos > 0 && (
+                            <Box
+                                onClick={() => setExpandidoColuna(v => !v)}
+                                sx={{
+                                    mt: 1, py: 0.8, px: 1,
+                                    display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 0.5,
+                                    cursor: 'pointer', borderRadius: 1,
+                                    bgcolor: 'action.hover',
+                                    '&:hover': { bgcolor: 'action.selected' },
+                                    transition: 'background-color 0.15s',
+                                }}
+                            >
+                                <ExpandMoreIcon sx={{ fontSize: 14, color: 'text.secondary', transform: expandidoColuna ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }} />
+                                <Typography variant="caption" color="text.secondary">
+                                    {expandidoColuna ? 'Ver menos' : `+${ocultos} mais`}
+                                </Typography>
+                            </Box>
+                        )}
+                    </>
                 )}
                 
                 {userInfo?.role === 'coordenador' && !isBlocked && !isSelectionMode && (

@@ -135,27 +135,46 @@ export default function GradeDisponibilidade({
     };
 
     const extrairDataLocal = (val) => {
-      if (!val) return dataSelecionada;
-      return toDataLocal(typeof val?.toDate === 'function' ? val.toDate() : val);
+      if (!val) return null;
+      if (typeof val === 'string') {
+        if (val.includes('T')) return dayjs(val).format('YYYY-MM-DD');
+        return val.slice(0, 10);
+      }
+      if (val instanceof Date) return dayjs(val).format('YYYY-MM-DD');
+      if (typeof val?.toDate === 'function') return dayjs(val.toDate()).format('YYYY-MM-DD');
+      if (dayjs.isDayjs(val)) return val.format('YYYY-MM-DD');
+      return toDataLocal(val);
     };
 
     aulas
       .filter(a => a.status !== 'rejeitada')
       .filter(a => {
         if (!dataSelecionada) return true;
-        const dataAula = a.dataInicio ? extrairDataLocal(a.dataInicio) : dataSelecionada;
-        return dataAula === dataSelecionada;
+        const rawDt = a.dataInicio || a.data_inicio || a.start;
+        const dataAula = extrairDataLocal(rawDt);
+        return !dataAula || dataAula === dataSelecionada;
       })
-      .forEach(a => registrar(a.laboratorioSelecionado || a.laboratorio, toHorariosArray(a.horarioSlotString || a.horario), a, 'aula'));
+      .forEach(a => registrar(
+        a.laboratorioSelecionado || a.laboratorio, 
+        toHorariosArray(a.horario_slot || a.horarioSlotString || a.horario), 
+        a, 
+        'aula'
+      ));
 
     eventos
       .filter(e => e.status !== 'cancelado')
       .filter(e => {
         if (!dataSelecionada) return true;
-        const dataEvento = e.dataInicio ? extrairDataLocal(e.dataInicio) : dataSelecionada;
-        return dataEvento === dataSelecionada;
+        const rawDt = e.dataInicio || e.data_inicio || e.start;
+        const dataEvento = extrairDataLocal(rawDt);
+        return !dataEvento || dataEvento === dataSelecionada;
       })
-      .forEach(e => registrar(e.laboratorio, toHorariosArray(e.horarioSlotString || e.horario), e, 'evento'));
+      .forEach(e => registrar(
+        e.laboratorio, 
+        toHorariosArray(e.horario_slot || e.horarioSlotString || e.horario), 
+        e, 
+        'evento'
+      ));
 
     return mapa;
   }, [aulas, eventos, dataSelecionada]);
