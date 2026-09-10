@@ -498,18 +498,13 @@ function App() {
     };
     const handleCloseSnackbar = (event, reason) => { if (reason === 'clickaway') return; setOpenSnackbar(false); };
     const handleProfileMenuOpen = (event) => setAnchorEl(event.currentTarget);
-    const handleMenuClose = () => { setAnchorEl(null); setMobileMoreAnchorEl(null); setCoordenadorMenuAnchorEl(null); setMobileDrawerOpen(false); };
+    const handleMenuClose = () => { setAnchorEl(null); setMobileMoreAnchorEl(null); setMobileDrawerOpen(false); };
     const handleMobileMenuOpen = (event) => {
         if (isMobile) {
             setMobileDrawerOpen(true);
         } else {
             setMobileMoreAnchorEl(event.currentTarget);
         }
-    };
-    const handleCoordenadorMenuOpen = (event) => {
-        setMobileMoreAnchorEl(null);
-        setMobileDrawerOpen(false);
-        setCoordenadorMenuAnchorEl(event.currentTarget);
     };
     
     const handlePublicGuestAccess = () => {
@@ -548,24 +543,17 @@ function App() {
         <MenuItem key="cal" component={Link} to="/calendario" onClick={handleMenuClose}><ListItemIcon><Calendar size={18} /></ListItemIcon><ListItemText primary="Calendário" primaryTypographyProps={{ noWrap: true }} /></MenuItem>,
         !approvalPending ? <MenuItem key="historico" component={Link} to="/historico-aulas" onClick={handleMenuClose}><ListItemIcon><History size={18} /></ListItemIcon><ListItemText primary="Histórico" primaryTypographyProps={{ noWrap: true }} /></MenuItem> : null,
         !approvalPending ? <MenuItem key="avisos" component={Link} to="/avisos" onClick={handleMenuClose}><ListItemIcon><Bell size={18} /></ListItemIcon><ListItemText primary="Avisos" primaryTypographyProps={{ noWrap: true }} /></MenuItem> : null,
-        !approvalPending ? <MenuItem key="ia" component={Link} to="/assistente-ia" onClick={handleMenuClose}><ListItemIcon><Bot size={18} /></ListItemIcon><ListItemText primary="Assistente IA" primaryTypographyProps={{ noWrap: true }} /></MenuItem> : null,
         <Divider key="div1" sx={{ my: 0.5 }} />,
         ...(role === 'coordenador' && !approvalPending ? [
             <MenuItem key="agend" component={Link} to="/propor-aula" onClick={handleMenuClose}><ListItemIcon><PlusCircle size={18} /></ListItemIcon><ListItemText primary="Agendar Aula" primaryTypographyProps={{ noWrap: true }} /></MenuItem>,
             <MenuItem key="agend-evento" component={Link} to="/propor-evento" onClick={handleMenuClose}><ListItemIcon><PlusCircle size={18} /></ListItemIcon><ListItemText primary="Agendar Evento" primaryTypographyProps={{ noWrap: true }} /></MenuItem>,
-            <MenuItem key="gerenciar-eventos-avancado" component={Link} to="/gerenciar-eventos-avancado" onClick={handleMenuClose}><ListItemIcon><CalendarOff size={18} /></ListItemIcon><ListItemText primary="Gerenciar Eventos" primaryTypographyProps={{ noWrap: true }} /></MenuItem>,
             <MenuItem key="consulta-disponibilidade" component={Link} to="/consulta-disponibilidade" onClick={handleMenuClose}><ListItemIcon><Search size={18} /></ListItemIcon><ListItemText primary="Consulta Disponibilidade" primaryTypographyProps={{ noWrap: true }} /></MenuItem>,
-            <MenuItem key="gerenciar-menu" onClick={handleCoordenadorMenuOpen}><ListItemIcon><ListTodo size={18} /></ListItemIcon><ListItemText primary="Gerenciar" primaryTypographyProps={{ noWrap: true }} /></MenuItem>,
-            <MenuItem key="users" component={Link} to="/gerenciar-usuarios" onClick={handleMenuClose}><ListItemIcon><Users size={18} /></ListItemIcon><ListItemText primary="Usuários" primaryTypographyProps={{ noWrap: true }} /></MenuItem>,
-            <MenuItem key="importar-externo" component={Link} to="/importar-cronograma-externo" onClick={handleMenuClose}><ListItemIcon><Download size={18} /></ListItemIcon><ListItemText primary="Importar Cronograma" primaryTypographyProps={{ noWrap: true }} /></MenuItem>,
-            <MenuItem key="periodos" component={Link} to="/gerenciar-periodos" onClick={handleMenuClose}><ListItemIcon><CalendarOff size={18} /></ListItemIcon><ListItemText primary="Períodos Eventos" primaryTypographyProps={{ noWrap: true }} /></MenuItem>,
-            <MenuItem key="gerenciar-avisos" component={Link} to="/gerenciar-avisos" onClick={handleMenuClose}><ListItemIcon><Settings size={18} /></ListItemIcon><ListItemText primary="Gerenciar Avisos" primaryTypographyProps={{ noWrap: true }} /></MenuItem>,
-            <MenuItem key="backup-sistema" component={Link} to="/backup-sistema" onClick={handleMenuClose}><ListItemIcon><Database size={18} /></ListItemIcon><ListItemText primary="Backup do Sistema" primaryTypographyProps={{ noWrap: true }} /></MenuItem>,
+            <Divider key="div-gestao" sx={{ my: 0.5 }} />,
+            <MenuItem key="gerenciar-menu" onClick={(e) => { e.stopPropagation(); setGerenciarExpandedMobile(prev => !prev); }}><ListItemIcon><ListTodo size={18} /></ListItemIcon><ListItemText primary="Gerenciar & Gestão" primaryTypographyProps={{ fontWeight: 600, noWrap: true }} /></MenuItem>,
         ] : []),
         ...(role === 'tecnico' && !approvalPending ? [
             <MenuItem key="aula" component={Link} to="/propor-aula" onClick={handleMenuClose}><ListItemIcon><PlusCircle size={18} /></ListItemIcon><ListItemText primary="Propor Atividade" primaryTypographyProps={{ noWrap: true }} /></MenuItem>,
             <MenuItem key="consulta-disponibilidade-tec" component={Link} to="/consulta-disponibilidade" onClick={handleMenuClose}><ListItemIcon><Search size={18} /></ListItemIcon><ListItemText primary="Consulta Disponibilidade" primaryTypographyProps={{ noWrap: true }} /></MenuItem>,
-            <MenuItem key="design" component={Link} to="/minhas-designacoes" onClick={handleMenuClose}><ListItemIcon><UserCheck size={18} /></ListItemIcon><ListItemText primary="Designações" primaryTypographyProps={{ noWrap: true }} /></MenuItem>,
             <MenuItem key="prop" component={Link} to="/minhas-propostas" onClick={handleMenuClose}><ListItemIcon><ListTodo size={18} /></ListItemIcon><ListItemText primary="Minhas Propostas" primaryTypographyProps={{ noWrap: true }} /></MenuItem>,
             <MenuItem key="revisoes" component={Link} to="/revisoes" onClick={handleMenuClose}><ListItemIcon><FlaskConical size={18} /></ListItemIcon><ListItemText primary="Revisões" primaryTypographyProps={{ noWrap: true }} /></MenuItem>,
         ] : []),
@@ -763,7 +751,10 @@ function App() {
                                     return (
                                         <React.Fragment key="gerenciar-menu-fragment">
                                             <MenuItem
-                                                onClick={() => setGerenciarExpandedMobile(prev => !prev)}
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    setGerenciarExpandedMobile(prev => !prev);
+                                                }}
                                                 sx={{
                                                     minHeight: 48,
                                                     borderRadius: 2,
@@ -776,30 +767,54 @@ function App() {
                                             >
                                                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
                                                     <ListItemIcon><ListTodo size={20} /></ListItemIcon>
-                                                    <ListItemText primary="Gerenciar" primaryTypographyProps={{ fontWeight: 600 }} />
+                                                    <ListItemText primary="Gestão & Administração" primaryTypographyProps={{ fontWeight: 600 }} />
                                                 </Box>
                                                 {gerenciarExpandedMobile ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
                                             </MenuItem>
                                             <Collapse in={gerenciarExpandedMobile} timeout="auto" unmountOnExit sx={{ pl: 2 }}>
-                                                <MenuItem component={Link} to="/gerenciar-aprovacoes" onClick={handleMenuClose} sx={{ minHeight: 44, borderRadius: 2, my: 0.2 }}>
+                                                <MenuItem component={Link} to="/gerenciar-aprovacoes" onClick={handleMenuClose} sx={{ minHeight: 42, borderRadius: 2, my: 0.2 }}>
                                                     <ListItemIcon>
                                                         <Badge badgeContent={pendingProposalsCount} color="error">
                                                             <ThumbsUp size={18} />
                                                         </Badge>
                                                     </ListItemIcon>
-                                                    <ListItemText primary="Aprovações" primaryTypographyProps={{ fontSize: '0.9rem' }} />
+                                                    <ListItemText primary="Aprovações" primaryTypographyProps={{ fontSize: '0.875rem' }} />
                                                 </MenuItem>
-                                                <MenuItem component={Link} to="/analise-aulas" onClick={handleMenuClose} sx={{ minHeight: 44, borderRadius: 2, my: 0.2 }}>
+                                                <MenuItem component={Link} to="/analise-aulas" onClick={handleMenuClose} sx={{ minHeight: 42, borderRadius: 2, my: 0.2 }}>
                                                     <ListItemIcon><BarChart size={18} /></ListItemIcon>
-                                                    <ListItemText primary="Análise de Aulas" primaryTypographyProps={{ fontSize: '0.9rem' }} />
+                                                    <ListItemText primary="Análise de Aulas" primaryTypographyProps={{ fontSize: '0.875rem' }} />
                                                 </MenuItem>
-                                                <MenuItem component={Link} to="/analise-eventos" onClick={handleMenuClose} sx={{ minHeight: 44, borderRadius: 2, my: 0.2 }}>
+                                                <MenuItem component={Link} to="/analise-eventos" onClick={handleMenuClose} sx={{ minHeight: 42, borderRadius: 2, my: 0.2 }}>
                                                     <ListItemIcon><BarChart size={18} /></ListItemIcon>
-                                                    <ListItemText primary="Análise de Eventos" primaryTypographyProps={{ fontSize: '0.9rem' }} />
+                                                    <ListItemText primary="Análise de Eventos" primaryTypographyProps={{ fontSize: '0.875rem' }} />
                                                 </MenuItem>
-                                                <MenuItem component={Link} to="/verificar-integridade" onClick={handleMenuClose} sx={{ minHeight: 44, borderRadius: 2, my: 0.2 }}>
+                                                <MenuItem component={Link} to="/gerenciar-eventos-avancado" onClick={handleMenuClose} sx={{ minHeight: 42, borderRadius: 2, my: 0.2 }}>
+                                                    <ListItemIcon><CalendarOff size={18} /></ListItemIcon>
+                                                    <ListItemText primary="Gerenciar Eventos" primaryTypographyProps={{ fontSize: '0.875rem' }} />
+                                                </MenuItem>
+                                                <MenuItem component={Link} to="/gerenciar-avisos" onClick={handleMenuClose} sx={{ minHeight: 42, borderRadius: 2, my: 0.2 }}>
+                                                    <ListItemIcon><Settings size={18} /></ListItemIcon>
+                                                    <ListItemText primary="Gerenciar Avisos" primaryTypographyProps={{ fontSize: '0.875rem' }} />
+                                                </MenuItem>
+                                                <MenuItem component={Link} to="/verificar-integridade" onClick={handleMenuClose} sx={{ minHeight: 42, borderRadius: 2, my: 0.2 }}>
                                                     <ListItemIcon><Bug size={18} /></ListItemIcon>
-                                                    <ListItemText primary="Integridade" primaryTypographyProps={{ fontSize: '0.9rem' }} />
+                                                    <ListItemText primary="Integridade dos Dados" primaryTypographyProps={{ fontSize: '0.875rem' }} />
+                                                </MenuItem>
+                                                <MenuItem component={Link} to="/gerenciar-usuarios" onClick={handleMenuClose} sx={{ minHeight: 42, borderRadius: 2, my: 0.2 }}>
+                                                    <ListItemIcon><Users size={18} /></ListItemIcon>
+                                                    <ListItemText primary="Usuários" primaryTypographyProps={{ fontSize: '0.875rem' }} />
+                                                </MenuItem>
+                                                <MenuItem component={Link} to="/gerenciar-periodos" onClick={handleMenuClose} sx={{ minHeight: 42, borderRadius: 2, my: 0.2 }}>
+                                                    <ListItemIcon><CalendarOff size={18} /></ListItemIcon>
+                                                    <ListItemText primary="Períodos de Eventos" primaryTypographyProps={{ fontSize: '0.875rem' }} />
+                                                </MenuItem>
+                                                <MenuItem component={Link} to="/importar-cronograma-externo" onClick={handleMenuClose} sx={{ minHeight: 42, borderRadius: 2, my: 0.2 }}>
+                                                    <ListItemIcon><Download size={18} /></ListItemIcon>
+                                                    <ListItemText primary="Importar Cronograma" primaryTypographyProps={{ fontSize: '0.875rem' }} />
+                                                </MenuItem>
+                                                <MenuItem component={Link} to="/backup-sistema" onClick={handleMenuClose} sx={{ minHeight: 42, borderRadius: 2, my: 0.2 }}>
+                                                    <ListItemIcon><Database size={18} /></ListItemIcon>
+                                                    <ListItemText primary="Backup do Sistema" primaryTypographyProps={{ fontSize: '0.875rem' }} />
                                                 </MenuItem>
                                             </Collapse>
                                         </React.Fragment>
@@ -846,15 +861,94 @@ function App() {
                         </List>
                     </Drawer>
 
-                    {/* Menu Desktop Mobile Fallback (telas médias) */}
+                    {/* Menu Desktop */}
                     <Menu 
                         anchorEl={mobileMoreAnchorEl} 
                         open={Boolean(mobileMoreAnchorEl) && !isMobile} 
                         onClose={handleMenuClose}
                         anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
                         transformOrigin={{ vertical: 'top', horizontal: 'right' }}
+                        PaperProps={{
+                            sx: {
+                                width: 280,
+                                maxHeight: '85vh',
+                                overflowY: 'auto'
+                            }
+                        }}
                     >
-                        {cleanMenuItems(navMenuItems)}
+                        {navMenuItems.filter(Boolean).map((item, idx) => {
+                            if (item.type === Divider) {
+                                return <Divider key={`desk-div-${idx}`} sx={{ my: 0.5 }} />;
+                            }
+
+                            if (item.key === 'gerenciar-menu') {
+                                return (
+                                    <React.Fragment key="desk-gerenciar-fragment">
+                                        <MenuItem
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                setGerenciarExpandedMobile(prev => !prev);
+                                            }}
+                                            sx={{ display: 'flex', justifyContent: 'space-between', fontWeight: 600 }}
+                                        >
+                                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                                <ListItemIcon><ListTodo size={18} /></ListItemIcon>
+                                                <ListItemText primary="Gestão & Administração" primaryTypographyProps={{ fontWeight: 600, fontSize: '0.9rem' }} />
+                                            </Box>
+                                            {gerenciarExpandedMobile ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+                                        </MenuItem>
+                                        <Collapse in={gerenciarExpandedMobile} timeout="auto" unmountOnExit sx={{ pl: 2 }}>
+                                            <MenuItem component={Link} to="/gerenciar-aprovacoes" onClick={handleMenuClose}>
+                                                <ListItemIcon>
+                                                    <Badge badgeContent={pendingProposalsCount} color="error">
+                                                        <ThumbsUp size={16} />
+                                                    </Badge>
+                                                </ListItemIcon>
+                                                <ListItemText primary="Aprovações" primaryTypographyProps={{ fontSize: '0.85rem' }} />
+                                            </MenuItem>
+                                            <MenuItem component={Link} to="/analise-aulas" onClick={handleMenuClose}>
+                                                <ListItemIcon><BarChart size={16} /></ListItemIcon>
+                                                <ListItemText primary="Análise de Aulas" primaryTypographyProps={{ fontSize: '0.85rem' }} />
+                                            </MenuItem>
+                                            <MenuItem component={Link} to="/analise-eventos" onClick={handleMenuClose}>
+                                                <ListItemIcon><BarChart size={16} /></ListItemIcon>
+                                                <ListItemText primary="Análise de Eventos" primaryTypographyProps={{ fontSize: '0.85rem' }} />
+                                            </MenuItem>
+                                            <MenuItem component={Link} to="/gerenciar-eventos-avancado" onClick={handleMenuClose}>
+                                                <ListItemIcon><CalendarOff size={16} /></ListItemIcon>
+                                                <ListItemText primary="Gerenciar Eventos" primaryTypographyProps={{ fontSize: '0.85rem' }} />
+                                            </MenuItem>
+                                            <MenuItem component={Link} to="/gerenciar-avisos" onClick={handleMenuClose}>
+                                                <ListItemIcon><Settings size={16} /></ListItemIcon>
+                                                <ListItemText primary="Gerenciar Avisos" primaryTypographyProps={{ fontSize: '0.85rem' }} />
+                                            </MenuItem>
+                                            <MenuItem component={Link} to="/verificar-integridade" onClick={handleMenuClose}>
+                                                <ListItemIcon><Bug size={16} /></ListItemIcon>
+                                                <ListItemText primary="Integridade dos Dados" primaryTypographyProps={{ fontSize: '0.85rem' }} />
+                                            </MenuItem>
+                                            <MenuItem component={Link} to="/gerenciar-usuarios" onClick={handleMenuClose}>
+                                                <ListItemIcon><Users size={16} /></ListItemIcon>
+                                                <ListItemText primary="Usuários" primaryTypographyProps={{ fontSize: '0.85rem' }} />
+                                            </MenuItem>
+                                            <MenuItem component={Link} to="/gerenciar-periodos" onClick={handleMenuClose}>
+                                                <ListItemIcon><CalendarOff size={16} /></ListItemIcon>
+                                                <ListItemText primary="Períodos de Eventos" primaryTypographyProps={{ fontSize: '0.85rem' }} />
+                                            </MenuItem>
+                                            <MenuItem component={Link} to="/importar-cronograma-externo" onClick={handleMenuClose}>
+                                                <ListItemIcon><Download size={16} /></ListItemIcon>
+                                                <ListItemText primary="Importar Cronograma" primaryTypographyProps={{ fontSize: '0.85rem' }} />
+                                            </MenuItem>
+                                            <MenuItem component={Link} to="/backup-sistema" onClick={handleMenuClose}>
+                                                <ListItemIcon><Database size={16} /></ListItemIcon>
+                                                <ListItemText primary="Backup do Sistema" primaryTypographyProps={{ fontSize: '0.85rem' }} />
+                                            </MenuItem>
+                                        </Collapse>
+                                    </React.Fragment>
+                                );
+                            }
+
+                            return item;
+                        })}
                         {role !== 'visualizador' && [
                             <Divider key="div-prof" sx={{ my: 0.5 }} />,
                             <MenuItem key="perfil" component={Link} to="/perfil" onClick={handleMenuClose}>
@@ -887,39 +981,6 @@ function App() {
                             <ListItemText primary={role === 'visualizador' ? "Sair do Modo Visitante" : "Sair"} primaryTypographyProps={{ noWrap: true }} />
                         </MenuItem>
                     </Menu>
-
-                    {/* Menu Coordenador Gerenciar */}
-                    {role === 'coordenador' && (
-                        <Menu 
-                            anchorEl={coordenadorMenuAnchorEl} 
-                            open={Boolean(coordenadorMenuAnchorEl)} 
-                            onClose={handleMenuClose}
-                            anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
-                            transformOrigin={{ vertical: 'top', horizontal: 'right' }}
-                        >
-                            <MenuItem component={Link} to="/gerenciar-aprovacoes" onClick={handleMenuClose}>
-                                <ListItemIcon>
-                                    <Badge badgeContent={pendingProposalsCount} color="error">
-                                        <ThumbsUp size={18} />
-                                    </Badge>
-                                </ListItemIcon>
-                                <ListItemText primary="Aprovações" primaryTypographyProps={{ noWrap: true }} />
-                            </MenuItem>
-                            <MenuItem component={Link} to="/analise-aulas" onClick={handleMenuClose}>
-                                <ListItemIcon><BarChart size={18} /></ListItemIcon>
-                                <ListItemText primary="Análise de Aulas" primaryTypographyProps={{ noWrap: true }} />
-                            </MenuItem>
-                            <MenuItem component={Link} to="/analise-eventos" onClick={handleMenuClose}>
-                                <ListItemIcon><BarChart size={18} /></ListItemIcon>
-                                <ListItemText primary="Análise de Eventos" primaryTypographyProps={{ noWrap: true }} />
-                            </MenuItem>
-                            <Divider sx={{ my: 0.5 }} />
-                            <MenuItem component={Link} to="/verificar-integridade" onClick={handleMenuClose}>
-                                <ListItemIcon><Bug size={18} /></ListItemIcon>
-                                <ListItemText primary="Integridade" primaryTypographyProps={{ noWrap: true }} />
-                            </MenuItem>
-                        </Menu>
-                    )}
 
                     {user && !approvalPending && (
                         <NotificacoesMenuArea
