@@ -484,7 +484,8 @@ function CalendarioCronograma({ userInfo }) {
     const [bulkEditFields, setBulkEditFields] = useState({
         assunto: '', observacoes: '', cursos: [],
         dataInicio: null, laboratorio: '', horario: '',
-        tipoAula: '' // 'aula' | 'revisao' | 'prova' | '' (não alterar)
+        tipoAula: '', // 'aula' | 'revisao' | 'prova' | '' (não alterar)
+        tipoEvento: '' // 'Manutenção' | 'Feriado' | 'Evento' | 'Giro' | 'Outro' | '' (não alterar)
     });
     const [bulkEditLoading, setBulkEditLoading] = useState(false);
     const [bulkEditConflitos, setBulkEditConflitos] = useState([]); // lista de conflitos encontrados
@@ -755,6 +756,7 @@ function CalendarioCronograma({ userInfo }) {
                     const eventoUpdates = {};
                     if (bulkEditFields.assunto.trim())     eventoUpdates.titulo     = bulkEditFields.assunto.trim();
                     if (bulkEditFields.observacoes.trim()) eventoUpdates.descricao  = bulkEditFields.observacoes.trim();
+                    if (bulkEditFields.tipoEvento)         eventoUpdates.tipo       = bulkEditFields.tipoEvento;
                     if (mudandoLab)                        eventoUpdates.laboratorio = novoLab;
                     if (mudandoHorario)                    eventoUpdates.horario_slot = novoSlot;
                     if (mudandoAgendamento) {
@@ -773,7 +775,7 @@ function CalendarioCronograma({ userInfo }) {
             const totalAlterados = bulkEditTarget === 'aula' ? selectedAulasIds.length : selectedEventosIds.length;
             setFeedback({ open: true, message: `${totalAlterados} ${bulkEditTarget === 'aula' ? 'aula(s)' : 'evento(s)'} atualizado(s) com sucesso!`, severity: 'success' });
             setIsBulkEditModalOpen(false);
-            setBulkEditFields({ assunto: '', observacoes: '', cursos: [], dataInicio: null, laboratorio: '', horario: '', tipoAula: '' });
+            setBulkEditFields({ assunto: '', observacoes: '', cursos: [], dataInicio: null, laboratorio: '', horario: '', tipoAula: '', tipoEvento: '' });
             setBulkEditConflitos([]);
             if (bulkEditTarget === 'aula') setSelectedAulasIds([]);
             else setSelectedEventosIds([]);
@@ -911,7 +913,7 @@ function CalendarioCronograma({ userInfo }) {
                                     disabled={selectedAulasIds.length === 0} 
                                     onClick={() => { 
                                         setBulkEditTarget('aula');
-                                        setBulkEditFields({ assunto: '', observacoes: '', cursos: [], dataInicio: null, laboratorio: '', horario: '', tipoAula: '' }); 
+                                        setBulkEditFields({ assunto: '', observacoes: '', cursos: [], dataInicio: null, laboratorio: '', horario: '', tipoAula: '', tipoEvento: '' }); 
                                         setBulkEditConflitos([]); 
                                         setIsBulkEditModalOpen(true); 
                                     }}
@@ -926,7 +928,7 @@ function CalendarioCronograma({ userInfo }) {
                                     disabled={selectedEventosIds.length === 0} 
                                     onClick={() => { 
                                         setBulkEditTarget('evento');
-                                        setBulkEditFields({ assunto: '', observacoes: '', cursos: [], dataInicio: null, laboratorio: '', horario: '', tipoAula: '' }); 
+                                        setBulkEditFields({ assunto: '', observacoes: '', cursos: [], dataInicio: null, laboratorio: '', horario: '', tipoAula: '', tipoEvento: '' }); 
                                         setBulkEditConflitos([]); 
                                         setIsBulkEditModalOpen(true); 
                                     }}
@@ -1305,7 +1307,7 @@ function CalendarioCronograma({ userInfo }) {
                                     onChange={(e) => setBulkEditFields(p => ({ ...p, observacoes: e.target.value }))}
                                     placeholder="Deixe vazio para não alterar" />
                             </Grid>
-                            {bulkEditTarget === 'aula' && (
+                            {bulkEditTarget === 'aula' ? (
                                 <>
                                     <Grid item xs={12}>
                                         <FormControl fullWidth size="small">
@@ -1336,6 +1338,22 @@ function CalendarioCronograma({ userInfo }) {
                                         </FormControl>
                                     </Grid>
                                 </>
+                            ) : (
+                                <Grid item xs={12}>
+                                    <FormControl fullWidth size="small">
+                                        <InputLabel>Tipo do Evento (opcional)</InputLabel>
+                                        <Select value={bulkEditFields.tipoEvento}
+                                            onChange={(e) => setBulkEditFields(p => ({ ...p, tipoEvento: e.target.value }))}
+                                            label="Tipo do Evento (opcional)">
+                                            <MenuItem value=""><em>Não alterar</em></MenuItem>
+                                            <MenuItem value="Manutenção">🛠️ Manutenção</MenuItem>
+                                            <MenuItem value="Feriado">🎉 Feriado</MenuItem>
+                                            <MenuItem value="Evento">📅 Evento</MenuItem>
+                                            <MenuItem value="Giro">🔄 Giro</MenuItem>
+                                            <MenuItem value="Outro">📌 Outro</MenuItem>
+                                        </Select>
+                                    </FormControl>
+                                </Grid>
                             )}
 
                             {/* Campos de agendamento */}
