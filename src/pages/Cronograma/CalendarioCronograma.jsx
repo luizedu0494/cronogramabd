@@ -979,13 +979,19 @@ function CalendarioCronograma({ userInfo }) {
                                     size="small"
                                     sx={{ width: { xs: '100%', sm: 'auto' } }}
                                 >
-                                    <ToggleButton value="ocupados" color="error" sx={{ flex: 1, py: 0.75, fontWeight: 700 }}>
-                                        🔴 Ocupados
+                                    <ToggleButton value="ocupados" color="error" sx={{ flex: 1, py: 0.75, px: 1.5, fontWeight: 700, whiteSpace: 'nowrap' }}>
+                                        <Box component="span" sx={{ display: 'inline-flex', alignItems: 'center', gap: 0.75 }}>
+                                            <span>🔴</span>
+                                            <span>Ocupados</span>
+                                        </Box>
                                     </ToggleButton>
-                                    <ToggleButton value="livres" color="success" sx={{ flex: 1, py: 0.75, fontWeight: 700 }}>
-                                        🟢 Livres
+                                    <ToggleButton value="livres" color="success" sx={{ flex: 1, py: 0.75, px: 1.5, fontWeight: 700, whiteSpace: 'nowrap' }}>
+                                        <Box component="span" sx={{ display: 'inline-flex', alignItems: 'center', gap: 0.75 }}>
+                                            <span>🟢</span>
+                                            <span>Livres</span>
+                                        </Box>
                                     </ToggleButton>
-                                    <ToggleButton value="todos" sx={{ flex: 1, py: 0.75, fontWeight: 700 }}>
+                                    <ToggleButton value="todos" sx={{ flex: 1, py: 0.75, px: 1.5, fontWeight: 700, whiteSpace: 'nowrap' }}>
                                         Todos
                                     </ToggleButton>
                                 </ToggleButtonGroup>
