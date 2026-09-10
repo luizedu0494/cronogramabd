@@ -427,7 +427,7 @@ export class ExecutorAcoes {
     aulas.forEach(a => {
       const lab = a.laboratorioSelecionado || 'N/A';
       const slots = Array.isArray(a.horarioSlotString) ? a.horarioSlotString : [a.horarioSlotString];
-      slots.forEach(s => ocupacaoMap.add(`${lab.toLowerCase()}___${s}`));
+      slots.forEach((s: string) => ocupacaoMap.add(`${lab.toLowerCase()}___${s}`));
     });
 
     const disponiveis: any[] = [];
@@ -563,8 +563,6 @@ export class ExecutorAcoes {
       throw new Error('Dados incompletos. Preciso de Data e Assunto.');
     }
 
-    const batch = writeBatch(db);
-
     let labs =
       dados.laboratorios && dados.laboratorios.length ? dados.laboratorios : ['multidisciplinar_1'];
     let horarios = dados.horarios && dados.horarios.length ? dados.horarios : ['07:00-09:10'];
@@ -583,37 +581,37 @@ export class ExecutorAcoes {
       return match ? match.name : l;
     });
 
-    const dataISO = dayjs(dados.data, 'DD/MM/YYYY').format('YYYY-MM-DD');
     let count = 0;
 
     const isProva = dados.isProva === true;
     const isRevisao = !isProva && dados.isRevisao === true;
     const tipoRevisao = isRevisao ? dados.tipoRevisao || 'revisao_conteudo' : null;
 
+    const novasAulas: any[] = [];
     for (const lab of labs) {
       for (const h of horarios) {
-        const ref = doc(collection(db, 'aulas'));
-        batch.set(ref, {
+        novasAulas.push({
           assunto: dados.assunto,
-          laboratorioSelecionado: lab,
-          horarioSlotString: h,
-          dataInicio: Timestamp.fromDate(dayjs(dados.data, 'DD/MM/YYYY').toDate()),
+          laboratorio: lab,
+          horario_slot: h,
+          data_inicio: dayjs(dados.data, 'DD/MM/YYYY').toISOString(),
           cursos: dados.cursos || [],
           status: 'aprovada',
-          createdAt: serverTimestamp(),
           observacoes: dados.observacoes || 'Agendado via Assistente IA',
-          propostoPorUid: this.currentUser?.uid || 'sys',
-          propostoPorNome: this.currentUser?.displayName || 'IA',
-          isProva,
-          isRevisao,
-          tipoRevisao,
+          proposto_por_uid: this.currentUser?.uid || 'sys',
+          proposto_por_nome: this.currentUser?.displayName || 'IA',
+          is_prova: isProva,
+          is_revisao: isRevisao,
+          tipo_revisao: tipoRevisao,
         });
         count++;
       }
     }
-    await batch.commit();
 
-    this.notificar(dados, horarios, labs, 'adicionar', dataISO);
+    const { error } = await supabase.from('aulas').insert(novasAulas);
+    if (error) throw error;
+
+    await this.notificar();
 
     const tipoLabel = isProva ? 'prova(s)' : isRevisao ? 'revisão(ões)' : 'aula(s)';
 
@@ -629,30 +627,22 @@ export class ExecutorAcoes {
     if (aulas.length === 0) throw new Error('Nenhuma aula encontrada para editar.');
     const aula = aulas[0];
 
-    const updateData: any = { updatedAt: serverTimestamp() };
+    const updateData: any = { updated_at: new Date().toISOString() };
     if (dadosNovos.assunto) updateData.assunto = dadosNovos.assunto;
     if (dadosNovos.data)
-      updateData.dataInicio = Timestamp.fromDate(dayjs(dadosNovos.data, 'DD/MM/YYYY').toDate());
-    if (dadosNovos.horarios?.length) updateData.horarioSlotString = dadosNovos.horarios[0];
+      updateData.data_inicio = dayjs(dadosNovos.data, 'DD/MM/YYYY').toISOString();
+    if (dadosNovos.horarios?.length) updateData.horario_slot = dadosNovos.horarios[0];
     if (dadosNovos.laboratorios?.length)
-      updateData.laboratorioSelecionado = dadosNovos.laboratorios[0];
+      updateData.laboratorio = dadosNovos.laboratorios[0];
     if (dadosNovos.cursos) updateData.cursos = dadosNovos.cursos;
-    if (dadosNovos.isProva !== undefined) updateData.isProva = dadosNovos.isProva;
-    if (dadosNovos.isRevisao !== undefined) updateData.isRevisao = dadosNovos.isRevisao;
-    if (dadosNovos.tipoRevisao !== undefined) updateData.tipoRevisao = dadosNovos.tipoRevisao;
+    if (dadosNovos.isProva !== undefined) updateData.is_prova = dadosNovos.isProva;
+    if (dadosNovos.isRevisao !== undefined) updateData.is_revisao = dadosNovos.isRevisao;
+    if (dadosNovos.tipoRevisao !== undefined) updateData.tipo_revisao = dadosNovos.tipoRevisao;
 
-    await updateDoc(doc(db, 'aulas', aula.id), updateData);
+    const { error } = await supabase.from('aulas').update(updateData).eq('id', aula.id);
+    if (error) throw error;
 
-    const dataISO = dayjs(
-      updateData.dataInicio ? updateData.dataInicio.toDate() : aula.dataInicio.toDate()
-    ).format('YYYY-MM-DD');
-    this.notificar(
-      { ...aula, ...updateData },
-      [updateData.horarioSlotString || aula.horarioSlotString],
-      [updateData.laboratorioSelecionado || aula.laboratorioSelecionado],
-      'editar',
-      dataISO
-    );
+    await this.notificar();
 
     return { tipo: 'aviso_acao', titulo: 'Sucesso', mensagem: 'Atividade editada com sucesso.' };
   }
@@ -661,23 +651,15 @@ export class ExecutorAcoes {
     const aulas = await this.buscarAulas(criterios);
     if (aulas.length === 0) throw new Error('Nenhuma atividade encontrada para excluir.');
 
-    const batch = writeBatch(db);
-    aulas.forEach(a => batch.delete(doc(db, 'aulas', a.id)));
-    await batch.commit();
+    const ids = aulas.map(a => a.id);
+    const { error } = await supabase.from('aulas').delete().in('id', ids);
+    if (error) throw error;
 
     for (const a of aulas) {
       await registrarLogExclusao(a, this.currentUser);
     }
 
-    if (aulas.length === 1) {
-      this.notificar(
-        aulas[0],
-        [aulas[0].horarioSlotString],
-        [aulas[0].laboratorioSelecionado],
-        'excluir',
-        null
-      );
-    }
+    await this.notificar();
 
     return {
       tipo: 'aviso_acao',
@@ -686,7 +668,7 @@ export class ExecutorAcoes {
     };
   }
 
-  async notificar() {
+  async notificar(_dados?: any, _horarios?: any, _labs?: any, _tipo?: any, _dataISO?: any) {
     // No-op - Telegram desativado
   }
 }
