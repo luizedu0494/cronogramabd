@@ -37,15 +37,18 @@ const MinhasPropostas = ({ userInfo }) => {
                     return;
                 }
 
-                // Busca propostas filtrando por UID ou por E-mail do proponente
+                const nome = userInfo?.name || localSession?.name;
+
+                // Busca propostas filtrando por UID, E-mail ou Nome do proponente
                 let query = supabase.from('aulas').select('*');
                 
-                if (uid && email) {
-                    query = query.or(`proposto_por_uid.eq.${uid},proposto_por_uid.eq.${email}`);
-                } else if (uid) {
-                    query = query.eq('proposto_por_uid', uid);
-                } else {
-                    query = query.eq('proposto_por_uid', email);
+                const orConditions = [];
+                if (uid) orConditions.push(`proposto_por_uid.eq.${uid}`);
+                if (email) orConditions.push(`proposto_por_uid.eq.${email}`);
+                if (nome) orConditions.push(`proposto_por_nome.ilike.%${nome}%`);
+
+                if (orConditions.length > 0) {
+                    query = query.or(orConditions.join(','));
                 }
 
                 const { data, error } = await query.order('created_at', { ascending: false });

@@ -221,10 +221,12 @@ const PaginaInicial = ({ userInfo }) => {
             }
 
             if (userInfo?.role === 'tecnico') {
-                const { count: countMinhas } = await supabase
-                    .from('aulas')
-                    .select('*', { count: 'exact', head: true })
-                    .eq('proposto_por_uid', userInfo.uid);
+                const targetUid = userInfo?.uid || userInfo?.email;
+                let query = supabase.from('aulas').select('*', { count: 'exact', head: true });
+                if (targetUid) {
+                    query = query.or(`proposto_por_uid.eq.${targetUid},proposto_por_uid.eq.${userInfo?.email}`);
+                }
+                const { count: countMinhas } = await query;
                 setMinhasPropostasCount(countMinhas || 0);
             }
         } catch (err) {
