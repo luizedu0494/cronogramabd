@@ -149,22 +149,8 @@ const PaginaInicial = ({ userInfo }) => {
             setAulasOficiaisHoje(aulasHojeDocs.filter(a => !a.isRevisao));
             setRevisoesOficiaisHoje(aulasHojeDocs.filter(a => a.isRevisao === true));
 
-            // Agenda do Técnico (Revisões do técnico para hoje)
-            if (userInfo?.uid) {
-                const todayDateOnly = dayjs().format('YYYY-MM-DD');
-                const { data: resRevTec } = await supabase
-                    .from('revisoes_tecnico')
-                    .select('*')
-                    .eq('usuario_id', userInfo.uid)
-                    .gte('data', todayDateOnly)
-                    .lte('data', todayDateOnly);
-
-                setRevisoesTecnicoHoje((resRevTec || []).map(r => ({
-                    ...r,
-                    horarioSlot: r.horario_slot,
-                    usuarioId: r.usuario_id
-                })));
-            }
+            // Períodos e eventos de hoje
+            setRevisoesTecnicoHoje([]);
 
             // Eventos de manutenção e Períodos inativos/Feriados de hoje
             const { data: resEvHoje } = await supabase
