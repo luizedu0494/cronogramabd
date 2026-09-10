@@ -129,13 +129,13 @@ function ConfiguracoesPerfil() {
                 setSnackbarMessage('Notificações Web Push desativadas neste dispositivo.');
                 setSnackbarSeverity('info');
             } else {
-                const sucesso = await registrarWebPush(userProfile.uid);
-                if (sucesso) {
+                const resultado = await registrarWebPush(userProfile.uid);
+                if (resultado.sucesso) {
                     setPushAtivo(true);
                     setSnackbarMessage('Notificações Web Push (VAPID) ativadas com sucesso!');
                     setSnackbarSeverity('success');
                 } else {
-                    setSnackbarMessage('Não foi possível ativar. Configure VITE_VAPID_PUBLIC_KEY no arquivo .env.');
+                    setSnackbarMessage(resultado.mensagem || 'Não foi possível ativar as notificações.');
                     setSnackbarSeverity('warning');
                 }
             }

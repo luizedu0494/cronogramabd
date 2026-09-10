@@ -11,23 +11,23 @@ function urlBase64ToUint8Array(base64String: string) {
   return outputArray;
 }
 
-export async function registrarWebPush(userUid: string): Promise<boolean> {
+export async function registrarWebPush(userUid: string): Promise<{ sucesso: boolean; mensagem?: string }> {
   if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
     console.warn('Web Push não é suportado neste navegador.');
-    return false;
+    return { sucesso: false, mensagem: 'Web Push não é suportado neste navegador/dispositivo.' };
   }
 
   const DEFAULT_VAPID_PUBLIC_KEY = 'BLjEhLkPJrJlWbtKRvyGR2fZhFQvm9SEj-zm0aulM55fDJVkjJsZMGwe95sAVs6IGyFyFA_t0fFfhfQNijH66I4';
   const vapidPublicKey = import.meta.env.VITE_VAPID_PUBLIC_KEY || import.meta.env.VITE_FIREBASE_VAPID_KEY || DEFAULT_VAPID_PUBLIC_KEY;
   if (!vapidPublicKey) {
-    return false;
+    return { sucesso: false, mensagem: 'Chave VAPID pública não encontrada no ambiente.' };
   }
 
   try {
     const permission = await Notification.requestPermission();
     if (permission !== 'granted') {
       console.warn('Permissão de notificação negada no navegador.');
-      return false;
+      return { sucesso: false, mensagem: 'Permissão de notificação negada pelo navegador. Ative as notificações nas configurações do site.' };
     }
 
     const registration = await navigator.serviceWorker.ready;
@@ -42,7 +42,7 @@ export async function registrarWebPush(userUid: string): Promise<boolean> {
     }
 
     const subJson = subscription.toJSON();
-    if (!subJson.endpoint || !subJson.keys) return false;
+    if (!subJson.endpoint || !subJson.keys) return { sucesso: false, mensagem: 'Inscrição gerada sem chaves válidas.' };
 
     // Salvar inscrição de Web Push no Supabase
     await supabase.from('push_subscriptions').upsert(
@@ -58,12 +58,10 @@ export async function registrarWebPush(userUid: string): Promise<boolean> {
       { onConflict: 'endpoint' }
     );
 
-    return true;
+    return { sucesso: true };
   } catch (err: any) {
-    if (err?.name !== 'AbortError' && err?.name !== 'NotAllowedError') {
-      console.error('Erro ao registrar Web Push:', err);
-    }
-    return false;
+    console.error('Erro ao registrar Web Push:', err);
+    return { sucesso: false, mensagem: err?.message || 'Erro inesperado ao registrar Notificações Push.' };
   }
 }
 
