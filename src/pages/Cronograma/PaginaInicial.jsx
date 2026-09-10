@@ -473,14 +473,18 @@ const PaginaInicial = ({ userInfo }) => {
     const MiniStatCard = ({ icon, value, label, onClick, color }) => (
         <Paper 
             elevation={2} 
+            role="region"
+            aria-label={`${value} ${label}`}
             onClick={onClick}
             sx={{ 
                 p: 2.5, 
                 display: 'flex', 
                 alignItems: 'center', 
+                width: '100%',
+                height: '100%',
                 cursor: onClick ? 'pointer' : 'default', 
                 transition: 'all 0.25s cubic-bezier(0.4, 0, 0.2, 1)',
-                borderRadius: 3,
+                borderRadius: 4,
                 border: '1px solid',
                 borderColor: mode === 'dark' ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)',
                 bgcolor: mode === 'dark' ? 'rgba(30, 41, 59, 0.7)' : '#ffffff',
@@ -496,22 +500,23 @@ const PaginaInicial = ({ userInfo }) => {
                 sx={{ 
                     mr: 2, 
                     p: 1.5, 
-                    borderRadius: 2.5, 
+                    borderRadius: 3, 
                     bgcolor: `${color}15`, 
                     color: color, 
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    border: `1px solid ${color}30`
+                    border: `1px solid ${color}30`,
+                    flexShrink: 0
                 }}
             >
                 {icon}
             </Box>
-            <Box>
+            <Box sx={{ minWidth: 0 }}>
                 <Typography variant="h4" fontWeight="800" lineHeight={1} color="text.primary" sx={{ letterSpacing: '-0.5px' }}>
                     {value}
                 </Typography>
-                <Typography variant="caption" color="text.secondary" fontWeight="700" sx={{ textTransform: 'uppercase', letterSpacing: '0.5px', mt: 0.5, display: 'block' }}>
+                <Typography variant="body2" color="text.secondary" fontWeight="700" sx={{ textTransform: 'none', letterSpacing: '0px', mt: 0.5, display: 'block' }}>
                     {label}
                 </Typography>
             </Box>
@@ -537,59 +542,59 @@ const PaginaInicial = ({ userInfo }) => {
             </Box>
 
             {/* 2. KPIs */}
-            <Grid container spacing={2} sx={{ mb: 3 }}>
+            <Grid container spacing={2} sx={{ mb: 3, justifyContent: 'center' }}>
                 {userInfo?.role === 'coordenador' ? (
                     <>
-                        <Grid item xs={6} sm={3}>
+                        <Grid item xs={12} sm={6} md={3}>
                             <MiniStatCard icon={<Clock size={22} />} value={aulasHoje} label="🎓 Aulas Hoje" color={theme.palette.info.main}
                                 onClick={() => navigate('/calendario', { state: { initialDate: dayjs().toISOString() } })} />
                         </Grid>
-                        <Grid item xs={6} sm={3}>
+                        <Grid item xs={12} sm={6} md={3}>
                             <MiniStatCard icon={<BookOpen size={22} />} value={revisoesHoje} label="📖 Revisões Hoje" color={theme.palette.secondary.main}
                                 onClick={() => navigate('/calendario', { state: { initialDate: dayjs().toISOString() } })} />
                         </Grid>
-                        <Grid item xs={6} sm={3}>
+                        <Grid item xs={12} sm={6} md={3}>
                             <MiniStatCard icon={<CalendarCheck size={22} />} value={totalAulasNoCronograma} label={`🎓 Aulas ${currentYear}`} color={theme.palette.success.main}
                                 onClick={() => navigate('/analise-aulas')} />
                         </Grid>
-                        <Grid item xs={6} sm={3}>
+                        <Grid item xs={12} sm={6} md={3}>
                             <MiniStatCard icon={<CalendarCheck size={22} />} value={totalRevisoesNoCronograma} label={`📖 Revisões ${currentYear}`} color={theme.palette.warning.main}
                                 onClick={() => navigate('/analise-aulas')} />
                         </Grid>
-                        <Grid item xs={6} sm={3}>
+                        <Grid item xs={12} sm={6} md={3}>
                             <MiniStatCard icon={<ClipboardList size={22} />} value={totalProvasNoAno} label={`📝 Provas ${currentYear}`} color="#f44336"
                                 onClick={() => navigate('/analise-aulas')} />
                         </Grid>
-                        <Grid item xs={6} sm={3}>
+                        <Grid item xs={12} sm={6} md={3}>
                             <MiniStatCard icon={<FileText size={22} />} value={propostasPendentes} label="Pendentes" color={theme.palette.error.main}
                                 onClick={() => navigate('/gerenciar-aprovacoes')} />
                         </Grid>
-                        <Grid item xs={6} sm={3}>
+                        <Grid item xs={12} sm={6} md={3}>
                             <MiniStatCard icon={<CalendarOff size={22} />} value={totalEventosNoCronograma} label={`Eventos ${currentYear}`} color={theme.palette.primary.main}
                                 onClick={() => navigate('/analise-eventos')} />
                         </Grid>
                     </>
                 ) : userInfo?.role === 'tecnico' ? (
                     <>
-                        <Grid item xs={6} sm={3}>
+                        <Grid item xs={12} sm={6} md={3}>
                             <MiniStatCard icon={<Clock size={22} />} value={aulasOficiaisHoje.length} label="🎓 Aulas Hoje" color={theme.palette.info.main}
                                 onClick={() => navigate('/calendario', { state: { initialDate: dayjs().toISOString() } })} />
                         </Grid>
-                        <Grid item xs={6} sm={3}>
+                        <Grid item xs={12} sm={6} md={3}>
                             <MiniStatCard icon={<BookOpen size={22} />} value={revisoesOficiaisHoje.length} label="📋 Revisões Cronograma" color={theme.palette.warning.main}
                                 onClick={() => navigate('/calendario', { state: { initialDate: dayjs().toISOString() } })} />
                         </Grid>
-                        <Grid item xs={6} sm={3}>
+                        <Grid item xs={12} sm={6} md={3}>
                             <MiniStatCard icon={<CalendarCheck size={22} />} value={revisoesTecnicoHoje.length} label="📖 Agenda Técnico Hoje" color={theme.palette.secondary.main}
                                 onClick={() => navigate('/revisoes')} />
                         </Grid>
-                        <Grid item xs={6} sm={3}>
+                        <Grid item xs={12} sm={6} md={3}>
                             <MiniStatCard icon={<UserCheck size={22} />} value={minhasPropostasCount} label="Minhas Propostas" color={theme.palette.primary.main}
                                 onClick={() => navigate('/minhas-propostas')} />
                         </Grid>
                     </>
                 ) : (
-                    <Grid item xs={6} sm={3}>
+                    <Grid item xs={12} sm={6} md={3}>
                         <MiniStatCard icon={<Clock size={22} />} value={aulasHoje} label="Aulas Hoje" color={theme.palette.info.main} />
                     </Grid>
                 )}

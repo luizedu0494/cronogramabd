@@ -604,9 +604,9 @@ function App() {
                                 boxShadow: darkMode ? '0 4px 20px rgba(0,0,0,0.4)' : '0 2px 10px rgba(0,0,0,0.06)'
                             }}
                         >
-                            <Toolbar>
-                                <Box component={Link} to={role === 'visualizador' ? "/calendario" : "/"} sx={{ display: 'flex', alignItems: 'center', textDecoration: 'none', color: 'inherit', flexGrow: 1, gap: 1 }}>
-                                    <img src={cesmacLogo} alt="Logo CESMAC" style={{ height: '35px', marginRight: '4px' }} />
+                            <Toolbar sx={{ justifyContent: { xs: 'space-between', sm: 'flex-start' } }}>
+                                <Box component={Link} to={role === 'visualizador' ? "/calendario" : "/"} sx={{ display: 'flex', alignItems: 'center', textDecoration: 'none', color: 'inherit', flexGrow: { xs: 0, sm: 1 }, gap: 1 }}>
+                                    <img src={cesmacLogo} alt="Logo CESMAC Centro Universitário" style={{ height: '36px', width: 'auto', objectFit: 'contain', marginRight: '4px' }} />
                                     {!isMobile && (
                                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                                             <Typography variant="h6" fontWeight={700} noWrap>Cronograma Lab</Typography>
@@ -630,7 +630,7 @@ function App() {
                                     <IconButton 
                                         onClick={handleThemeChange} 
                                         color="inherit" 
-                                        aria-label="Alternar tema"
+                                        aria-label={darkMode ? "Alternar para modo claro" : "Alternar para modo escuro"}
                                         sx={{ 
                                             minWidth: 44, 
                                             minHeight: 44, 
@@ -653,6 +653,7 @@ function App() {
                                             size="small"
                                             onClick={handleLogout}
                                             startIcon={<LogOut size={16} />}
+                                            aria-label="Sair da sessão"
                                             sx={{
                                                 textTransform: 'none',
                                                 fontWeight: 600,
@@ -671,7 +672,7 @@ function App() {
                                         <IconButton 
                                             onClick={handleProfileMenuOpen} 
                                             color="inherit" 
-                                            aria-label="Menu de perfil"
+                                            aria-label="Menu de perfil do usuário"
                                             sx={{ 
                                                 minWidth: 44, 
                                                 minHeight: 44, 
@@ -681,7 +682,7 @@ function App() {
                                             }}
                                         >
                                             {(userProfileData?.photo_url || userProfileData?.photoURL) ? (
-                                                <Avatar src={userProfileData.photo_url || userProfileData.photoURL} sx={{ width: 30, height: 30 }} />
+                                                <Avatar src={userProfileData.photo_url || userProfileData.photoURL} alt={userProfileData.name || "Foto de perfil"} sx={{ width: 30, height: 30 }} />
                                             ) : (
                                                 <AccountCircle sx={{ fontSize: 30 }} />
                                             )}
@@ -691,7 +692,8 @@ function App() {
                                         edge="end" 
                                         onClick={handleMobileMenuOpen} 
                                         color="inherit" 
-                                        aria-label="Menu principal"
+                                        aria-label="Abrir menu de navegação"
+                                        aria-expanded={mobileDrawerOpen}
                                         sx={{ 
                                             minWidth: 44, 
                                             minHeight: 44, 

@@ -8,9 +8,9 @@ export const colors = {
   surfaceLight: '#FFFFFF',
   surfaceDark: '#1E293B',
   textPrimaryLight: '#0F172A',
-  textSecondaryLight: '#64748B',
+  textSecondaryLight: '#616161', // Ajustado para WCAG AA (>= 4.5:1)
   textPrimaryDark: '#F8FAFC',
-  textSecondaryDark: '#94A3B8',
+  textSecondaryDark: '#A0AEC0', // Ajustado para contraste em modo escuro
   statusPendente: '#EAB308',
   statusAprovada: '#22C55E',
   statusRejeitada: '#EF4444',
@@ -36,10 +36,17 @@ export const typography = {
   fontSizeTitle: 30,
 };
 
+export const minWidths = {
+  select: 180,
+  chip: 'fit-content',
+};
+
 export const themeTokens = {
   colors,
   spacing,
   typography,
+  minWidths,
 };
 
 export default themeTokens;
+

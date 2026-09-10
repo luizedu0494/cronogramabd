@@ -1014,9 +1014,10 @@ function CalendarioCronograma({ userInfo }) {
                                                             <Chip 
                                                                 key={v} 
                                                                 label={v} 
+                                                                title={v}
                                                                 size="small" 
                                                                 color="primary"
-                                                                sx={{ height: 24, fontWeight: 600 }} 
+                                                                sx={{ height: 24, fontWeight: 600, maxWidth: '100%' }} 
                                                             />
                                                         ))}
                                                     </Box>
@@ -1049,15 +1050,19 @@ function CalendarioCronograma({ userInfo }) {
                                                     if (!selected || selected.length === 0) return <em>Todos os Cursos</em>;
                                                     return (
                                                         <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
-                                                            {selected.map(v => (
-                                                                <Chip 
-                                                                    key={v} 
-                                                                    label={LISTA_CURSOS.find(lc => lc.value === v)?.label || v} 
-                                                                    size="small" 
-                                                                    color="secondary"
-                                                                    sx={{ height: 24, fontWeight: 600 }} 
-                                                                />
-                                                            ))}
+                                                            {selected.map(v => {
+                                                                const cursoLabel = LISTA_CURSOS.find(lc => lc.value === v)?.label || v;
+                                                                return (
+                                                                    <Chip 
+                                                                        key={v} 
+                                                                        label={cursoLabel} 
+                                                                        title={cursoLabel}
+                                                                        size="small" 
+                                                                        color="secondary"
+                                                                        sx={{ height: 24, fontWeight: 600, maxWidth: '100%' }} 
+                                                                    />
+                                                                );
+                                                            })}
                                                         </Box>
                                                     );
                                                 }}

@@ -35,7 +35,7 @@ const lightPalette = {
     success:    { main: '#2E7D32', light: '#60AD5E', dark: '#005005', contrastText: '#ffffff' },
     error:      { main: '#C62828', light: '#EF5350', dark: '#8E0000', contrastText: '#ffffff' },
     background: { default: '#F2F4F8', paper: '#FFFFFF' },
-    text:       { primary: '#0D1B2A', secondary: '#4A5568', disabled: '#94A3B8' },
+    text:       { primary: '#0D1B2A', secondary: '#616161', disabled: '#94A3B8' },
     divider:    'rgba(0, 0, 0, 0.08)',
     curso: {
         biomedicina: '#4CAF50', farmacia: '#F44336', enfermagem: '#2196F3',
@@ -60,7 +60,7 @@ const darkPalette = {
     success:    { main: '#66BB6A', light: '#98EE99', dark: '#338A3E', contrastText: '#0B0F18' },
     error:      { main: '#EF5350', light: '#FF8A80', dark: '#C62828', contrastText: '#ffffff' },
     background: { default: '#0B0F18', paper: '#131826' },
-    text:       { primary: '#E8EDF5', secondary: '#8898B8', disabled: '#485880' },
+    text:       { primary: '#E8EDF5', secondary: '#A0AEC0', disabled: '#485880' },
     divider:    'rgba(255, 255, 255, 0.08)',
     curso: {
         biomedicina: '#4CAF50', farmacia: '#F44336', enfermagem: '#2196F3',
