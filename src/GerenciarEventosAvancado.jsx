@@ -276,7 +276,7 @@ export default function GerenciarEventosAvancado({ userInfo }) {
             descricao: formData.descricao.trim(),
             tipo: formData.tipo,
             status: formData.status || 'aprovado',
-            laboratorio: lab === 'Todos' ? null : lab,
+            laboratorio: lab || 'Todos',
             horario_slot: slot,
             data_inicio: finalStart.toISOString(),
             data_fim: finalEnd.toISOString(),
@@ -302,7 +302,7 @@ export default function GerenciarEventosAvancado({ userInfo }) {
       }
 
       for (const evLog of novosEventosLog) {
-        await registrarLogEvento('criacao', evLog, userInfo);
+        await registrarLogEvento('criou o evento', evLog.titulo || 'Evento', userInfo || {}, evLog);
       }
 
       setFeedback({ open: true, message: `${novosEventosLog.length} evento(s) criado(s) com sucesso!`, severity: 'success' });
