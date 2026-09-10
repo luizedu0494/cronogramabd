@@ -7,7 +7,7 @@
 <p align="center">
   <a href="#-o-que-%C3%A9-o-cronolab-para-leigos">O que é?</a> •
   <a href="#-como-funciona-para-cada-pessoa">Como Funciona</a> •
-  <a href="#-demonstra%C3%A7%C3%A3o-visual">Demonstração Visual</a> •
+  <a href="#-demonstra%C3%A7%C3%A3o-em-v%C3%ADdeos--gifs">GIFs & Demonstrações</a> •
   <a href="#-principais-recursos">Recursos</a> •
   <a href="#-tecnologias-usadas">Tecnologias</a> •
   <a href="#-como-rodar-o-projeto">Como Rodar</a>
@@ -49,17 +49,35 @@ O **CronoLab** resolve tudo isso! Funciona como uma **agenda digital inteligente
 
 ---
 
-## 📸 Demonstração Visual
+## 🎬 Demonstração em Vídeos / GIFs
 
-### 1. Painel de Notificações e Configuração de Perfil
-Notificações nativas em tempo real no navegador (imunes a bloqueadores de anúncios) e controle personalizado de horário silencioso:
+### 1. Visão do Aluno / Visitante (Desktop & Celular)
+Navegação direta sem necessidade de login, consulta por dia/semana e busca rápida de salas:
 
-![Notificações Nativas do Navegador](./docs/assets/notificacoes_demo.png)
+| Desktop | Celular |
+| :---: | :---: |
+| ![Modo Visitante Desktop](./src/assets/gifs/visitante.gif) | ![Modo Visitante Celular](./src/assets/gifs/visitante-cel.gif) |
 
-### 2. Agenda de Atividades e Grade Visual
-Visualização limpa por dia, semana ou mês, diferenciando Aulas, Revisões e Provas por cores institucionais:
+---
 
-![Agenda e Calendário de Aulas](./docs/assets/agenda_demo.png)
+### 2. Proposta de Aulas e Agendamentos
+Envio simples de solicitações com validação automática de disponibilidade e colisão de turmas:
+
+![Agendamento de Aulas](./src/assets/gifs/agendamento%20de%20aula.gif)
+
+---
+
+### 3. Painel do Coordenador & Gerenciador de Propostas
+Visualização unificada de solicitações pendentes com aprovação instantânea:
+
+![Dashboard do Coordenador](./src/assets/gifs/dashboard%20coordenador.gif)
+
+---
+
+### 4. Notificações Nativas e Configuração de Perfil
+Configuração de alertas nativos do navegador e definição de horários silenciosos:
+
+![Notificações e Perfil](./docs/assets/notificacoes_demo.png)
 
 ---
 
