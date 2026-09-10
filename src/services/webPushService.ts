@@ -30,7 +30,12 @@ export async function registrarWebPush(userUid: string): Promise<{ sucesso: bool
       return { sucesso: false, mensagem: 'Permissão de notificação negada pelo navegador. Ative as notificações nas configurações do site.' };
     }
 
-    const registration = await navigator.serviceWorker.ready;
+    let registration = await navigator.serviceWorker.getRegistration('/sw.js');
+    if (!registration) {
+      registration = await navigator.serviceWorker.register('/sw.js', { scope: '/' });
+    }
+    await navigator.serviceWorker.ready;
+
     let subscription = await registration.pushManager.getSubscription();
 
     if (!subscription) {
@@ -61,6 +66,12 @@ export async function registrarWebPush(userUid: string): Promise<{ sucesso: bool
     return { sucesso: true };
   } catch (err: any) {
     console.error('Erro ao registrar Web Push:', err);
+    if (err?.name === 'AbortError' || err?.message?.includes('push service error')) {
+      return { 
+        sucesso: false, 
+        mensagem: 'O serviço de Push do navegador falhou temporariamente (Push Service Error). Tente reiniciar a aba do navegador ou verificar se não está em janela anônima.' 
+      };
+    }
     return { sucesso: false, mensagem: err?.message || 'Erro inesperado ao registrar Notificações Push.' };
   }
 }
