@@ -737,6 +737,26 @@ function CalendarioCronograma({ userInfo }) {
                 return;
             }
 
+            if (mudandoData && bulkEditFields.dataInicio) {
+                const dataNovaObj = dayjs(bulkEditFields.dataInicio).startOf('day');
+                const periodoConflito = periodosBloqueio.find(p => {
+                    const pStart = dayjs(p.start).startOf('day');
+                    const pEnd = dayjs(p.end).endOf('day');
+                    return dataNovaObj.isBetween(pStart, pEnd, 'day', '[]');
+                });
+                if (periodoConflito) {
+                    setBulkEditConflitos([{
+                        aulaEditada: 'Tentativa de alteração de data',
+                        laboratorio: 'Todos',
+                        data: dataNovaObj.format('DD/MM/YYYY'),
+                        horario: 'Todos',
+                        aulaConflito: `🚫 Período Inativo / Feriado: ${periodoConflito.descricao}`
+                    }]);
+                    setBulkEditLoading(false);
+                    return;
+                }
+            }
+
             if (bulkEditTarget === 'aula' && selectedAulasIds.length > 0) {
                 const { data: aulasAtuais } = await supabase
                     .from('aulas')

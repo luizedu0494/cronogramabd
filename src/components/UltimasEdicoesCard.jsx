@@ -111,33 +111,32 @@ const UltimasEdicoesCard = () => {
     };
 
     return (
-        <Card variant="outlined" sx={{ height: '100%', display: 'flex', flexDirection: 'column', borderRadius: 2 }}>
-            <CardContent sx={{ pb: 1, flexGrow: 1 }}>
-                <Box display="flex" alignItems="center" gap={1} mb={1}>
-                    <Edit3 size={20} color={theme.palette.warning.main} />
-                    <Typography variant="h6" fontWeight="bold">
-                        Aulas Editadas
-                    </Typography>
+        <Card elevation={3} sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+            <CardContent sx={{ flexGrow: 1, p: 2, pb: 0 }}>
+                <Box display="flex" alignItems="center" mb={1}>
+                    <Edit3 color={theme.palette.warning.main} style={{ marginRight: 8 }} size={22} />
+                    <Typography variant="h6" fontWeight="bold">Aulas Editadas</Typography>
                 </Box>
-                <Tabs value={tab} onChange={(_, v) => setTab(v)} size="small" sx={{ minHeight: 32, mb: 1, borderBottom: 1, borderColor: 'divider' }}>
-                    <Tab label={`Aulas (${logsAulas.length})`} sx={{ minHeight: 32, py: 0.5, fontSize: '0.78rem' }} />
-                    <Tab label={`Revisões (${logsRevisoes.length})`} sx={{ minHeight: 32, py: 0.5, fontSize: '0.78rem' }} />
+                <Tabs value={tab} onChange={(_, v) => setTab(v)} textColor="primary" indicatorColor="primary"
+                    sx={{ mb: 1, minHeight: 34, '& .MuiTab-root': { minHeight: 34, fontSize: '0.75rem', py: 0 } }}>
+                    <Tab label={<span><span aria-hidden="true">🎓 </span>Aulas ({logsAulas.length})</span>} />
+                    <Tab label={<span><span aria-hidden="true">📖 </span>Revisões ({logsRevisoes.length})</span>} />
                 </Tabs>
 
                 {loading ? (
-                    <Box display="flex" justifyContent="center" py={4}><CircularProgress size={28} /></Box>
+                    <Box display="flex" justifyContent="center" py={3}><CircularProgress size={22} /></Box>
                 ) : error ? (
-                    <Alert severity="error" sx={{ my: 2 }}>{error}</Alert>
-                ) : tab === 0 ? (
-                    renderLogs(logsAulas, false)
+                    <Alert severity="error">{error}</Alert>
                 ) : (
-                    renderLogs(logsRevisoes, true)
+                    <Box>
+                        {tab === 0 && renderLogs(logsAulas, false)}
+                        {tab === 1 && renderLogs(logsRevisoes, true)}
+                    </Box>
                 )}
             </CardContent>
-            <Divider />
-            <Box p={1.5} display="flex" justifyContent="flex-end">
-                <Button size="small" variant="text" color="warning" onClick={() => navigate('/historico')}>
-                    Ver Histórico Completo →
+            <Box sx={{ p: 2, pt: 1 }}>
+                <Button fullWidth variant="outlined" color="warning" size="small" onClick={() => navigate('/historico-aulas')} startIcon={<BookOpen size={16} />}>
+                    Ver Histórico Completo
                 </Button>
             </Box>
         </Card>

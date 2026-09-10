@@ -134,7 +134,7 @@ const UltimasExclusoesCard = () => {
                 )}
             </CardContent>
             <Box sx={{ p: 2, pt: 1 }}>
-                <Button fullWidth variant="outlined" size="small" onClick={() => navigate('/historico-aulas')} startIcon={<BookOpen size={16} />}>
+                <Button fullWidth variant="outlined" color="error" size="small" onClick={() => navigate('/historico-aulas')} startIcon={<BookOpen size={16} />}>
                     Ver Histórico Completo
                 </Button>
             </Box>
