@@ -73,6 +73,19 @@ export function useNotificacoes(uid?: string) {
         payload => {
           const novaNotificacao = payload.new as NotificacaoItem;
           setNotificacoes(prev => [novaNotificacao, ...prev]);
+
+          // Disparar Notificação Local de Desktop (funciona 100% sem servidores Push externos e imune a AdBlock)
+          if ('Notification' in window && Notification.permission === 'granted') {
+            try {
+              new Notification(novaNotificacao.titulo || 'Nova Notificação - CronoLab', {
+                body: novaNotificacao.corpo || '',
+                icon: '/icons/icon-192x192.png',
+                tag: novaNotificacao.id,
+              });
+            } catch (e) {
+              console.warn('Erro ao disparar notificação local:', e);
+            }
+          }
         }
       );
 
