@@ -268,17 +268,22 @@ function GerenciarAprovacoes() {
         try {
             const { data, error } = await supabase
                 .from('aulas')
-                .select('*')
+                .select('*, aula_cursos(curso)')
                 .eq('status', 'pendente')
                 .order('created_at', { ascending: true });
 
             if (error) throw error;
-            setPendentesGlobal((data || []).map(a => ({
-                ...a,
-                laboratorioSelecionado: a.laboratorio,
-                horarioSlotString: a.horario_slot,
-                propostoPorNome: a.proposto_por_nome
-            })));
+            setPendentesGlobal((data || []).map(a => {
+                const cursosRel = Array.isArray(a.aula_cursos) ? a.aula_cursos.map(ac => ac.curso) : [];
+                const cursosFinal = (a.cursos && a.cursos.length) ? a.cursos : cursosRel;
+                return {
+                    ...a,
+                    cursos: cursosFinal,
+                    laboratorioSelecionado: a.laboratorio,
+                    horarioSlotString: a.horario_slot,
+                    propostoPorNome: a.proposto_por_nome
+                };
+            }));
         } catch (err) {
             console.error(err);
         } finally {
@@ -306,19 +311,24 @@ function GerenciarAprovacoes() {
                 const end   = dayjs().year(selectedYear).month(selectedMonth).endOf('month').toISOString();
                 const { data, error } = await supabase
                     .from('aulas')
-                    .select('*')
+                    .select('*, aula_cursos(curso)')
                     .gte('data_inicio', start)
                     .lte('data_inicio', end)
                     .in('status', ['aprovada', 'rejeitada'])
                     .order('data_inicio', { ascending: true });
 
                 if (error) throw error;
-                setAulasDoMes((data || []).map(a => ({
-                    ...a,
-                    laboratorioSelecionado: a.laboratorio,
-                    horarioSlotString: a.horario_slot,
-                    propostoPorNome: a.proposto_por_nome
-                })));
+                setAulasDoMes((data || []).map(a => {
+                    const cursosRel = Array.isArray(a.aula_cursos) ? a.aula_cursos.map(ac => ac.curso) : [];
+                    const cursosFinal = (a.cursos && a.cursos.length) ? a.cursos : cursosRel;
+                    return {
+                        ...a,
+                        cursos: cursosFinal,
+                        laboratorioSelecionado: a.laboratorio,
+                        horarioSlotString: a.horario_slot,
+                        propostoPorNome: a.proposto_por_nome
+                    };
+                }));
             } catch (err) {
                 console.error(err);
             } finally {
