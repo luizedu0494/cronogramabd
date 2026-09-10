@@ -710,9 +710,11 @@ function ProporAulaForm({ userInfo, currentUser, initialDate, onSuccess, onCance
                     ? aula.horarioSlotString[0] 
                     : (aula.horarioSlotString || '');
 
+                const finalTipoAtividade = tipoEntrada || (aula.isProva ? 'prova' : (aula.isRevisao ? 'revisao' : (aula.tipoAtividade || 'aula')));
+
                 const finalData = {
                     assunto: aula.assunto,
-                    tipo_atividade: aula.isProva ? 'prova' : (aula.isRevisao ? 'revisao' : (aula.tipoAtividade || 'aula')),
+                    tipo_atividade: finalTipoAtividade,
                     laboratorio: aula.laboratorioSelecionado || aula.laboratorio,
                     horario_slot: finalHorarioSlot,
                     data_inicio: dtInicioIso,
@@ -720,7 +722,7 @@ function ProporAulaForm({ userInfo, currentUser, initialDate, onSuccess, onCance
                     status: aula.status || 'aprovada',
                     proposto_por_uid: aula.propostoPorUid || currentUser?.uid || '',
                     proposto_por_nome: aula.propostoPorNome || userInfo?.nome || currentUser?.displayName || '',
-                    tipo_revisao_label: aula.tipoRevisaoLabel || null,
+                    tipo_revisao_label: finalTipoAtividade === 'revisao' ? aula.tipoRevisaoLabel : null,
                     liga: aula.liga || null,
                     observacoes: aula.observacoes || null,
                     updated_at: new Date().toISOString()
@@ -757,9 +759,11 @@ function ProporAulaForm({ userInfo, currentUser, initialDate, onSuccess, onCance
                         ? aula.horarioSlotString[0] 
                         : (aula.horarioSlotString || '');
 
+                    const finalTipoAtividade = tipoEntrada || (aula.isProva ? 'prova' : (aula.isRevisao ? 'revisao' : (aula.tipoAtividade || 'aula')));
+
                     const finalData = {
                         assunto: aula.assunto,
-                        tipo_atividade: aula.isProva ? 'prova' : (aula.isRevisao ? 'revisao' : (aula.tipoAtividade || 'aula')),
+                        tipo_atividade: finalTipoAtividade,
                         laboratorio: aula.laboratorioSelecionado || aula.laboratorio,
                         horario_slot: finalHorarioSlot,
                         data_inicio: dtInicioIso,
@@ -767,7 +771,7 @@ function ProporAulaForm({ userInfo, currentUser, initialDate, onSuccess, onCance
                         status: aula.status,
                         proposto_por_uid: aula.propostoPorUid || currentUser?.uid || '',
                         proposto_por_nome: aula.propostoPorNome || userInfo?.nome || currentUser?.displayName || '',
-                        tipo_revisao_label: aula.tipoRevisaoLabel || null,
+                        tipo_revisao_label: finalTipoAtividade === 'revisao' ? aula.tipoRevisaoLabel : null,
                         liga: aula.liga || null,
                         observacoes: aula.observacoes || null,
                     };
