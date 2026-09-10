@@ -175,19 +175,52 @@ function GerenciarAprovacoes() {
     const handleAprovarEmLote = async () => {
         if (selectedIds.length === 0 || loadingBatch) return;
         setLoadingBatch(true);
+        const idsParaAprovar = [...selectedIds];
         try {
-            await supabase.from('aulas').update({ status: 'aprovada' }).in('id', selectedIds);
+            await supabase.from('aulas').update({ status: 'aprovada', updated_at: new Date().toISOString() }).in('id', idsParaAprovar);
+
+            // Atualização Otimista Imediata da UI Local
+            setPendentesGlobal(prev => prev.filter(p => !idsParaAprovar.includes(p.id)));
+            setSelectedIds([]);
 
             setSnackbar({
                 open: true,
                 severity: 'success',
-                message: `✅ ${selectedIds.length} proposta(s) aprovada(s) em lote!`
+                message: `✅ ${idsParaAprovar.length} proposta(s) aprovada(s) em lote!`
             });
-            setSelectedIds([]);
             fetchPendentes();
         } catch (err) {
             console.error('Erro na aprovação em lote:', err);
             setSnackbar({ open: true, severity: 'error', message: 'Erro ao aprovar em lote.' });
+        } finally {
+            setLoadingBatch(false);
+        }
+    };
+
+    const handleRejeitarEmLote = async () => {
+        if (selectedIds.length === 0 || loadingBatch) return;
+        setLoadingBatch(true);
+        const idsParaRejeitar = [...selectedIds];
+        try {
+            await supabase.from('aulas').update({ 
+                status: 'rejeitada', 
+                observacoes: '[MOTIVO REJEIÇÃO]: Rejeitada em lote pelo gestor.',
+                updated_at: new Date().toISOString() 
+            }).in('id', idsParaRejeitar);
+
+            // Atualização Otimista Imediata da UI Local
+            setPendentesGlobal(prev => prev.filter(p => !idsParaRejeitar.includes(p.id)));
+            setSelectedIds([]);
+
+            setSnackbar({
+                open: true,
+                severity: 'warning',
+                message: `❌ ${idsParaRejeitar.length} proposta(s) rejeitada(s) em lote.`
+            });
+            fetchPendentes();
+        } catch (err) {
+            console.error('Erro na rejeição em lote:', err);
+            setSnackbar({ open: true, severity: 'error', message: 'Erro ao rejeitar em lote.' });
         } finally {
             setLoadingBatch(false);
         }
@@ -314,6 +347,12 @@ function GerenciarAprovacoes() {
 
         setConfirmDialog({ open: false, aula: null, acao: null });
         setProcessando(aula.id);
+
+        // Atualização Otimista Imediata da UI Local
+        if (currentTab === 'pendente') {
+            setPendentesGlobal(prev => prev.filter(p => p.id !== aula.id));
+        }
+
         try {
             const updatePayload = { status: acao, updated_at: new Date().toISOString() };
             if (acao === 'rejeitada') {
@@ -323,7 +362,6 @@ function GerenciarAprovacoes() {
             }
 
             await supabase.from('aulas').update(updatePayload).eq('id', aula.id);
-
 
             if (acao === 'aprovada') {
                 await autoRejeitarPendentesConflitantes({
@@ -342,8 +380,10 @@ function GerenciarAprovacoes() {
                     ? `✅ Aula "${aula.assunto}" aprovada com sucesso!`
                     : `❌ Aula "${aula.assunto}" rejeitada.`
             });
+            fetchPendentes();
         } catch (err) {
             console.error(err);
+            fetchPendentes(); // Restaurar se falhou
             setSnackbar({ open: true, severity: 'error', message: 'Erro ao atualizar. Tente novamente.' });
         } finally {
             setProcessando(null);
@@ -415,16 +455,28 @@ function GerenciarAprovacoes() {
                                 Selecionar sem conflito
                             </Button>
                             {selectedIds.length > 0 && (
-                                <Button
-                                    size="small"
-                                    variant="contained"
-                                    color="success"
-                                    startIcon={<CheckCircleIcon />}
-                                    onClick={handleAprovarEmLote}
-                                    disabled={loadingBatch}
-                                >
-                                    {loadingBatch ? 'Aprovando...' : `Aprovar Selecionadas (${selectedIds.length})`}
-                                </Button>
+                                <>
+                                    <Button
+                                        size="small"
+                                        variant="outlined"
+                                        color="error"
+                                        startIcon={<CancelIcon />}
+                                        onClick={handleRejeitarEmLote}
+                                        disabled={loadingBatch}
+                                    >
+                                        {loadingBatch ? 'Processando...' : `Rejeitar (${selectedIds.length})`}
+                                    </Button>
+                                    <Button
+                                        size="small"
+                                        variant="contained"
+                                        color="success"
+                                        startIcon={<CheckCircleIcon />}
+                                        onClick={handleAprovarEmLote}
+                                        disabled={loadingBatch}
+                                    >
+                                        {loadingBatch ? 'Processando...' : `Aprovar (${selectedIds.length})`}
+                                    </Button>
+                                </>
                             )}
                         </Box>
                     )}
