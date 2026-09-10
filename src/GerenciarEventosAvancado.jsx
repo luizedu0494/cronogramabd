@@ -263,7 +263,6 @@ export default function GerenciarEventosAvancado({ userInfo }) {
     setActionLoading(true);
 
     try {
-      const batch = writeBatch(db);
       const novosEventosLog = [];
 
       for (const lab of formData.laboratorios) {
@@ -272,48 +271,31 @@ export default function GerenciarEventosAvancado({ userInfo }) {
           const finalStart = formData.dataInicio.hour(parseInt(inicioStr.split(':')[0])).minute(parseInt(inicioStr.split(':')[1])).second(0);
           const finalEnd = formData.dataInicio.hour(parseInt(fimStr.split(':')[0])).minute(parseInt(fimStr.split(':')[1])).second(0);
 
-          const startTs = Timestamp.fromDate(finalStart.toDate());
-          const endTs = Timestamp.fromDate(finalEnd.toDate());
-
-          // Checar conflito no intervalo com aulas ativas
-          const qAulas = query(
-            collection(db, "aulas"),
-            where("dataInicio", "<", endTs),
-            where("dataInicio", ">=", startTs)
-          );
-          const snapAulas = await getDocs(qAulas);
-          const aulasConflito = snapAulas.docs.filter(d => {
-            const a = d.data();
-            return lab === 'Todos' || a.laboratorioSelecionado === lab;
-          });
-
-          if (aulasConflito.length > 0) {
-            console.warn(`Aviso: ${aulasConflito.length} aulas conflitam com o evento no lab ${lab} às ${slot}.`);
-          }
-
-          const docRef = doc(collection(db, 'eventosManutencao'));
           const payload = {
             titulo: formData.titulo.trim(),
             descricao: formData.descricao.trim(),
             tipo: formData.tipo,
             status: formData.status || 'aprovado',
-            laboratorio: lab,
-            laboratorios: formData.laboratorios,
-            dataInicio: startTs,
-            dataFim: endTs,
-            horarioSlotString: slot,
-            criadoPorUid: userInfo?.uid || 'desconhecido',
-            criadoPorNome: userInfo?.name || userInfo?.displayName || userInfo?.email || 'Usuário',
-            criadoEm: serverTimestamp(),
-            atualizadoEm: serverTimestamp(),
+            laboratorio: lab === 'Todos' ? null : lab,
+            horario_slot: slot,
+            data_inicio: finalStart.toISOString(),
+            data_fim: finalEnd.toISOString(),
+            criado_por_uid: userInfo?.uid || 'desconhecido',
+            criado_por_nome: userInfo?.name || userInfo?.displayName || userInfo?.email || 'Usuário',
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
           };
 
-          batch.set(docRef, payload);
-          novosEventosLog.push({ ...payload, id: docRef.id });
+          const { data: inserted, error: insertErr } = await supabase
+            .from('eventos_manutencao')
+            .insert([payload])
+            .select()
+            .single();
+
+          if (insertErr) throw insertErr;
+          novosEventosLog.push({ ...payload, id: inserted?.id });
         }
       }
-
-      await batch.commit();
 
       for (const evLog of novosEventosLog) {
         await registrarLogEvento('criacao', evLog, userInfo);
@@ -324,7 +306,7 @@ export default function GerenciarEventosAvancado({ userInfo }) {
       handleSearch('start');
     } catch (err) {
       console.error("Erro ao criar evento:", err);
-      setFeedback({ open: true, message: 'Erro ao criar evento. Tente novamente.', severity: 'error' });
+      setFeedback({ open: true, message: `Erro ao criar evento: ${err.message}`, severity: 'error' });
     } finally {
       setActionLoading(false);
     }
