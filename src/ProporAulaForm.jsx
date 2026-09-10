@@ -647,10 +647,8 @@ function ProporAulaForm({ userInfo, currentUser, initialDate, onSuccess, onCance
                     .eq('horario_slot', nova.horarioSlotString);
 
                 (conflitosRes || []).forEach(docData => {
-                    if (docData.id !== aulaId) {
-                        if (!docData.status || docData.status === 'aprovada') {
-                            conflitosEncontrados.push({ novaAula: nova, conflito: { id: docData.id, ...docData } });
-                        }
+                    if (docData.id !== aulaId && docData.status !== 'rejeitada') {
+                        conflitosEncontrados.push({ novaAula: nova, conflito: { id: docData.id, ...docData } });
                     }
                 });
             }
@@ -712,7 +710,15 @@ function ProporAulaForm({ userInfo, currentUser, initialDate, onSuccess, onCance
                     updated_at: new Date().toISOString()
                 };
                 const { error } = await supabase.from('aulas').update(finalData).eq('id', aulaId);
-                if (error) throw error;
+                if (error) {
+                    if (error.code === '23505' || error.message?.includes('duplicate key')) {
+                        setSnackbarMessage('⚠️ Conflito de Agendamento: Já existe uma aula ou proposta para este laboratório, data e horário.');
+                        setSnackbarSeverity('warning');
+                        setOpenSnackbar(true);
+                        return;
+                    }
+                    throw error;
+                }
 
                 await registrarLogEdicao({ ...aula, title: aula.assunto }, userInfo || { uid: currentUser?.uid }, 'aulas');
 
@@ -744,7 +750,15 @@ function ProporAulaForm({ userInfo, currentUser, initialDate, onSuccess, onCance
                         observacoes: aula.observacoes || null,
                     };
                     const { data: novaAula, error } = await supabase.from('aulas').insert([finalData]).select().single();
-                    if (error) throw error;
+                    if (error) {
+                        if (error.code === '23505' || error.message?.includes('duplicate key')) {
+                            setSnackbarMessage('⚠️ Conflito: Já existe um agendamento (aprovado ou pendente) registrado para este laboratório, data e horário.');
+                            setSnackbarSeverity('warning');
+                            setOpenSnackbar(true);
+                            return;
+                        }
+                        throw error;
+                    }
 
                     if (aula.cursos && aula.cursos.length > 0) {
                         await supabase.from('aula_cursos').insert(
