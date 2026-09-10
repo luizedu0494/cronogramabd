@@ -1,18 +1,17 @@
 # CronoLab — Sistema de Gestão de Cronogramas de Laboratórios
 
-> Plataforma inteligente e moderna para gestão descentralizada de agendamentos, cronogramas e uso de laboratórios acadêmicos em **Universidades e Instituições de Ensino Superior (IES)**.
+> Plataforma inteligente e moderna desenhada sob medida para a **jornada do usuário** e a gestão descentralizada de agendamentos e cronogramas de laboratórios acadêmicos em **Universidades e Instituições de Ensino Superior (IES)**.
 
 ![Banner](./imgbanner.png)
 
 <p align="center">
   <a href="#sobre">Sobre</a> •
-  <a href="#modo-visitante-acesso-publico">Modo Visitante</a> •
-  <a href="#perfis-de-acesso">Perfis de Acesso</a> •
+  <a href="#design--experiencia-do-usuario-ux">Design & UX</a> •
+  <a href="#jornada-dos-stakeholders">Jornada dos Stakeholders</a> •
+  <a href="#novidades">Novidades</a> •
   <a href="#funcionalidades">Funcionalidades</a> •
-  <a href="#identidade-visual-e-design">Identidade & Design</a> •
   <a href="#tecnologias">Tecnologias</a> •
-  <a href="#configuracao-e-instalacao">Instalação & Setup</a> •
-  <a href="#status-do-projeto">Status do Projeto</a>
+  <a href="#configuracao-e-instalacao">Instalação & Setup</a>
 </p>
 
 <p align="center">
@@ -33,59 +32,48 @@
 
 ## Sobre
 
-O **CronoLab** é uma solução completa desenvolvida para resolver um desafio crítico no ambiente acadêmico: a **gestão descentralizada de laboratórios de aulas e pesquisas**.
+O **CronoLab** foi concebido a partir de um princípio fundamental: **colocar as necessidades dos usuários reais no centro de cada decisão**. No ambiente acadêmico, a alocação de laboratórios frequentemente envolve conflitos de horários, burocracia excessiva e desinformação entre diferentes setores.
 
-O sistema centraliza a agenda de múltiplos espaços físicos em uma única interface inteligente, atendendo às necessidades de **Coordenadores**, **Técnicos de Laboratório**, **Professores** e **Alunos (Visitantes)**. Ele substitui planilhas manuais e conflitos de horários por um banco de dados relacional **Supabase (PostgreSQL)** com verificação automática de choques de agenda, análise preditiva de ocupação e atualizações em tempo real.
-
-### ✨ Destaques:
-- 🏫 **Pronto para Instituições de Ensino**: Adequado para universidades, faculdades e centros tecnológicos com múltiplos laboratórios.
-- 🎓 **Modo Visitante sem Necessidade de Cadastro**: Acesso direto e instantâneo para Alunos e Professores consultarem os horários.
-- ⚡ **Arquitetura 100% Supabase (PostgreSQL)**: Consultas relacionais de alta velocidade e atualizações em tempo real via WebSockets (`postgres_changes`).
-- 🔐 **Autenticação Flexível & Segura**: Login por E-mail + Senha ou **Login Social com Google OAuth** via Supabase Auth (PKCE Flow).
-- 🤖 **Assistente com Inteligência Artificial**: Motor de IA alimentado por Groq API (`llama-3.3-70b-versatile` / `groq/compound`) para interpretação de comandos e análises.
-- 📱 **PWA Responsivo**: Instalável em smartphones e desktops (Android/iOS/Windows) com suporte a Web Push nativo VAPID.
-- 💬 **Integração Nativa com Telegram Bot**: Alertas em tempo real e vinculação de conta em 1 clique via deep link (`t.me/bot?start=CRN-XXXX`).
-- 🌙 **Design de Alto Padrão**: Dark mode nativo com paleta de cores harmoniosa e animações fluidas.
-- 📥 **Importação e Exportação Completa**: Reconhecimento automático em Excel, CSV, JSON e Word (.docx), exportação em Excel (.xlsx), PDF e iCal (.ics).
+A plataforma resolve esse problema conectando de forma harmoniosa e intuitiva cada perfil da instituição — de alunos a coordenadores —, oferecendo dados em tempo real, verificação automática de choques de grade, análises com Inteligência Artificial e notificações diretas via Telegram e Web Push.
 
 ---
 
-## Modo Visitante (Acesso Público)
+## Design & Experiência do Usuário (UX)
 
-Para facilitar a consulta dos horários de aulas e disponibilidade de laboratórios, o sistema conta com um modo de acesso público direto na tela inicial:
+O design do **CronoLab** foi cuidadosamente planejado para proporcionar uma navegação fluida, ergonômica e inclusiva:
 
-- 🔓 **Sem Cadastro Nem Aprovação**: Alunos e professores entram instantaneamente.
-- 📅 **Direto ao Calendário**: O visitante vai direto para a grade semanal e filtros por laboratório.
-- 📥 **Exportação de Dados**: Agenda do semestre/mês em Excel (.xlsx), PDF e iCal (.ics).
-- 🛡️ **Segurança Reforçada**: Acesso puramente de leitura; funcionalidades administrativas e Assistente de IA são restritas à equipe autorizada.
+- 🎨 **Foco na Jornada do Usuário**: Interfaces simplificadas e objetivas que reduzem o número de cliques necessários para realizar qualquer tarefa.
+- 🔤 **Tipografia Cuidadosamente Selecionada**: Utilização combinada das fontes **Sora** (para títulos modernos e hierarquia marcante) e **Inter** (para máxima legibilidade e conforto visual em listas e tabelas).
+- 🧩 **Arquitetura Baseada em Tokens de Design**: Sistema centralizado de tokens de estilo (`src/theme/tokens.ts`) que permite adaptar rapidamente a paleta de cores para a identidade de qualquer instituição de ensino.
+- 🌓 **Modo Claro e Escuro Nativo**: Alternância instantânea de tema com persistência de preferência e alto contraste (WCAG 2.1 AA) para uso diurno ou noturno.
+- ♿ **Acessibilidade Universal**: Foco visível destacado (`:focus-visible`), suporte completo a leitores de tela (`aria-label`) e rótulos claros em selects e chips sem truncamentos indesejados.
 
 ---
 
-## Perfis de Acesso
+## Jornada dos Stakeholders
 
-O acesso restrito da equipe é controlado por um fluxo de aprovação via Supabase Auth. Ao se cadastrar via **E-mail + Senha** ou **Google**, a conta fica com o status **Pendente** até que a coordenação aprove o perfil adequado:
+O sistema foi desenhado respeitando as particularidades e responsabilidades de cada papel na instituição:
 
-### 👨‍💼 Coordenador
-- Painel de Indicadores (KPIs) e estatísticas em tempo real.
-- Agendamento direto de aulas, revisões e provas.
-- Gestão de bloqueios de manutenção preventiva.
-- Central de Aprovações de propostas enviadas pela equipe.
-- Gestão de usuários, alteração de cargos e aprovação de cadastros.
-- Importação de cronogramas em lote por planilhas ou documentos.
-- Painel de Avisos e comunicados com controle de prioridade.
-- Ferramenta de **Verificação de Integridade de Dados** e auditoria.
+### 🎓 Alunos e Professores (Modo Visitante / Acesso Público)
+- **Zero Burocracia**: Acesso instantâneo aos horários dos laboratórios diretamente da tela inicial, sem necessidade de cadastro ou aprovação.
+- **Foco na Informação**: Visualização límpida do calendário semanal, filtros por curso/laboratório e exportação prática em Excel, PDF e iCal (.ics).
 
-### 🧑‍🔬 Técnico de Laboratório
-- Seleção de laboratórios favoritos no painel inicial.
-- Envio de propostas de reserva de horário para aprovação.
-- Painel de designações e agenda pessoal por técnico.
-- Reserva de revisões/monitorias e preparação de bancadas.
+### 🧑‍🔬 Técnicos de Laboratório
+- **Rotina Simplificada**: Seleção de laboratórios favoritos no dashboard inicial para acompanhamento diário.
+- **Eficiência Operacional**: Envio rápido de propostas de aulas/atividades, controle de revisões/monitorias e preparação antecipada de bancadas.
 
-### 🎓 Visitante (Aluno / Professor)
-- Visualização do Cronograma de Aulas e Calendário Acadêmico.
-- Filtro inteligente por curso, laboratório e turno.
-- Exportação de horários em Excel, PDF e .ics.
-- Guia prático de dúvidas (FAQ).
+### 👨‍💼 Coordenadores
+- **Governança & Visão Global**: Central de Aprovações unificada com indicadores de pendências em tempo real.
+- **Gestão Inteligente**: Controle de manutenções preventivas, cadastro de avisos institucionais, verificação automática de integridade de dados e relatórios analíticos de ocupação.
+
+---
+
+## Novidades
+
+- ⚡ **Centralização e Responsividade Mobile**: Redesenho completo dos cards do dashboard e menus sanfona (`Collapse` inline) ajustados ergonomicamente para dispositivos móveis.
+- 🔑 **Login Google Universal**: Suporte a autenticação instantânea com qualquer conta Google, além do login tradicional por e-mail e senha.
+- 🤖 **Assistente de IA Integrado**: Análise de conflitos de grade em tempo real diretamente na página inicial com IA (`llama-3.3-70b-versatile`).
+- 📱 **PWA & Web Push Nativo**: Instalável diretamente no celular ou desktop com notificações push instantâneas.
 
 ---
 
@@ -93,41 +81,27 @@ O acesso restrito da equipe é controlado por um fluxo de aprovação via Supaba
 
 ### 📅 Agendamento e Grade Relacional
 - Blocos padronizados de horários (Matutino, Vespertino, Noturno).
-- Verificação instantânea de conflitos e colisão de turmas em tempo real.
-- Suporte a múltiplas turmas e disciplinas simultâneas com cálculo de ocupação.
-- Histórico completo de auditoria e exclusões na tabela de `logs`.
-
-### 🤖 Assistente de IA Técnico
-- Interpretação de comandos de voz ou texto em linguagem natural.
-- Análise automática de conflitos na grade e sugestões de horários vagos.
-- Extração estruturada de parâmetros de agendamentos.
+- Verificação instantânea de conflitos e colisão de turmas no Supabase (PostgreSQL).
+- Suporte a múltiplas turmas e disciplinas simultâneas com cálculo dinâmico de ocupação.
 
 ### 🔔 Notificações Unificadas (Telegram & Web Push VAPID)
-- **Bot do Telegram**: Vinculação em 1 clique com geração de código temporário e redirecionamento deep-link. Alertas instantâneos de alteração de grade no grupo ou privado.
-- **Web Push Naitvo (VAPID)**: Notificações no navegador para desktop e dispositivos móveis sem dependência de serviços legados.
+- **Bot do Telegram**: Vinculação em 1 clique com geração de código temporário e alertas de alterações na grade em tempo real.
+- **Web Push (VAPID)**: Notificações no navegador para desktop e dispositivos móveis sem dependência de serviços legados.
+
+### 📥 Importação e Exportação Flexível
+- Suporte a importação automática via planilhas Excel, CSV, JSON e documentos Word (.docx).
+- Exportação completa em Excel (.xlsx), PDF e arquivos iCal (.ics).
 
 ---
 
-## Identidade Visual e Design
-
-| Token | Cor | Aplicação no Sistema |
-| :--- | :--- | :--- |
-| **Azul Principal** | `#1E7EC8` | Botões primários, cabeçalhos e elementos ativos |
-| **Azul Destaque** | `#4AADE8` | Detalhes no modo escuro, ícones e estados hover |
-| **Dourado Acadêmico**| `#F5C518` | Alertas de revisões, eventos e avisos importantes |
-| **Verde Sucesso** | `#00C853` / `#3ECF8E` | Indicadores de disponibilidade, status aprovado |
-| **Fundo Dark Mode** | `#0B0F18` | Interface elegante e confortável para uso noturno |
-
----
-
-## Arquitetura & Tecnologias
+## Tecnologias & Arquitetura
 
 - **Frontend**: React 19, Vite 7, Material UI (MUI v7), Lucide Icons, Emotion
-- **Backend & Database**: Supabase PostgreSQL, Supabase Auth (PKCE), Supabase Realtime
+- **Backend & Banco de Dados**: Supabase PostgreSQL, Supabase Auth (PKCE Flow), Supabase Realtime
 - **Hospedagem & CDN**: Vercel Serverless
 - **Inteligência Artificial**: LangChain.js & Groq API (`llama-3.3-70b-versatile` / `groq/compound`)
 - **Notificações**: Telegram Bot API (`node-telegram-bot-api`), Web Push VAPID API
-- **Documentos & Mídia**: ExcelJS, SheetJS (`xlsx`), Tesseract.js (OCR), jsPDF, Cloudinary
+- **Documentos & OCR**: ExcelJS, SheetJS (`xlsx`), Tesseract.js (OCR), jsPDF, Cloudinary
 
 ---
 
@@ -140,10 +114,10 @@ O acesso restrito da equipe é controlado por um fluxo de aprovação via Supaba
 
 ### 2. Configurar o Banco de Dados (Supabase)
 Execute os scripts SQL disponibilizados no **SQL Editor** do seu projeto Supabase:
-- [`supabase/full_schema.sql`](./supabase/full_schema.sql) — Tabela `users`, `aulas`, `eventos_manutencao`, `avisos`, `notificacoes`, `logs`, `config`, `telegram_vinculos_pendentes`, `push_subscriptions`, etc.
+- [`supabase/full_schema.sql`](./supabase/full_schema.sql) — Schemas completos de tabelas, RLS e constraints.
 
 ### 3. Variáveis de Ambiente (`.env`)
-Crie um arquivo `.env` na raiz do projeto com base no `.env.example`:
+Crie um arquivo `.env` na raiz do projeto com base no modelo:
 
 ```env
 # Supabase PostgreSQL
@@ -183,7 +157,7 @@ npm run build
 
 ## Status do Projeto
 
-🚧 Em desenvolvimento ativo, com deploy contínuo em produção via Vercel.
+🚧 Em desenvolvimento ativo, com deploy contínuo em produção via Vercel.  
 Interessado em uma demonstração guiada, parceria ou licenciamento para sua instituição? Entre em contato pelo perfil do GitHub.
 
 ---
