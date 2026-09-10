@@ -27,10 +27,31 @@ const YEARS  = Array.from({ length: 5  }, (_, i) => dayjs().year() - 2 + i);
 
 // ─── Card de Aula ─────────────────────────────────────────────────────────────
 function AulaCard({ aula, onAction, processando, isSelected, onClick, temConflito, isCheckable, isChecked, onToggleCheck }) {
-    const cursosLabel = useMemo(() => {
-        if (!aula.cursos?.length) return '—';
-        return aula.cursos.map(v => LISTA_CURSOS.find(c => c.value === v)?.label || v).join(', ');
-    }, [aula.cursos]);
+    const formatarCursos = (cursosInput) => {
+        if (!cursosInput) return [];
+        let lista = [];
+        if (Array.isArray(cursosInput)) {
+            lista = cursosInput;
+        } else if (typeof cursosInput === 'string') {
+            try {
+                const parsed = JSON.parse(cursosInput);
+                if (Array.isArray(parsed)) lista = parsed;
+                else lista = [cursosInput];
+            } catch {
+                lista = cursosInput.split(',').map(s => s.trim());
+            }
+        }
+        return lista.map(v => {
+            if (!v) return '';
+            const doConst = LISTA_CURSOS.find(c => c.value === String(v).toLowerCase() || c.label.toLowerCase() === String(v).toLowerCase());
+            if (doConst) return doConst.label;
+            // Se for chave crua como "medicina", capitalizar bonitinho
+            return String(v).charAt(0).toUpperCase() + String(v).slice(1);
+        }).filter(Boolean);
+    };
+
+    const cursosArray = useMemo(() => formatarCursos(aula.cursos), [aula.cursos]);
+    const cursosLabel = useMemo(() => cursosArray.length ? cursosArray.join(', ') : '—', [cursosArray]);
 
     const dataFormatada = useMemo(() => {
         try { return dayjs(aula.data_inicio || aula.dataInicio).format('ddd, DD/MM/YYYY [às] HH:mm'); }
@@ -591,10 +612,34 @@ function GerenciarAprovacoes() {
                                         </Typography>
                                     </Grid>
                                     <Grid size={{ xs: 12, sm: 6 }}>
-                                        <Typography variant="body2" color="text.secondary">Cursos Atendidos</Typography>
-                                        <Typography variant="body1" fontWeight="bold">
-                                            🎓 {aulaSelecionada.cursos?.map(v => LISTA_CURSOS.find(c => c.value === v)?.label || v).join(', ') || '—'}
-                                        </Typography>
+                                        <Typography variant="body2" color="text.secondary" sx={{ mb: 0.5 }}>Cursos Atendidos</Typography>
+                                        <Box display="flex" flexWrap="wrap" gap={0.5}>
+                                            {(() => {
+                                                const cursos = aulaSelecionada.cursos;
+                                                let lista = [];
+                                                if (Array.isArray(cursos)) lista = cursos;
+                                                else if (typeof cursos === 'string') {
+                                                    try { lista = JSON.parse(cursos); } catch { lista = cursos.split(','); }
+                                                }
+                                                const formatados = lista.map(v => {
+                                                    const item = LISTA_CURSOS.find(c => c.value === String(v).toLowerCase() || c.label.toLowerCase() === String(v).toLowerCase());
+                                                    return item ? item.label : String(v).trim();
+                                                }).filter(Boolean);
+
+                                                if (formatados.length === 0) return <Typography variant="body1" fontWeight="bold">—</Typography>;
+
+                                                return formatados.map((cName, idx) => (
+                                                    <Chip
+                                                        key={idx}
+                                                        label={`🎓 ${cName}`}
+                                                        size="small"
+                                                        color="info"
+                                                        variant="outlined"
+                                                        sx={{ fontWeight: 600, borderRadius: 1.5 }}
+                                                    />
+                                                ));
+                                            })()}
+                                        </Box>
                                     </Grid>
                                 </Grid>
 
