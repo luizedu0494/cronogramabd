@@ -28,7 +28,7 @@
 
 ---
 
-## <img src="https://api.iconify.design/lucide:microscope.svg?color=%231E7EC8" width="24" height="24" style="vertical-align: middle; margin-bottom: 4px;" /> Sobre o Projeto & Origem
+## <img src="https://api.iconify.design/lucide:microscope.svg?color=%231E7EC8" width="22" height="22" style="vertical-align: sub;" /> Sobre o Projeto & Origem
 
 > [!NOTE]
 > **VIVÊNCIA PRÁTICA NO AMBIENTE ACADÊMICO**  
@@ -36,7 +36,7 @@
 
 Percebendo essa necessidade real, desenvolvi e apliquei o **CronoLab** diretamente no ambiente de trabalho: um sistema inteligente, transparente e robusto feito sob medida para facilitar o dia a dia dos **meus colegas técnicos**, dar previsibilidade à **coordenação** e garantir acesso rápido para **professores e alunos**.
 
-### <img src="https://api.iconify.design/lucide:check-circle-2.svg?color=%233ECF8E" width="20" height="20" style="vertical-align: middle; margin-bottom: 3px;" /> Pilares Operacionais
+### <img src="https://api.iconify.design/lucide:check-circle-2.svg?color=%233ECF8E" width="18" height="18" style="vertical-align: sub;" /> Pilares Operacionais
 
 - **Validação Automática contra Conflitos**: Bloqueio em tempo real de qualquer tentativa de agendamento duplicado para a mesma sala e horário.
 - **Acessibilidade Multiplataforma**: Experiência fluida no computador de bancada e no smartphone.
@@ -45,7 +45,7 @@ Percebendo essa necessidade real, desenvolvi e apliquei o **CronoLab** diretamen
 
 ---
 
-## <img src="https://api.iconify.design/lucide:users.svg?color=%231E7EC8" width="24" height="24" style="vertical-align: middle; margin-bottom: 4px;" /> Fluxo Operacional por Perfil
+## <img src="https://api.iconify.design/lucide:users.svg?color=%231E7EC8" width="22" height="22" style="vertical-align: sub;" /> Fluxo Operacional por Perfil
 
 | Perfil | Atribuições no CronoLab |
 | :--- | :--- |
@@ -55,11 +55,11 @@ Percebendo essa necessidade real, desenvolvi e apliquei o **CronoLab** diretamen
 
 ---
 
-## <img src="https://api.iconify.design/lucide:monitor-play.svg?color=%231E7EC8" width="24" height="24" style="vertical-align: middle; margin-bottom: 4px;" /> Demonstração Visual & GIFs
+## <img src="https://api.iconify.design/lucide:monitor-play.svg?color=%231E7EC8" width="22" height="22" style="vertical-align: sub;" /> Demonstração Visual & GIFs
 
 ---
 
-### <img src="https://api.iconify.design/lucide:monitor.svg?color=%23646CFF" width="20" height="20" style="vertical-align: middle; margin-bottom: 3px;" /> NAVEGADOR DESKTOP (Computador)
+### <img src="https://api.iconify.design/lucide:monitor.svg?color=%23646CFF" width="18" height="18" style="vertical-align: sub;" /> NAVEGADOR DESKTOP (Computador)
 
 #### 1. Modo Visitante (Acesso Público e Consulta de Aulas)
 Visualização sem necessidade de login para consulta de turmas e horários:
@@ -110,7 +110,7 @@ Gerenciamento do perfil de usuário, foto e preferências de horário silencioso
 
 ---
 
-### <img src="https://api.iconify.design/lucide:smartphone.svg?color=%23646CFF" width="20" height="20" style="vertical-align: middle; margin-bottom: 3px;" /> NAVEGADOR MOBILE (Dispositivos Móveis / Smartphone)
+### <img src="https://api.iconify.design/lucide:smartphone.svg?color=%23646CFF" width="18" height="18" style="vertical-align: sub;" /> NAVEGADOR MOBILE (Dispositivos Móveis / Smartphone)
 
 #### 1. Modo Visitante no Celular
 Interface mobile fluida para consulta rápida por alunos e professores:
@@ -122,7 +122,7 @@ Gestão ágil de aprovações e agendamentos na palma da mão:
 
 ---
 
-## <img src="https://api.iconify.design/lucide:layers.svg?color=%231E7EC8" width="24" height="24" style="vertical-align: middle; margin-bottom: 4px;" /> Recursos e Funcionalidades
+## <img src="https://api.iconify.design/lucide:layers.svg?color=%231E7EC8" width="22" height="22" style="vertical-align: sub;" /> Recursos e Funcionalidades
 
 - **Calendário Interativo de Ocupação**: Blocos padronizados de horários (Matutino, Vespertino e Noturno).
 - **Categorização Visual Distinta**:
@@ -138,7 +138,7 @@ Gestão ágil de aprovações e agendamentos na palma da mão:
 
 ---
 
-## <img src="https://api.iconify.design/lucide:cpu.svg?color=%231E7EC8" width="24" height="24" style="vertical-align: middle; margin-bottom: 4px;" /> Tecnologias Usadas
+## <img src="https://api.iconify.design/lucide:cpu.svg?color=%231E7EC8" width="22" height="22" style="vertical-align: sub;" /> Tecnologias Usadas
 
 - **Frontend**: [React 19](https://react.dev/), [Vite 7](https://vitejs.dev/), [Material-UI (MUI v7)](https://mui.com/), [Dayjs](https://day.js.org/)
 - **Backend & Banco de Dados**: [Supabase](https://supabase.com/) (PostgreSQL + Auth PKCE Flow + Realtime Subscriptions + Storage)
@@ -148,7 +148,7 @@ Gestão ágil de aprovações e agendamentos na palma da mão:
 
 ---
 
-## <img src="https://api.iconify.design/lucide:terminal.svg?color=%231E7EC8" width="24" height="24" style="vertical-align: middle; margin-bottom: 4px;" /> Executar e Configurar Localmente
+## <img src="https://api.iconify.design/lucide:terminal.svg?color=%231E7EC8" width="22" height="22" style="vertical-align: sub;" /> Executar e Configurar Localmente
 
 Passos para executar o projeto em ambiente de desenvolvimento local ou homologação:
 
@@ -180,7 +180,7 @@ O projeto estará disponível no endereço `http://localhost:5173`.
 
 ---
 
-## <img src="https://api.iconify.design/lucide:shield-check.svg?color=%231E7EC8" width="24" height="24" style="vertical-align: middle; margin-bottom: 4px;" /> Licença e Direitos Comerciais
+## <img src="https://api.iconify.design/lucide:shield-check.svg?color=%231E7EC8" width="22" height="22" style="vertical-align: sub;" /> Licença e Direitos Comerciais
 
 > [!IMPORTANT]
 > **PRODUTO COMERCIAL PROPRIETÁRIO**  
