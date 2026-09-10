@@ -58,6 +58,8 @@ const PaginaInicial = ({ userInfo }) => {
     const [revisoesTecnicoHoje, setRevisoesTecnicoHoje] = useState([]);
     const [aulasOficiaisHoje, setAulasOficiaisHoje] = useState([]);
     const [revisoesOficiaisHoje, setRevisoesOficiaisHoje] = useState([]);
+    const [eventosHoje, setEventosHoje] = useState([]);
+    const [periodosBloqueadosHoje, setPeriodosBloqueadosHoje] = useState([]);
 
     // Estados de UI
     const [isCalendarEnabled, setIsCalendarEnabled] = useState(false);
@@ -135,13 +137,56 @@ const PaginaInicial = ({ userInfo }) => {
             const aulasHojeDocs = (resAulasHoje || []).map(a => ({
                 ...a,
                 laboratorioSelecionado: a.laboratorio,
-                isRevisao: a.is_revisao
+                isRevisao: a.is_revisao,
+                dataInicio: a.data_inicio,
+                dataFim: a.data_fim,
+                horarioSlot: a.horario_slot,
+                professorNome: a.professor_nome || a.proposto_por_nome
             }));
 
             setAulasHoje(aulasHojeDocs.filter(a => !a.isRevisao).length);
             setRevisoesHoje(aulasHojeDocs.filter(a => a.isRevisao === true).length);
             setAulasOficiaisHoje(aulasHojeDocs.filter(a => !a.isRevisao));
             setRevisoesOficiaisHoje(aulasHojeDocs.filter(a => a.isRevisao === true));
+
+            // Agenda do Técnico (Revisões do técnico para hoje)
+            if (userInfo?.uid) {
+                const todayDateOnly = dayjs().format('YYYY-MM-DD');
+                const { data: resRevTec } = await supabase
+                    .from('revisoes_tecnico')
+                    .select('*')
+                    .eq('usuario_id', userInfo.uid)
+                    .gte('data', todayDateOnly)
+                    .lte('data', todayDateOnly);
+
+                setRevisoesTecnicoHoje((resRevTec || []).map(r => ({
+                    ...r,
+                    horarioSlot: r.horario_slot,
+                    usuarioId: r.usuario_id
+                })));
+            }
+
+            // Eventos de manutenção e Períodos inativos/Feriados de hoje
+            const { data: resEvHoje } = await supabase
+                .from('eventos_manutencao')
+                .select('*')
+                .gte('data_inicio', todayStr)
+                .lt('data_inicio', tomorrowStr);
+            setEventosHoje((resEvHoje || []).map(e => ({
+                ...e,
+                laboratorioSelecionado: e.laboratorio,
+                dataInicio: e.data_inicio,
+                dataFim: e.data_fim,
+                horarioSlot: e.horario_slot
+            })));
+
+            const todayYMD = dayjs().format('YYYY-MM-DD');
+            const { data: resPerHoje } = await supabase
+                .from('periodos_sem_atividade')
+                .select('*')
+                .lte('data_inicio', todayYMD)
+                .gte('data_fim', todayYMD);
+            setPeriodosBloqueadosHoje(resPerHoje || []);
 
             if (userInfo?.role === 'coordenador') {
                 // Aulas do ano
@@ -679,9 +724,12 @@ const PaginaInicial = ({ userInfo }) => {
                                         </Box>
                                         <List dense disablePadding>
                                             {aulasVisiveis.map((aula, i) => {
-                                                const dataInicio = aula.dataInicio?.toDate ? aula.dataInicio.toDate() : new Date(aula.dataInicio);
-                                                const dataFim = aula.dataFim?.toDate ? aula.dataFim.toDate() : null;
-                                                const horario = dataFim ? `${dayjs(dataInicio).format('HH:mm')} - ${dayjs(dataFim).format('HH:mm')}` : dayjs(dataInicio).format('HH:mm');
+                                                const dataInicio = aula.dataInicio ? (aula.dataInicio?.toDate ? aula.dataInicio.toDate() : new Date(aula.dataInicio)) : null;
+                                                const dataFim = aula.dataFim ? (aula.dataFim?.toDate ? aula.dataFim.toDate() : new Date(aula.dataFim)) : null;
+                                                const isValidInicio = dataInicio && !isNaN(dataInicio.getTime());
+                                                const isValidFim = dataFim && !isNaN(dataFim.getTime());
+                                                
+                                                const horario = aula.horarioSlot || (isValidInicio ? (isValidFim ? `${dayjs(dataInicio).format('HH:mm')} - ${dayjs(dataFim).format('HH:mm')}` : dayjs(dataInicio).format('HH:mm')) : 'Horário a definir');
 
                                                 // Pill de tempo restante
                                                 const agora = dayjs();
@@ -772,9 +820,11 @@ const PaginaInicial = ({ userInfo }) => {
                                         </Box>
                                         <List dense disablePadding>
                                             {revisVisiveis.map((aula, i) => {
-                                                const dataInicio = aula.dataInicio?.toDate ? aula.dataInicio.toDate() : new Date(aula.dataInicio);
-                                                const dataFim = aula.dataFim?.toDate ? aula.dataFim.toDate() : null;
-                                                const horario = dataFim ? `${dayjs(dataInicio).format('HH:mm')} - ${dayjs(dataFim).format('HH:mm')}` : dayjs(dataInicio).format('HH:mm');
+                                                const dataInicio = aula.dataInicio ? (aula.dataInicio?.toDate ? aula.dataInicio.toDate() : new Date(aula.dataInicio)) : null;
+                                                const dataFim = aula.dataFim ? (aula.dataFim?.toDate ? aula.dataFim.toDate() : new Date(aula.dataFim)) : null;
+                                                const isValidInicio = dataInicio && !isNaN(dataInicio.getTime());
+                                                const isValidFim = dataFim && !isNaN(dataFim.getTime());
+                                                const horario = aula.horarioSlot || (isValidInicio ? (isValidFim ? `${dayjs(dataInicio).format('HH:mm')} - ${dayjs(dataFim).format('HH:mm')}` : dayjs(dataInicio).format('HH:mm')) : 'Horário a definir');
                                                 return (
                                                     <React.Fragment key={aula.id}>
                                                         {i > 0 && <Divider />}
@@ -803,11 +853,94 @@ const PaginaInicial = ({ userInfo }) => {
                                 );
                             })()}
 
+                            {/* Feriados / Períodos sem atividade hoje */}
+                            {periodosBloqueadosHoje.length > 0 && (
+                                <>
+                                    <Box sx={{ px: 2, pt: 1.5, pb: 0.5, bgcolor: 'error.main', color: 'white' }}>
+                                        <Typography variant="caption" fontWeight="bold" sx={{ textTransform: 'uppercase', letterSpacing: 0.5, display: 'flex', alignItems: 'center', gap: 1 }}>
+                                            ⛔ DIA BLOQUEADO / SEM ATIVIDADE ACADÊMICA
+                                        </Typography>
+                                    </Box>
+                                    <List dense disablePadding>
+                                        {periodosBloqueadosHoje.map((per, i) => (
+                                            <React.Fragment key={per.id || i}>
+                                                {i > 0 && <Divider />}
+                                                <ListItem sx={{ py: 1, px: 2, bgcolor: 'rgba(211, 47, 47, 0.08)' }}>
+                                                    <ListItemText
+                                                        primary={
+                                                            <Typography variant="body2" fontWeight="bold" color="error.main">
+                                                                📌 {per.descricao || 'Feriado / Período Inativo'}
+                                                            </Typography>
+                                                        }
+                                                        secondary={
+                                                            <Typography variant="caption" color="text.secondary">
+                                                                📅 Período: {dayjs(per.data_inicio).format('DD/MM/YYYY')} até {dayjs(per.data_fim).format('DD/MM/YYYY')}
+                                                            </Typography>
+                                                        }
+                                                    />
+                                                </ListItem>
+                                            </React.Fragment>
+                                        ))}
+                                    </List>
+                                </>
+                            )}
+
+                            {/* Eventos / Manutenções de Hoje */}
+                            {(() => {
+                                const eventosVisiveis = (labsFavoritos.length > 0
+                                    ? eventosHoje.filter(e => !e.laboratorioSelecionado || labsFavoritos.includes(e.laboratorioSelecionado))
+                                    : eventosHoje
+                                );
+
+                                if (eventosVisiveis.length === 0) return null;
+                                return (
+                                    <>
+                                        <Divider />
+                                        <Box sx={{ px: 2, pt: 1.5, pb: 0.5 }}>
+                                            <Typography variant="caption" fontWeight="bold" color="warning.main" sx={{ textTransform: 'uppercase', letterSpacing: 0.5 }}>
+                                                🛠️ Eventos & Manutenções ({eventosVisiveis.length})
+                                            </Typography>
+                                        </Box>
+                                        <List dense disablePadding>
+                                            {eventosVisiveis.map((ev, i) => {
+                                                const dataInicio = ev.dataInicio ? (ev.dataInicio?.toDate ? ev.dataInicio.toDate() : new Date(ev.dataInicio)) : null;
+                                                const dataFim = ev.dataFim ? (ev.dataFim?.toDate ? ev.dataFim.toDate() : new Date(ev.dataFim)) : null;
+                                                const isValidInicio = dataInicio && !isNaN(dataInicio.getTime());
+                                                const isValidFim = dataFim && !isNaN(dataFim.getTime());
+                                                const horario = ev.horarioSlot || (isValidInicio ? (isValidFim ? `${dayjs(dataInicio).format('HH:mm')} - ${dayjs(dataFim).format('HH:mm')}` : dayjs(dataInicio).format('HH:mm')) : 'Dia Inteiro');
+                                                return (
+                                                    <React.Fragment key={ev.id || i}>
+                                                        {i > 0 && <Divider />}
+                                                        <ListItem sx={{ py: 1, px: 2, bgcolor: 'rgba(237, 108, 2, 0.08)' }}>
+                                                            <ListItemText
+                                                                primary={
+                                                                    <Box display="flex" alignItems="center" gap={0.8}>
+                                                                        <Typography variant="body2" fontWeight="bold" color="warning.main">{ev.titulo || ev.descricao || 'Manutenção'}</Typography>
+                                                                        <Chip label={ev.tipo || 'Evento'} size="small" color="warning" sx={{ height: 18, fontSize: '0.62rem' }} />
+                                                                    </Box>
+                                                                }
+                                                                secondary={
+                                                                    <Box sx={{ display: 'flex', gap: 1, mt: 0.2, flexWrap: 'wrap' }}>
+                                                                        <Typography variant="caption" color="text.secondary">🕐 {horario}</Typography>
+                                                                        {ev.laboratorioSelecionado && <Typography variant="caption" color="text.secondary">🏛️ {ev.laboratorioSelecionado}</Typography>}
+                                                                    </Box>
+                                                                }
+                                                            />
+                                                        </ListItem>
+                                                    </React.Fragment>
+                                                );
+                                            })}
+                                        </List>
+                                    </>
+                                );
+                            })()}
+
                             {/* Mensagem quando não há nada */}
                             {(() => {
                                 const aulasVis = labsFavoritos.length > 0 ? aulasOficiaisHoje.filter(a => labsFavoritos.includes(a.laboratorioSelecionado)) : aulasOficiaisHoje;
                                 const revisVis = labsFavoritos.length > 0 ? revisoesOficiaisHoje.filter(a => labsFavoritos.includes(a.laboratorioSelecionado)) : revisoesOficiaisHoje;
-                                if (aulasVis.length > 0 || revisVis.length > 0) return null;
+                                const evVis = labsFavoritos.length > 0 ? eventosHoje.filter(e => !e.laboratorioSelecionado || labsFavoritos.includes(e.laboratorioSelecionado)) : eventosHoje;
+                                if (aulasVis.length > 0 || revisVis.length > 0 || evVis.length > 0 || periodosBloqueadosHoje.length > 0) return null;
                                 return (
                                     <Box sx={{ px: 2, py: 3, textAlign: 'center' }}>
                                         <Typography variant="body2" color="text.secondary">
