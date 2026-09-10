@@ -456,15 +456,16 @@ function ProporEventoForm({ userInfo, currentUser, initialDate, onSuccess, onCan
                 for (const ev of eventosParaConfirmar) {
                     const finalData = {
                         titulo: ev.titulo,
-                        descricao: ev.descricao,
+                        descricao: ev.descricao || '',
                         tipo: ev.tipo,
-                        laboratorio: ev.laboratorio,
+                        laboratorio: ev.laboratorio || 'Todos',
                         data_inicio: ev.dataInicio.toISOString(),
                         data_fim: ev.dataFim.toISOString(),
                         horario_slot: ev.horarioSlotString,
-                        criado_por_uid: ev.criadoPorUid,
-                        criado_por_nome: ev.criadoPorNome,
-                        created_at: new Date().toISOString()
+                        criado_por_uid: ev.criadoPorUid || 'desconhecido',
+                        criado_por_nome: ev.criadoPorNome || 'Usuário',
+                        created_at: new Date().toISOString(),
+                        updated_at: new Date().toISOString()
                     };
                     const { data: inserted, error: insertErr } = await supabase
                         .from('eventos_manutencao')

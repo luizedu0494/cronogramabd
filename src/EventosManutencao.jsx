@@ -173,12 +173,15 @@ function EventosManutencao() {
 
         const eventoData = {
           titulo: formData.titulo,
-          descricao: formData.descricao,
+          descricao: formData.descricao || '',
           tipo: formData.tipo,
-          laboratorio: formData.laboratorio === 'Todos' ? null : formData.laboratorio,
+          laboratorio: formData.laboratorio || 'Todos',
           horario_slot: slot,
           data_inicio: finalStart.toISOString(),
           data_fim: finalEnd.toISOString(),
+          criado_por_uid: currentUser?.uid || 'desconhecido',
+          criado_por_nome: currentUser?.displayName || currentUser?.email || 'Técnico',
+          created_at: new Date().toISOString(),
           updated_at: new Date().toISOString()
         };
 
