@@ -317,7 +317,7 @@ const HistoricoAulas = () => {
                 </Box>
 
                 <Grid container spacing={2}>
-                    <Grid item xs={12} sm={6} md={3}>
+                    <Grid item xs={12} sm={6} md={3} sx={{ width: '100%', flexBasis: { xs: '100%', sm: '50%', md: '25%' } }}>
                         <TextField
                             fullWidth size="small"
                             label="Nome/Assunto"
@@ -330,13 +330,12 @@ const HistoricoAulas = () => {
                         />
                     </Grid>
 
-                    <Grid item xs={12} sm={6} md={3}>
-                        <FormControl fullWidth size="small" variant="outlined" sx={{ minWidth: 140 }}>
+                    <Grid item xs={12} sm={6} md={3} sx={{ width: '100%', flexBasis: { xs: '100%', sm: '50%', md: '25%' } }}>
+                        <FormControl fullWidth size="small" variant="outlined" sx={{ minWidth: { xs: '100%', sm: 140 }, width: '100%' }}>
                             <InputLabel shrink notched>Curso/Tipo</InputLabel>
                             <Select
                                 value={filtroCurso}
                                 onChange={(e) => setFiltroCurso(e.target.value)}
-                                label="Curso/Tipo"
                                 input={<OutlinedInput notched label="Curso/Tipo" />}
                             >
                                 <MenuItem value="">Todos</MenuItem>
@@ -347,13 +346,12 @@ const HistoricoAulas = () => {
                         </FormControl>
                     </Grid>
 
-                    <Grid item xs={12} sm={6} md={3}>
-                        <FormControl fullWidth size="small" variant="outlined" sx={{ minWidth: 120 }}>
+                    <Grid item xs={12} sm={6} md={3} sx={{ width: '100%', flexBasis: { xs: '100%', sm: '50%', md: '25%' } }}>
+                        <FormControl fullWidth size="small" variant="outlined" sx={{ minWidth: { xs: '100%', sm: 120 }, width: '100%' }}>
                             <InputLabel shrink notched>Ano</InputLabel>
                             <Select
                                 value={filtroAno}
                                 onChange={(e) => setFiltroAno(e.target.value)}
-                                label="Ano"
                                 input={<OutlinedInput notched label="Ano" />}
                             >
                                 <MenuItem value="">Todos</MenuItem>
@@ -364,13 +362,12 @@ const HistoricoAulas = () => {
                         </FormControl>
                     </Grid>
 
-                    <Grid item xs={12} sm={6} md={3}>
-                        <FormControl fullWidth size="small" variant="outlined" sx={{ minWidth: 140 }}>
+                    <Grid item xs={12} sm={6} md={3} sx={{ width: '100%', flexBasis: { xs: '100%', sm: '50%', md: '25%' } }}>
+                        <FormControl fullWidth size="small" variant="outlined" sx={{ minWidth: { xs: '100%', sm: 140 }, width: '100%' }}>
                             <InputLabel shrink notched>Status</InputLabel>
                             <Select
                                 value={filtroStatus}
                                 onChange={(e) => setFiltroStatus(e.target.value)}
-                                label="Status"
                                 input={<OutlinedInput notched label="Status" />}
                             >
                                 <MenuItem value="">Todos</MenuItem>
@@ -382,14 +379,13 @@ const HistoricoAulas = () => {
                         </FormControl>
                     </Grid>
 
-                    <Grid item xs={12} sm={6} md={3}>
-                        <FormControl fullWidth size="small" variant="outlined">
-                            <InputLabel shrink>Tipo de Conteúdo</InputLabel>
+                    <Grid item xs={12} sm={6} md={3} sx={{ width: '100%', flexBasis: { xs: '100%', sm: '50%', md: '25%' } }}>
+                        <FormControl fullWidth size="small" variant="outlined" sx={{ minWidth: { xs: '100%', sm: 140 }, width: '100%' }}>
+                            <InputLabel shrink notched>Tipo</InputLabel>
                             <Select
                                 value={filtroTipo}
                                 onChange={(e) => setFiltroTipo(e.target.value)}
-                                label="Tipo de Conteúdo"
-                                input={<OutlinedInput notched label="Tipo de Conteúdo" />}
+                                input={<OutlinedInput notched label="Tipo" />}
                             >
                                 <MenuItem value="">Todos</MenuItem>
                                 <MenuItem value="aula">🎓 Aula Normal</MenuItem>

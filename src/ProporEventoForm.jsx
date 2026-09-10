@@ -595,14 +595,14 @@ function ProporEventoForm({ userInfo, currentUser, initialDate, onSuccess, onCan
                                         />
                                     </Grid>
                                     <Grid item xs={12} sm={6}>
-                                        <FormControl fullWidth error={!!errors.horarioSlotString} disabled={!formData.dataInicio || (!secao1Completa && !isEditMode)}>
-                                            <InputLabel>{isEditMode ? 'Horário *' : 'Horário(s) *'}</InputLabel>
+                                        <FormControl fullWidth size="small" error={!!errors.horarioSlotString} disabled={!formData.dataInicio || (!secao1Completa && !isEditMode)} sx={{ minWidth: { xs: '100%', sm: 160 } }}>
+                                            <InputLabel shrink notched>{isEditMode ? 'Horário *' : 'Horário(s) *'}</InputLabel>
                                             {isEditMode ? (
                                                 <Select
                                                     name="horarioSlotString"
                                                     value={formData.horarioSlotString[0] || ''}
                                                     onChange={(e) => setFormData(prev => ({ ...prev, horarioSlotString: [e.target.value] }))}
-                                                    label="Horário *"
+                                                    input={<OutlinedInput notched label="Horário *" />}
                                                 >
                                                     {BLOCOS_HORARIO.map((bloco) => {
                                                         const isOccupied = infoOcupacao.hasOwnProperty(bloco.value);
@@ -623,19 +623,22 @@ function ProporEventoForm({ userInfo, currentUser, initialDate, onSuccess, onCan
                                                 </Select>
                                             ) : (
                                                 <Select
-                                                    multiple
-                                                    name="horarioSlotString"
-                                                    value={formData.horarioSlotString}
-                                                    onChange={handleChange}
-                                                    input={<OutlinedInput label="Horário(s) *" />}
-                                                    renderValue={(selected) => (
-                                                        <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
-                                                            {selected.map((value) => (
-                                                                <Chip key={value} label={BLOCOS_HORARIO.find(b => b.value === value)?.label || value} size="small" color="primary" />
-                                                            ))}
-                                                        </Box>
-                                                    )}
-                                                >
+                                                     multiple
+                                                     name="horarioSlotString"
+                                                     value={formData.horarioSlotString}
+                                                     onChange={handleChange}
+                                                     input={<OutlinedInput notched label="Horário(s) *" />}
+                                                     renderValue={(selected) => {
+                                                         if (!selected || selected.length === 0) return <span style={{ opacity: 0.7 }}>Selecione o(s) horário(s)</span>;
+                                                         return (
+                                                             <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
+                                                                 {selected.map((value) => (
+                                                                     <Chip key={value} label={BLOCOS_HORARIO.find(b => b.value === value)?.label || value} size="small" color="primary" />
+                                                                 ))}
+                                                             </Box>
+                                                         );
+                                                     }}
+                                                 >
                                                     {BLOCOS_HORARIO.map((bloco) => {
                                                         const isOccupied = infoOcupacao.hasOwnProperty(bloco.value);
                                                         const tituloQueOcupa = infoOcupacao[bloco.value];

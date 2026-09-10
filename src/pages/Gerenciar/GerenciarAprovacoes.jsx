@@ -13,6 +13,7 @@ import SearchIcon from '@mui/icons-material/Search';
 import WarningAmberIcon from '@mui/icons-material/WarningAmber';
 import FilterListIcon from '@mui/icons-material/FilterList';
 import TaskAltIcon from '@mui/icons-material/TaskAlt';
+import PlaylistAddCheckIcon from '@mui/icons-material/PlaylistAddCheck';
 import dayjs from 'dayjs';
 import 'dayjs/locale/pt-br';
 import { supabase } from '../../supabaseConfig';

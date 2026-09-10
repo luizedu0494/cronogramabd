@@ -1118,15 +1118,15 @@ function ProporAulaForm({ userInfo, currentUser, initialDate, onSuccess, onCance
                                         />
                                     </Grid>
                                     <Grid item xs={12} sm={6}>
-                                        <FormControl fullWidth error={!!errors.horarioSlotString} disabled={!formData.dataInicio || (!secao1Completa && !isEditMode)}>
-                                            <InputLabel>{isEditMode ? 'Horário *' : 'Horário(s) *'}</InputLabel>
+                                        <FormControl fullWidth size="small" error={!!errors.horarioSlotString} disabled={!formData.dataInicio || (!secao1Completa && !isEditMode)} sx={{ minWidth: { xs: '100%', sm: 160 } }}>
+                                            <InputLabel shrink notched>{isEditMode ? 'Horário *' : 'Horário(s) *'}</InputLabel>
                                             {isEditMode ? (
                                                 /* EDIÇÃO: select simples, 1 horário */
                                                 <Select
                                                     name="horarioSlotString"
                                                     value={formData.horarioSlotString[0] || ''}
                                                     onChange={(e) => setFormData(prev => ({ ...prev, horarioSlotString: [e.target.value] }))}
-                                                    label="Horário *"
+                                                    input={<OutlinedInput notched label="Horário *" />}
                                                 >
                                                     {BLOCOS_HORARIO.map((bloco) => {
                                                         const info = infoOcupacao[bloco.value];
@@ -1159,14 +1159,17 @@ function ProporAulaForm({ userInfo, currentUser, initialDate, onSuccess, onCance
                                                     name="horarioSlotString"
                                                     value={formData.horarioSlotString}
                                                     onChange={handleChange}
-                                                    input={<OutlinedInput label="Horário(s) *" />}
-                                                    renderValue={(selected) => (
-                                                        <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
-                                                            {selected.map((value) => (
-                                                                <Chip key={value} label={BLOCOS_HORARIO.find(b => b.value === value)?.label || value} size="small" />
-                                                            ))}
-                                                        </Box>
-                                                    )}
+                                                    input={<OutlinedInput notched label="Horário(s) *" />}
+                                                    renderValue={(selected) => {
+                                                        if (!selected || selected.length === 0) return <span style={{ opacity: 0.7 }}>Selecione o(s) horário(s)</span>;
+                                                        return (
+                                                            <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
+                                                                {selected.map((value) => (
+                                                                    <Chip key={value} label={BLOCOS_HORARIO.find(b => b.value === value)?.label || value} size="small" />
+                                                                ))}
+                                                            </Box>
+                                                        );
+                                                    }}
                                                 >
                                                     {BLOCOS_HORARIO.map((bloco) => {
                                                         const info = infoOcupacao[bloco.value];
