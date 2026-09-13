@@ -235,14 +235,24 @@ class ProcessadorConsultas {
 
       // Fallback para desenvolvimento local caso a API Key esteja no VITE_GROQ_API_KEY ou /api/groq retorne HTML no Vite
       if ((!response.ok || !isJson) && GROQ_API_KEY) {
-        response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${GROQ_API_KEY}`,
-          },
-          body: JSON.stringify(payload),
-        });
+        const candidates = [GROQ_MODEL, 'llama-3.1-8b-instant', 'llama3-8b-8192', 'llama3-70b-8192', 'mixtral-8x7b-32768', 'gemma2-9b-it'];
+        const uniqueCandidates = [...new Set(candidates.filter(Boolean))];
+        for (const modelCandidate of uniqueCandidates) {
+          const fallbackPayload = { ...payload, model: modelCandidate };
+          const directResp = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              Authorization: `Bearer ${GROQ_API_KEY}`,
+            },
+            body: JSON.stringify(fallbackPayload),
+          });
+          if (directResp.ok) {
+            response = directResp;
+            break;
+          }
+          response = directResp;
+        }
       }
 
       const finalContentType = response.headers.get('content-type');
