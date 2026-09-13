@@ -15,6 +15,12 @@ export default async function handler(req, res) {
       return res.status(400).json({ error: 'Payload ausente' });
     }
 
+    // Valida/Sanitiza o modelo da Groq para evitar 404 de modelo inexistente
+    const validModels = ['llama-3.3-70b-versatile', 'llama-3.1-8b-instant', 'mixtral-8x7b-32768', 'gemma2-9b-it', 'deepseek-r1-distill-llama-70b'];
+    if (!payload.model || !validModels.includes(payload.model)) {
+      payload.model = 'llama-3.3-70b-versatile';
+    }
+
     const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
       method: 'POST',
       headers: {
