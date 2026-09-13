@@ -295,32 +295,7 @@ export default function ConsultaDisponibilidade() {
             Localize datas e horários disponíveis em múltiplos laboratórios para agendamentos recorrentes ou eventos especiais.
           </Typography>
 
-          {/* BUSCA COM IA (LINGUAGEM NATURAL) */}
-          <Paper elevation={0} sx={{ p: 2, mb: 3, backgroundColor: 'action.hover', border: '1px solid', borderColor: 'primary.main', borderRadius: 2 }}>
-            <Typography variant="subtitle2" fontWeight="bold" color="primary" display="flex" alignItems="center" gap={1} mb={1}>
-              <AutoAwesomeIcon fontSize="small" /> Assistente de Busca Inteligente
-            </Typography>
-            <Box display="flex" gap={1}>
-              <TextField
-                fullWidth
-                size="small"
-                placeholder="Ex: Lab livre quinta à tarde para 30 alunos..."
-                value={textoBuscaIA}
-                onChange={(e) => setTextoBuscaIA(e.target.value)}
-                onKeyDown={(e) => { if (e.key === 'Enter') handleProcessarLinguagemNatural(); }}
-                InputProps={{
-                  startAdornment: (
-                    <InputAdornment position="start">
-                      <AutoAwesomeIcon color="primary" fontSize="small" />
-                    </InputAdornment>
-                  ),
-                }}
-              />
-              <Button variant="contained" onClick={handleProcessarLinguagemNatural} sx={{ whitespace: 'nowrap' }}>
-                Preencher Filtros
-              </Button>
-            </Box>
-          </Paper>
+
 
           {/* PASSO 1: Configurar a Consulta */}
 

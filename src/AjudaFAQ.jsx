@@ -150,7 +150,7 @@ function AjudaFAQ({ userInfo }) {
           {isVisitor ? 'Dúvidas & Dicas para Visitantes' : 'Ajuda / Perguntas Frequentes'}
         </Typography>
         <Typography variant="body2" color="text.secondary" align="center" sx={{ mb: 3 }}>
-          {isVisitor ? 'Guia prático para consultar horários e usar o assistente de I.A.' : `${faqBase.length} perguntas — filtre por categoria para encontrar mais rápido`}
+          {isVisitor ? 'Guia prático para consultar horários.' : `${faqBase.length} perguntas — filtre por categoria para encontrar mais rápido`}
         </Typography>
 
         {/* Filtro por categoria */}

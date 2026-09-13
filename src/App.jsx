@@ -1135,7 +1135,7 @@ function App() {
                                         <Route path="/importar-cronograma-externo" element={<UploadCronogramaExterno />} />
                                         <Route path="/backup-sistema" element={<BackupSistema userProfile={userProfileData} />} />
                                     </>)}
-                                    <Route path="/assistente-ia" element={role === 'visualizador' ? <Navigate to="/calendario" replace /> : <AssistenteIA userInfo={userProfileData} currentUser={user} mode={darkMode ? 'dark' : 'light'} />} />
+                                    <Route path="/assistente-ia" element={<Navigate to="/calendario" replace />} />
                                     <Route path="/download-cronograma" element={<DownloadCronograma />} />
                                     <Route path="*" element={<Navigate to={role === 'visualizador' ? "/calendario" : "/"} replace />} />
 

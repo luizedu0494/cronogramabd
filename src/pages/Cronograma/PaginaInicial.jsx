@@ -1076,20 +1076,7 @@ const PaginaInicial = ({ userInfo }) => {
                 </DialogActions>
             </Dialog>
 
-            {/* 4. ASSISTENTE IA */}
-            {canUseAI && (
-                <Accordion sx={{ mb: 3, bgcolor: 'background.paper', boxShadow: 1, '&:before': { display: 'none' } }}>
-                    <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-                        <Box display="flex" alignItems="center" gap={1}>
-                            <LayoutDashboard size={20} color={theme.palette.primary.main} />
-                            <Typography fontWeight="medium">Analista Inteligente (IA)</Typography>
-                        </Box>
-                    </AccordionSummary>
-                    <AccordionDetails sx={{ pt: 0 }}>
-                        <AssistenteIA userInfo={userInfo} currentUser={userInfo} mode={mode} />
-                    </AccordionDetails>
-                </Accordion>
-            )}
+
 
             {/* 5. CONTEÚDO PRINCIPAL (Abas) */}
             <Paper elevation={2} sx={{ mb: 3 }}>
