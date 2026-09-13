@@ -1,4 +1,4 @@
-module.exports = async function handler(req, res) {
+export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
@@ -79,7 +79,7 @@ module.exports = async function handler(req, res) {
           },
           body: JSON.stringify({
             ...payloadWithoutFormat,
-            model: 'llama-3.1-8b-instant'
+            model: 'llama-3.3-70b-versatile'
           }),
         });
 
@@ -95,7 +95,9 @@ module.exports = async function handler(req, res) {
     console.error('Erro na Vercel Function groq Proxy:', error);
     return res.status(500).json({ error: 'Erro interno ao processar requisição da IA: ' + (error.message || String(error)) });
   }
-};
+}
 
-module.exports.default = module.exports;
-
+if (typeof module !== 'undefined' && module.exports) {
+  module.exports = handler;
+  module.exports.default = handler;
+}
