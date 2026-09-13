@@ -23,7 +23,7 @@ const BLOCOS_HORARIO = [
 ];
 
 const GROQ_API_KEY = import.meta.env.VITE_GROQ_API_KEY;
-const GROQ_MODEL = import.meta.env.VITE_GROQ_MODEL_LIGHT || 'groq/compound-mini';
+const GROQ_MODEL = import.meta.env.VITE_GROQ_MODEL_LIGHT || 'llama-3.1-8b-instant';
 
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import SendTimeExtensionIcon from '@mui/icons-material/SendTimeExtension';

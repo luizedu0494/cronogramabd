@@ -4,9 +4,9 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: 'Método não permitido' });
   }
 
-  const groqApiKey = process.env.GROQ_API_KEY;
+  const groqApiKey = process.env.GROQ_API_KEY || process.env.VITE_GROQ_API_KEY;
   if (!groqApiKey) {
-    return res.status(500).json({ error: 'Chave GROQ_API_KEY não configurada no ambiente.' });
+    return res.status(500).json({ error: 'Chave GROQ_API_KEY ou VITE_GROQ_API_KEY não configurada no ambiente do servidor.' });
   }
 
   try {
@@ -24,10 +24,11 @@ export default async function handler(req, res) {
       body: JSON.stringify(payload),
     });
 
-    const data = await response.json();
+    const data = await response.json().catch(() => ({}));
     return res.status(response.status).json(data);
   } catch (error) {
     console.error('Erro na Vercel Function groq Proxy:', error);
-    return res.status(500).json({ error: 'Erro interno ao processar requisição da IA.' });
+    return res.status(500).json({ error: 'Erro interno ao processar requisição da IA: ' + (error.message || String(error)) });
   }
 }
+
