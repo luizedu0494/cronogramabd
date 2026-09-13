@@ -32,8 +32,3 @@ export default async function handler(req, res) {
   }
 }
 
-if (typeof module !== 'undefined' && module.exports) {
-  module.exports = handler;
-  module.exports.default = handler;
-}
-
