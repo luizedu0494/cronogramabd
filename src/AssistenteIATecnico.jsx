@@ -23,9 +23,9 @@ const BLOCOS_HORARIO = [
 ];
 
 const GROQ_API_KEY = import.meta.env.VITE_GROQ_API_KEY;
-const VALID_GROQ_MODELS = ['llama-3.1-8b-instant', 'llama3-70b-8192', 'llama3-8b-8192', 'mixtral-8x7b-32768', 'gemma2-9b-it'];
+const VALID_GROQ_MODELS = ['llama-3.3-70b-versatile', 'llama-3.1-8b-instant', 'llama3-70b-8192', 'llama3-8b-8192', 'mixtral-8x7b-32768'];
 const RAW_MODEL = import.meta.env.VITE_GROQ_MODEL_LIGHT || import.meta.env.VITE_GROQ_MODEL;
-const GROQ_MODEL = (RAW_MODEL && VALID_GROQ_MODELS.includes(RAW_MODEL)) ? RAW_MODEL : 'llama-3.1-8b-instant';
+const GROQ_MODEL = (RAW_MODEL && VALID_GROQ_MODELS.includes(RAW_MODEL)) ? RAW_MODEL : 'llama-3.3-70b-versatile';
 
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import SendTimeExtensionIcon from '@mui/icons-material/SendTimeExtension';

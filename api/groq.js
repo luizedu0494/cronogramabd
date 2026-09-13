@@ -1,4 +1,11 @@
 export default async function handler(req, res) {
+  if (req.method === 'OPTIONS') {
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+    return res.status(200).end();
+  }
+
   // Apenas aceita solicitações POST
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Método não permitido' });
@@ -17,12 +24,12 @@ export default async function handler(req, res) {
 
     const candidateModels = [
       payload.model,
+      'llama-3.3-70b-versatile',
       'llama-3.1-8b-instant',
-      'llama3-8b-8192',
       'llama3-70b-8192',
-      'mixtral-8x7b-32768',
-      'gemma2-9b-it'
-    ].filter(Boolean);
+      'llama3-8b-8192',
+      'mixtral-8x7b-32768'
+    ].filter(m => m && m !== 'openai/gpt-oss-20b' && m !== 'groq/compound-mini' && m !== 'gemma2-9b-it' && m !== 'llama-3.1-70b-versatile');
 
     const uniqueModels = [...new Set(candidateModels)];
 
