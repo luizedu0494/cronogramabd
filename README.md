@@ -134,7 +134,6 @@ Gestão ágil de aprovações e agendamentos na palma da mão:
 - **Importação & Exportação**:
   - Importação de cronogramas em planilhas Excel (`.xlsx`) e documentos Word (`.docx`).
   - Exportação em **PDF**, **Excel** e arquivos de calendário **iCal (.ics)**.
-- **Assistente de Inteligência Artificial**: Análise e diagnóstico inteligente de choques de horário.
 
 ---
 
@@ -143,7 +142,6 @@ Gestão ágil de aprovações e agendamentos na palma da mão:
 - **Frontend**: [React 19](https://react.dev/), [Vite 7](https://vitejs.dev/), [Material-UI (MUI v7)](https://mui.com/), [Dayjs](https://day.js.org/)
 - **Backend & Banco de Dados**: [Supabase](https://supabase.com/) (PostgreSQL + Auth PKCE Flow + Realtime Subscriptions + Storage)
 - **Hospedagem & CDN**: [Vercel](https://vercel.com/)
-- **Inteligência Artificial**: LangChain.js & Groq API (`llama-3.3-70b-versatile`)
 - **Documentos & Dados**: ExcelJS, SheetJS (`xlsx`), jsPDF, Tesseract.js (OCR)
 
 ---
@@ -169,7 +167,6 @@ Crie um arquivo `.env` na raiz do projeto com as credenciais do Supabase:
 ```env
 VITE_SUPABASE_URL=https://seu_projeto.supabase.co
 VITE_SUPABASE_ANON_KEY=sua_chave_anonima_supabase
-VITE_GROQ_API_KEY=sua_chave_groq_opcional
 ```
 
 ### 4. Iniciar o Servidor de Desenvolvimento
