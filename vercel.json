@@ -1,4 +1,6 @@
 {
+  "buildCommand": "npm run build",
+  "outputDirectory": "dist",
   "functions": {
     "api/*.js": {
       "memory": 1024,
@@ -26,7 +28,7 @@
   ],
   "rewrites": [
     {
-      "source": "/((?!api/|.*\\.).*)",
+      "source": "/((?!api/).*)",
       "destination": "/index.html"
     }
   ]
