@@ -154,8 +154,12 @@ function AssistenteIATecnico({ userInfo, currentUser, mode }) {
             const data = finalIsJson ? await response.json().catch(() => ({})) : {};
 
             if (!response.ok || !finalIsJson) {
+                const serverError = data?.error || data?.message;
+                if (serverError) {
+                    return { erro: typeof serverError === 'string' ? serverError : (serverError.message || JSON.stringify(serverError)) };
+                }
                 if (!GROQ_API_KEY) {
-                    return { erro: 'Configuração necessária: Adicione VITE_GROQ_API_KEY=gsk_... no arquivo .env para executar a IA em ambiente local.' };
+                    return { erro: `Erro HTTP (${response.status}): Não foi possível conectar ao /api/groq. Verifique a variável GROQ_API_KEY no painel da Vercel.` };
                 }
                 const apiError = data?.error?.message || response.statusText || response.status;
                 throw new Error(`Erro na API Groq (${response.status}): ${apiError}`);
