@@ -18,8 +18,34 @@ module.exports = async function handler(req, res) {
       return res.status(400).json({ error: 'Payload ausente' });
     }
 
-    // Modelo fixo universal liberado para todas as chaves da Groq (Free & Paid)
-    const finalPayload = { ...payload, model: 'llama-3.1-8b-instant' };
+    // Consulta dinâmica dos modelos ativos na conta da Groq
+    let activeModels = [];
+    try {
+      const modelsRes = await fetch('https://api.groq.com/openai/v1/models', {
+        headers: { 'Authorization': `Bearer ${groqApiKey}` }
+      });
+      if (modelsRes.ok) {
+        const modelsData = await modelsRes.json();
+        activeModels = (modelsData.data || [])
+          .filter(m => m.active !== false && !m.id.includes('whisper'))
+          .map(m => m.id);
+      }
+    } catch (e) {
+      console.warn('Não foi possível consultar os modelos ativos:', e);
+    }
+
+    const preferredModels = ['llama-3.3-70b-versatile', 'llama-3.1-8b-instant', 'llama3-70b-8192', 'llama3-8b-8192'];
+    let modelToUse = payload.model;
+
+    if (activeModels.length > 0) {
+      if (!activeModels.includes(modelToUse)) {
+        modelToUse = preferredModels.find(m => activeModels.includes(m)) || activeModels[0];
+      }
+    } else {
+      modelToUse = 'llama-3.3-70b-versatile';
+    }
+
+    const finalPayload = { ...payload, model: modelToUse };
 
     const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
       method: 'POST',

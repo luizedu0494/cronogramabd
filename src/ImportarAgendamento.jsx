@@ -240,26 +240,25 @@ REGRAS:
 4. Não duplique a mesma aula — agrupe por data
 5. Se não houver NENHUMA aula prática, retorne []`;
 
-    const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+    const payload = {
+        model: GROQ_MODEL,
+        temperature: 0.1,                          // baixa = mais obediente ao JSON
+        response_format: { type: 'json_object' },  // Groq garante JSON válido
+        messages: [
+            { role: 'system', content: systemPrompt },
+            { role: 'user',   content: `Arquivo: "${nomeArquivo}"\n\n${textoTruncado}` },
+        ],
+    };
+
+    let response = await fetch('/api/groq', {
         method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${GROQ_API_KEY}`,
-        },
-        body: JSON.stringify({
-            model: GROQ_MODEL,
-            temperature: 0.1,                          // baixa = mais obediente ao JSON
-            response_format: { type: 'json_object' },  // Groq garante JSON válido
-            messages: [
-                { role: 'system', content: systemPrompt },
-                { role: 'user',   content: `Arquivo: "${nomeArquivo}"\n\n${textoTruncado}` },
-            ],
-        }),
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ payload }),
     });
 
     if (!response.ok) {
         const err = await response.json().catch(() => ({}));
-        throw new Error(`Erro Groq: ${err.error?.message || response.statusText}`);
+        throw new Error(`Erro Groq: ${err.error?.message || err.error || response.statusText}`);
     }
 
     const data = await response.json();

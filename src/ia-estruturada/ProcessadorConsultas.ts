@@ -222,7 +222,7 @@ class ProcessadorConsultas {
 
     try {
       // 1. Tenta chamar via Serverless Function /api/groq (produção segura)
-      let response = await fetch('/api/groq', {
+      const response = await fetch('/api/groq', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ payload }),
@@ -230,35 +230,14 @@ class ProcessadorConsultas {
 
       const contentType = response.headers.get('content-type');
       const isJson = contentType && contentType.includes('application/json');
+      const data = isJson ? await response.json().catch(() => ({})) : {};
 
-      // Fallback para desenvolvimento local caso a API Key esteja no VITE_GROQ_API_KEY ou /api/groq retorne HTML no Vite
-      if ((!response.ok || !isJson) && GROQ_API_KEY) {
-        const fallbackPayload = { ...payload, model: 'llama-3.1-8b-instant' };
-        response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${GROQ_API_KEY}`,
-          },
-          body: JSON.stringify(fallbackPayload),
-        });
-      }
-
-      const finalContentType = response.headers.get('content-type');
-      const finalIsJson = finalContentType && finalContentType.includes('application/json');
-
-      const data = finalIsJson ? await response.json().catch(() => ({})) : {};
-
-      if (!response.ok || !finalIsJson) {
+      if (!response.ok || !isJson) {
         const serverError = data?.error || data?.message;
-        if (serverError) {
-          return { erro: typeof serverError === 'string' ? serverError : (serverError.message || JSON.stringify(serverError)) };
-        }
-        if (!GROQ_API_KEY) {
-          return { erro: `Erro HTTP (${response.status}): Não foi possível conectar ao /api/groq. Verifique a variável GROQ_API_KEY no painel da Vercel.` };
-        }
-        const apiError = data?.error?.message || response.statusText || response.status;
-        throw new Error(`Erro API Groq (${response.status}): ${apiError}`);
+        const errDetail = typeof serverError === 'string'
+          ? serverError
+          : (serverError?.message || response.statusText || `Erro ${response.status}`);
+        return { erro: errDetail };
       }
 
       const conteudo = data.choices?.[0]?.message?.content;
