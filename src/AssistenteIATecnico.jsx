@@ -23,9 +23,7 @@ const BLOCOS_HORARIO = [
 ];
 
 const GROQ_API_KEY = import.meta.env.VITE_GROQ_API_KEY;
-const VALID_GROQ_MODELS = ['llama-3.3-70b-versatile', 'llama-3.1-8b-instant', 'llama3-70b-8192', 'llama3-8b-8192', 'mixtral-8x7b-32768'];
-const RAW_MODEL = import.meta.env.VITE_GROQ_MODEL_LIGHT || import.meta.env.VITE_GROQ_MODEL;
-const GROQ_MODEL = (RAW_MODEL && VALID_GROQ_MODELS.includes(RAW_MODEL)) ? RAW_MODEL : 'llama-3.3-70b-versatile';
+const GROQ_MODEL = 'llama-3.3-70b-versatile';
 
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import SendTimeExtensionIcon from '@mui/icons-material/SendTimeExtension';
@@ -140,24 +138,15 @@ function AssistenteIATecnico({ userInfo, currentUser, mode }) {
             const isJson = contentType && contentType.includes('application/json');
 
             if ((!response.ok || !isJson) && GROQ_API_KEY) {
-                const candidates = [GROQ_MODEL, 'llama-3.1-8b-instant', 'llama3-8b-8192', 'llama3-70b-8192', 'mixtral-8x7b-32768', 'gemma2-9b-it'];
-                const uniqueCandidates = [...new Set(candidates.filter(Boolean))];
-                for (const modelCandidate of uniqueCandidates) {
-                    const fallbackPayload = { ...payload, model: modelCandidate };
-                    const directResp = await fetch('https://api.groq.com/openai/v1/chat/completions', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'Authorization': `Bearer ${GROQ_API_KEY}`
-                        },
-                        body: JSON.stringify(fallbackPayload)
-                    });
-                    if (directResp.ok) {
-                        response = directResp;
-                        break;
-                    }
-                    response = directResp;
-                }
+                const fallbackPayload = { ...payload, model: 'llama-3.3-70b-versatile' };
+                response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${GROQ_API_KEY}`
+                    },
+                    body: JSON.stringify(fallbackPayload)
+                });
             }
 
             const finalContentType = response.headers.get('content-type');
