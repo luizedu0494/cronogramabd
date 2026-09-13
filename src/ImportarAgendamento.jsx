@@ -206,9 +206,9 @@ async function extrairTexto(file) {
 
 // Reutiliza exatamente a mesma chave e modelo já configurados no projeto (ProcessadorConsultas.js)
 const GROQ_API_KEY = import.meta.env.VITE_GROQ_API_KEY;
-const VALID_GROQ_MODELS = ['llama-3.3-70b-versatile', 'llama-3.1-8b-instant', 'llama3-70b-8192', 'llama3-8b-8192', 'mixtral-8x7b-32768', 'gemma2-9b-it'];
+const VALID_GROQ_MODELS = ['llama-3.1-8b-instant', 'llama3-70b-8192', 'llama3-8b-8192', 'mixtral-8x7b-32768', 'gemma2-9b-it'];
 const RAW_MODEL = import.meta.env.VITE_GROQ_MODEL;
-const GROQ_MODEL = (RAW_MODEL && VALID_GROQ_MODELS.includes(RAW_MODEL) && RAW_MODEL !== 'llama-3.1-70b-versatile') ? RAW_MODEL : 'llama-3.3-70b-versatile';
+const GROQ_MODEL = (RAW_MODEL && VALID_GROQ_MODELS.includes(RAW_MODEL)) ? RAW_MODEL : 'llama-3.1-8b-instant';
 const LABS_PARA_IA = LISTA_LABORATORIOS.map(l => `${l.id} (${l.name})`).join(', ');
 
 async function interpretarComIA(textoExtraido, nomeArquivo, onProgress) {

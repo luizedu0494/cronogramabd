@@ -15,10 +15,10 @@ export default async function handler(req, res) {
       return res.status(400).json({ error: 'Payload ausente' });
     }
 
-    // Valida/Sanitiza o modelo da Groq para evitar erro de modelo descontinuado (llama-3.1-70b-versatile)
-    const validModels = ['llama-3.3-70b-versatile', 'llama-3.1-8b-instant', 'llama3-70b-8192', 'llama3-8b-8192', 'mixtral-8x7b-32768', 'gemma2-9b-it'];
-    if (!payload.model || !validModels.includes(payload.model) || payload.model === 'llama-3.1-70b-versatile') {
-      payload.model = 'llama-3.3-70b-versatile';
+    // Usa llama-3.1-8b-instant como modelo universal compatível com todas as chaves da Groq
+    const validModels = ['llama-3.1-8b-instant', 'llama3-70b-8192', 'llama3-8b-8192', 'mixtral-8x7b-32768', 'gemma2-9b-it'];
+    if (!payload.model || !validModels.includes(payload.model)) {
+      payload.model = 'llama-3.1-8b-instant';
     }
 
     const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
