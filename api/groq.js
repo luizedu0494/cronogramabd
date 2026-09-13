@@ -22,46 +22,43 @@ export default async function handler(req, res) {
       return res.status(400).json({ error: 'Payload ausente' });
     }
 
-    const candidateModels = [
-      payload.model,
-      'llama-3.3-70b-versatile',
-      'llama-3.1-8b-instant',
-      'llama3-70b-8192',
-      'llama3-8b-8192',
-      'mixtral-8x7b-32768'
-    ].filter(m => m && m !== 'openai/gpt-oss-20b' && m !== 'groq/compound-mini' && m !== 'gemma2-9b-it' && m !== 'llama-3.1-70b-versatile');
-
-    const uniqueModels = [...new Set(candidateModels)];
-
-    let lastData = {};
-    let lastStatus = 500;
-
-    for (const modelCandidate of uniqueModels) {
-      const currentPayload = { ...payload, model: modelCandidate };
-
-      const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${groqApiKey}`,
-        },
-        body: JSON.stringify(currentPayload),
+    // Busca dinâmica dos modelos ativos na Groq para evitar erros de descontinuação
+    let activeModels = [];
+    try {
+      const modelsRes = await fetch('https://api.groq.com/openai/v1/models', {
+        headers: { 'Authorization': `Bearer ${groqApiKey}` }
       });
-
-      lastStatus = response.status;
-      lastData = await response.json().catch(() => ({}));
-
-      if (response.ok) {
-        return res.status(200).json(lastData);
+      if (modelsRes.ok) {
+        const modelsData = await modelsRes.json();
+        activeModels = (modelsData.data || [])
+          .filter(m => m.active !== false && !m.id.includes('whisper'))
+          .map(m => m.id);
       }
-
-      const msg = lastData?.error?.message || '';
-      if (response.status !== 404 && !msg.includes('does not exist') && !msg.includes('decommissioned') && !msg.includes('not have access')) {
-        return res.status(response.status).json(lastData);
-      }
+    } catch (e) {
+      console.warn('Não foi possível obter lista dinâmica de modelos da Groq:', e);
     }
 
-    return res.status(lastStatus).json(lastData);
+    const defaultActiveModels = ['llama-3.1-8b-instant', 'llama-3.3-70b-versatile'];
+    const availableList = activeModels.length > 0 ? activeModels : defaultActiveModels;
+
+    const requestedModel = payload.model;
+    const modelToUse = (requestedModel && availableList.includes(requestedModel))
+      ? requestedModel
+      : (availableList.find(m => m.includes('instant') || m.includes('8b')) || availableList[0]);
+
+    const finalPayload = { ...payload, model: modelToUse };
+
+    const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${groqApiKey}`,
+      },
+      body: JSON.stringify(finalPayload),
+    });
+
+    const data = await response.json().catch(() => ({}));
+    return res.status(response.status).json(data);
   } catch (error) {
     console.error('Erro na Vercel Function groq Proxy:', error);
     return res.status(500).json({ error: 'Erro interno ao processar requisição da IA: ' + (error.message || String(error)) });
