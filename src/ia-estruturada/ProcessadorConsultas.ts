@@ -249,8 +249,12 @@ class ProcessadorConsultas {
       const data = finalIsJson ? await response.json().catch(() => ({})) : {};
 
       if (!response.ok || !finalIsJson) {
+        const serverError = data?.error || data?.message;
+        if (serverError) {
+          return { erro: typeof serverError === 'string' ? serverError : (serverError.message || JSON.stringify(serverError)) };
+        }
         if (!GROQ_API_KEY) {
-          return { erro: 'A API Groq precisa da chave VITE_GROQ_API_KEY configurada no arquivo .env para testes locais.' };
+          return { erro: `Erro HTTP (${response.status}): Não foi possível conectar ao /api/groq. Verifique a variável GROQ_API_KEY no painel da Vercel.` };
         }
         const apiError = data?.error?.message || response.statusText || response.status;
         throw new Error(`Erro API Groq (${response.status}): ${apiError}`);

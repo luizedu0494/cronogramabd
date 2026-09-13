@@ -26,15 +26,7 @@
   ],
   "rewrites": [
     {
-      "source": "/api/groq",
-      "destination": "/api/groq.js"
-    },
-    {
-      "source": "/api/:path*",
-      "destination": "/api/:path*"
-    },
-    {
-      "source": "/(.*)",
+      "source": "/((?!api/|.*\\.).*)",
       "destination": "/index.html"
     }
   ]
