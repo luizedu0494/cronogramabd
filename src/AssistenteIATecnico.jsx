@@ -112,7 +112,7 @@ function AssistenteIATecnico({ userInfo, currentUser, mode }) {
 
     const chamarGroqAPI = async (prompt, contexto, historicoMsgs = []) => {
         try {
-            const systemContent = `${PROMPT_TECNICO_ASSISTENTE}\n\nCONTEXTO DE CONEXÃO:\n${contexto}`;
+            const systemContent = `${PROMPT_TECNICO_ASSISTENTE}\n\nCONTEXTO DE CONEXÃO:\n${contexto}\n\nIMPORTANTE: Responda obrigatoriamente no formato JSON válido.`;
             const ultimosTurnos = historicoMsgs.slice(-6).map(m => ({
                 role: m.tipo === 'usuario' ? 'user' : 'assistant',
                 content: typeof m.texto === 'string' ? m.texto : 'Proposta gerada'
