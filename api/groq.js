@@ -18,8 +18,8 @@ module.exports = async function handler(req, res) {
       return res.status(400).json({ error: 'Payload ausente' });
     }
 
-    // Modelo fixo único oficial da Groq
-    const finalPayload = { ...payload, model: 'llama-3.3-70b-versatile' };
+    // Modelo fixo universal liberado para todas as chaves da Groq (Free & Paid)
+    const finalPayload = { ...payload, model: 'llama-3.1-8b-instant' };
 
     const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
       method: 'POST',

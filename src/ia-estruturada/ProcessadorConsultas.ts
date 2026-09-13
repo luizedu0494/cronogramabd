@@ -3,7 +3,7 @@ import ExtratorParametros, { ParametrosExtraidos } from './ExtratorParametros';
 import dayjs from 'dayjs';
 
 const GROQ_API_KEY = import.meta.env.VITE_GROQ_API_KEY;
-const GROQ_MODEL = 'llama-3.3-70b-versatile';
+const GROQ_MODEL = 'llama-3.1-8b-instant';
 
 export interface CriteriosBusca {
   data?: string | null;
@@ -233,7 +233,7 @@ class ProcessadorConsultas {
 
       // Fallback para desenvolvimento local caso a API Key esteja no VITE_GROQ_API_KEY ou /api/groq retorne HTML no Vite
       if ((!response.ok || !isJson) && GROQ_API_KEY) {
-        const fallbackPayload = { ...payload, model: 'llama-3.3-70b-versatile' };
+        const fallbackPayload = { ...payload, model: 'llama-3.1-8b-instant' };
         response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
           method: 'POST',
           headers: {

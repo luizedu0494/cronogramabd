@@ -23,7 +23,7 @@ const BLOCOS_HORARIO = [
 ];
 
 const GROQ_API_KEY = import.meta.env.VITE_GROQ_API_KEY;
-const GROQ_MODEL = 'llama-3.3-70b-versatile';
+const GROQ_MODEL = 'llama-3.1-8b-instant';
 
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import SendTimeExtensionIcon from '@mui/icons-material/SendTimeExtension';
@@ -138,7 +138,7 @@ function AssistenteIATecnico({ userInfo, currentUser, mode }) {
             const isJson = contentType && contentType.includes('application/json');
 
             if ((!response.ok || !isJson) && GROQ_API_KEY) {
-                const fallbackPayload = { ...payload, model: 'llama-3.3-70b-versatile' };
+                const fallbackPayload = { ...payload, model: 'llama-3.1-8b-instant' };
                 response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
                     method: 'POST',
                     headers: {

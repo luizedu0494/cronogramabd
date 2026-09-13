@@ -12,7 +12,7 @@ class LangChainService {
       try {
         this.model = new ChatGroq({
           apiKey: GROQ_API_KEY,
-          model: import.meta.env.VITE_GROQ_MODEL || "llama-3.1-8b-instant",
+          model: "llama-3.1-8b-instant",
           temperature: 0.3,
         });
 
