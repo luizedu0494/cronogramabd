@@ -25,25 +25,64 @@ function AnaliseEstatisticas() {
     const [explicacaoIA, setExplicacaoIA] = useState('');
     const [gerandoExplicacao, setGerandoExplicacao] = useState(false);
 
-    const handleGerarExplicacaoIA = () => {
+    const handleGerarExplicacaoIA = async () => {
         if (!stats) return;
         setGerandoExplicacao(true);
-        setTimeout(() => {
+        try {
             const totalAulas = stats.totalAulas || 0;
             const labs = Object.keys(stats.aulasPorLaboratorio || {});
             const topLab = labs.sort((a, b) => stats.aulasPorLaboratorio[b] - stats.aulasPorLaboratorio[a])[0] || 'N/A';
+            const topLabCount = stats.aulasPorLaboratorio[topLab] || 0;
             const meses = stats.aulasPorMes || [];
             const maxMesIdx = meses.indexOf(Math.max(...meses));
             const nomesMeses = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
             const picoMes = nomesMeses[maxMesIdx] || 'N/A';
 
+            const prompt = `Analise os seguintes dados estatísticos do CronoLab no ano de ${selectedYear}:
+- Total de Aulas Aprovadas: ${totalAulas}
+- Laboratório Mais Utilizado: ${topLab} (${topLabCount} aulas)
+- Mês de Maior Pico de Agendamentos: ${picoMes}
+- Distribuição por Mês (Jan-Dez): ${meses.join(', ')}
+
+Forneça um resumo executivo claro, profissional e sucinto (até 3 parágrafos) com destaques e recomendações para a gestão dos laboratórios.`;
+
+            const response = await fetch('/api/groq', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    payload: {
+                        model: 'llama-3.1-8b-instant',
+                        messages: [
+                            { role: 'system', content: 'Você é um especialista em análise estatística de uso de infraestrutura acadêmica.' },
+                            { role: 'user', content: prompt }
+                        ],
+                        temperature: 0.3,
+                        max_tokens: 500
+                    }
+                })
+            });
+
+            if (response.ok) {
+                const data = await response.json();
+                const textoIA = data.choices?.[0]?.message?.content;
+                if (textoIA) {
+                    setExplicacaoIA(textoIA);
+                    return;
+                }
+            }
+
             setExplicacaoIA(
-                `📊 Resumo da IA: Em ${selectedYear}, foram contabilizadas ${totalAulas} aulas aprovadas. ` +
-                `O laboratório com maior ocupação foi o '${topLab}'. ` +
-                `O mês de maior pico de agendamentos foi ${picoMes}.`
+                `📊 Resumo da Análise: Em ${selectedYear}, foram contabilizadas ${totalAulas} aulas aprovadas. ` +
+                `O laboratório com maior ocupação foi o '${topLab}' (${topLabCount} agendamentos). ` +
+                `O mês de maior pico de uso foi ${picoMes}.`
             );
+        } catch (err) {
+            console.error("Erro ao gerar explicação por IA:", err);
+            const totalAulas = stats.totalAulas || 0;
+            setExplicacaoIA(`📊 Resumo da Análise (${selectedYear}): Total de ${totalAulas} aulas aprovadas. Destaque para o mês de maior ocupação do período.`);
+        } finally {
             setGerandoExplicacao(false);
-        }, 500);
+        }
     };
 
 

@@ -161,7 +161,7 @@ function AjudaFAQ({ userInfo }) {
             color={categoriaAtiva === 'todas' ? 'primary' : 'default'}
             variant={categoriaAtiva === 'todas' ? 'filled' : 'outlined'}
           />
-          {Object.entries(CATEGORIAS).map(([key, cat]) => (
+          {Object.entries(categoriasDisponiveis).map(([key, cat]) => (
             <Chip
               key={key}
               label={cat.label}

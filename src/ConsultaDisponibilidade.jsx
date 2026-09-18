@@ -25,6 +25,7 @@ import InputAdornment from '@mui/material/InputAdornment';
 
 import { useDisponibilidade } from './hooks/useDisponibilidade';
 import { LISTA_LABORATORIOS, TIPOS_LABORATORIO } from './constants/laboratorios';
+import { BLOCOS_HORARIO } from './constants/horarios';
 import ExtratorParametros from './ia-estruturada/ExtratorParametros';
 
 
@@ -37,15 +38,6 @@ const DIAS_SEMANA_OPCOES = [
   { value: 4, label: 'Qui' },
   { value: 5, label: 'Sex' },
   { value: 6, label: 'Sáb' },
-];
-
-const BLOCOS_HORARIO = [
-  { value: '07:00-09:10', label: '07:00 - 09:10', turno: 'Manhã' },
-  { value: '09:30-12:00', label: '09:30 - 12:00', turno: 'Manhã' },
-  { value: '13:00-15:10', label: '13:00 - 15:10', turno: 'Tarde' },
-  { value: '15:30-18:00', label: '15:30 - 18:00', turno: 'Tarde' },
-  { value: '18:30-20:10', label: '18:30 - 20:10', turno: 'Noite' },
-  { value: '20:30-22:00', label: '20:30 - 22:00', turno: 'Noite' },
 ];
 
 export default function ConsultaDisponibilidade() {
@@ -133,6 +125,10 @@ export default function ConsultaDisponibilidade() {
   };
 
   const handleExecutarConsulta = async () => {
+    if (dataFim && dataInicio && dataFim.diff(dataInicio, 'month', true) > 6) {
+      setFeedback({ open: true, message: 'O período máximo para consulta é de 6 meses.', severity: 'warning' });
+      return;
+    }
     if (diasSemana.length === 0) {
       setFeedback({ open: true, message: 'Selecione pelo menos um dia da semana.', severity: 'warning' });
       return;

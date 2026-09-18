@@ -11,6 +11,7 @@ import DeleteIcon from '@mui/icons-material/Delete';
 import { grupoService, Grupo } from './services/grupoService';
 import { userService } from './services/userService';
 import { LISTA_LABORATORIOS } from './constants/laboratorios';
+import DialogConfirmacao from './components/DialogConfirmacao';
 
 const CORES_PALETA = ['#1E7EC8', '#00C853', '#F5C518', '#E53935', '#9C27B0', '#FF9800', '#00BCD4'];
 
@@ -20,6 +21,8 @@ function GerenciarGrupos() {
     const [openDialog, setOpenDialog] = useState(false);
     const [isEditing, setIsEditing] = useState(false);
     const [currentGrupo, setCurrentGrupo] = useState(null);
+    const [grupoParaDeletar, setGrupoParaDeletar] = useState(null);
+    const [deleting, setDeleting] = useState(false);
 
     const [nomeGrupo, setNomeGrupo] = useState('');
     const [descricaoGrupo, setDescricaoGrupo] = useState('');
@@ -132,15 +135,22 @@ function GerenciarGrupos() {
         }
     };
 
-    const handleDeleteGrupo = async (grupoId) => {
-        if (window.confirm("Tem certeza que deseja apagar este grupo?")) {
-            try {
-                await grupoService.deletarGrupo(grupoId);
-                loadGrupos();
-            } catch (err) {
-                console.error("Erro ao apagar grupo:", err);
-                setError("Ocorreu um erro ao apagar o grupo.");
-            }
+    const handleDeleteGrupo = (grupoId) => {
+        setGrupoParaDeletar(grupoId);
+    };
+
+    const handleConfirmDeleteGrupo = async () => {
+        if (!grupoParaDeletar) return;
+        setDeleting(true);
+        try {
+            await grupoService.deletarGrupo(grupoParaDeletar);
+            setGrupoParaDeletar(null);
+            loadGrupos();
+        } catch (err) {
+            console.error("Erro ao apagar grupo:", err);
+            setError("Ocorreu um erro ao apagar o grupo.");
+        } finally {
+            setDeleting(false);
         }
     };
 
@@ -284,6 +294,15 @@ function GerenciarGrupos() {
                     <Button onClick={handleSaveGrupo} variant="contained" fontWeight={700}>Salvar Grupo</Button>
                 </DialogActions>
             </Dialog>
+
+            <DialogConfirmacao
+                open={Boolean(grupoParaDeletar)}
+                onClose={() => setGrupoParaDeletar(null)}
+                onConfirm={handleConfirmDeleteGrupo}
+                title="Confirmar Exclusão"
+                message="Tem certeza que deseja apagar este grupo? Esta ação não poderá ser desfeita."
+                loading={deleting}
+            />
         </Container>
     );
 }

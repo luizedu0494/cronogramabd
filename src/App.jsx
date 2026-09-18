@@ -70,6 +70,7 @@ const UploadCronogramaExterno = lazyWithRetry(() => import('./UploadCronogramaEx
 const GerenciarEventosAvancado = lazyWithRetry(() => import('./GerenciarEventosAvancado'));
 const ConsultaDisponibilidade = lazyWithRetry(() => import('./ConsultaDisponibilidade'));
 const BackupSistema = lazyWithRetry(() => import('./pages/Gerenciar/BackupSistema'));
+const DashboardKPI = lazyWithRetry(() => import('./pages/Dashboard/DashboardKPI'));
 
 
 const LoadingFallback = () => (<Box display="flex" justifyContent="center" alignItems="center" height="80vh"><CircularProgress /></Box>);
@@ -1114,6 +1115,7 @@ function App() {
                              ) : (
                                 <Route element={<MainLayout />}>
                                     <Route path="/" element={role === 'visualizador' ? <Navigate to="/calendario" replace /> : <PaginaInicial userInfo={userProfileData}/>} />
+                                    <Route path="/dashboard" element={<DashboardKPI userInfo={userProfileData} />} />
                                     <Route path="/calendario" element={<CalendarioCronograma userInfo={userProfileData} />} />
                                     <Route path="/historico-aulas" element={role === 'visualizador' ? <Navigate to="/calendario" replace /> : <HistoricoAulas />} />
                                     <Route path="/propor-aula" element={<ProporAulaForm userInfo={userProfileData} currentUser={user} />} />

@@ -21,18 +21,8 @@ import { saveAs } from 'file-saver';
 
 import { LISTA_LABORATORIOS } from './constants/laboratorios';
 import { LISTA_CURSOS } from './constants/cursos';
+import { BLOCOS_HORARIO } from './constants/horarios';
 import cesmacLogo from './assets/images/cesmac-logo.png';
-
-dayjs.extend(utc);
-
-const BLOCOS_HORARIO = [
-    { "value": "07:00-09:10", "label": "07:00 - 09:10", "turno": "Matutino" },
-    { "value": "09:30-12:00", "label": "09:30 - 12:00", "turno": "Matutino" },
-    { "value": "13:00-15:10", "label": "13:00 - 15:10", "turno": "Vespertino" },
-    { "value": "15:30-18:00", "label": "15:30 - 18:00", "turno": "Vespertino" },
-    { "value": "18:30-20:10", "label": "18:30 - 20:10", "turno": "Noturno" },
-    { "value": "20:30-22:00", "label": "20:30 - 22:00", "turno": "Noturno" },
-];
 
 const TIPOS_AULA_OPCOES = [
     { id: 'aula', label: '🎓 Aula Regular' },
@@ -519,14 +509,16 @@ function DownloadCronograma() {
                     const tituloStr = isEvt ? (item.titulo || '') : (item.assunto || '');
                     doc.setFont('helvetica', 'normal');
                     doc.setTextColor(20, 20, 20);
-                    doc.text(tituloStr.substring(0, 32), margin + 92, y + 5);
+                    const tituloLines = doc.splitTextToSize(tituloStr, 52);
+                    doc.text(tituloLines[0] || '', margin + 92, y + 5);
 
                     // Coluna 5: Solicitante / Cursos
                     const respStr = isEvt
                         ? (item.criadoPor || 'Sistema')
                         : (item.proponenteNome || (item.cursos || []).join(', '));
                     doc.setTextColor(100, 100, 100);
-                    doc.text(respStr.substring(0, 22), margin + 148, y + 5);
+                    const respLines = doc.splitTextToSize(respStr, 38);
+                    doc.text(respLines[0] || '', margin + 148, y + 5);
 
                     y += rowHeight;
                 });

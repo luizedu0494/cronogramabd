@@ -142,20 +142,20 @@ export default function GerenciarEventosAvancado({ userInfo }) {
   const [formErrors, setFormErrors] = useState({});
 
   // Paginação
-  const [lastVisible, setLastVisible] = useState(null);
   const [pagina, setPagina] = useState(1);
-  const [historicoLastVisible, setHistoricoLastVisible] = useState([]);
+  const [totalContagem, setTotalContagem] = useState(0);
   const EVENTOS_POR_PAGINA = 25;
 
   const [feedback, setFeedback] = useState({ open: false, message: '', severity: 'info' });
 
-
-
-  const handleSearch = useCallback(async () => {
+  const handleSearch = useCallback(async (pageTarget = 1) => {
     setLoading(true);
     setError(null);
     try {
-      let queryRef = supabase.from('eventos_manutencao').select('*');
+      let queryRef = supabase
+        .from('eventos_manutencao')
+        .select('*', { count: 'exact' })
+        .order('data_inicio', { ascending: true });
 
       if (filtros.dataInicio) {
         queryRef = queryRef.gte('data_inicio', filtros.dataInicio.startOf('day').toISOString());
@@ -172,8 +172,14 @@ export default function GerenciarEventosAvancado({ userInfo }) {
       if (filtros.status) {
         queryRef = queryRef.eq('status', filtros.status);
       }
+      if (filtros.titulo?.trim()) {
+        queryRef = queryRef.ilike('titulo', `%${filtros.titulo.trim()}%`);
+      }
 
-      const { data, error: err } = await queryRef;
+      const offset = (pageTarget - 1) * EVENTOS_POR_PAGINA;
+      queryRef = queryRef.range(offset, offset + EVENTOS_POR_PAGINA - 1);
+
+      const { data, count, error: err } = await queryRef;
 
       if (err) throw err;
 
@@ -185,12 +191,10 @@ export default function GerenciarEventosAvancado({ userInfo }) {
         dataFim: item.data_fim ? new Date(item.data_fim) : new Date(),
       }));
 
-      if (filtros.titulo?.trim()) {
-        const termo = filtros.titulo.toLowerCase().trim();
-        docsFetched = docsFetched.filter(e => e.titulo?.toLowerCase().includes(termo));
-      }
-
       setEventos(docsFetched);
+      setTotalContagem(count || 0);
+      setPagina(pageTarget);
+      setSelectedEventos([]);
     } catch (err) {
       console.error("Erro ao buscar eventos no Supabase:", err);
       setEventos([]);

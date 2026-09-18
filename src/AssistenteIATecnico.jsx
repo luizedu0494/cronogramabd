@@ -15,7 +15,6 @@ import { aulaService } from './services/aulaService';
 
 dayjs.locale('pt-br');
 
-const GROQ_API_KEY = import.meta.env.VITE_GROQ_API_KEY;
 const GROQ_MODEL = 'llama-3.1-8b-instant';
 
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
@@ -150,8 +149,44 @@ function AssistenteIATecnico({ userInfo, currentUser, mode }) {
         }
     };
 
+    const verificarConflitoProposta = async (proposta) => {
+        if (!proposta.data || !proposta.horario || !proposta.laboratorio) return null;
+        try {
+            const dataObj = dayjs(proposta.data, 'DD/MM/YYYY');
+            if (!dataObj.isValid()) return null;
+            const startIso = dataObj.startOf('day').toISOString();
+            const endIso = dataObj.endOf('day').toISOString();
+
+            const { data: aulasExistentes } = await supabase
+                .from('aulas')
+                .select('*')
+                .eq('laboratorio', proposta.laboratorio)
+                .gte('data_inicio', startIso)
+                .lte('data_inicio', endIso);
+
+            const conflito = (aulasExistentes || []).find(a => 
+                a.horario_slot === proposta.horario || a.horario_slot_string === proposta.horario
+            );
+
+            if (conflito) {
+                return `⚠️ Alerta de Conflito: Já existe a aula "${conflito.assunto || 'Agendada'}" no ${proposta.laboratorio} no horário ${proposta.horario}.`;
+            }
+            return null;
+        } catch (e) {
+            console.error('Erro ao checar conflito:', e);
+            return null;
+        }
+    };
+
     const handleConfirmarProposta = async (proposta) => {
         try {
+            const avisoConflito = await verificarConflitoProposta(proposta);
+            if (avisoConflito) {
+                setSnackbarMessage(avisoConflito);
+                setSnackbarSeverity('warning');
+                setOpenSnackbar(true);
+            }
+
             const dataObj = dayjs(proposta.data, 'DD/MM/YYYY');
             const dataInicioIso = dataObj.isValid() ? dataObj.toISOString() : new Date().toISOString();
             const cursosList = Array.isArray(proposta.cursos) ? proposta.cursos : (proposta.cursos ? [proposta.cursos] : ['Medicina']);
@@ -242,7 +277,10 @@ function AssistenteIATecnico({ userInfo, currentUser, mode }) {
 
             if (resultadoIA.acao === 'propor' && resultadoIA.proposta) {
                 const p = resultadoIA.proposta;
-                const textoMsg = resultadoIA.resposta || 'Montei a proposta com base nas informações. Confira os dados:';
+                const avisoConflito = await verificarConflitoProposta(p);
+                const textoBase = resultadoIA.resposta || 'Montei a proposta com base nas informações. Confira os dados:';
+                const textoMsg = avisoConflito ? `${avisoConflito}\n\n${textoBase}` : textoBase;
+
                 setMensagens(prev => [...prev, {
                     texto: textoMsg,
                     tipo: 'ia',

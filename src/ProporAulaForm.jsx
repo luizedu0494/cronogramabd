@@ -27,14 +27,7 @@ import { registrarLogEdicao } from './services/loggerService';
 
 dayjs.locale('pt-br');
 
-const BLOCOS_HORARIO = [
-    { "value": "07:00-09:10", "label": "07:00 - 09:10", "turno": "Matutino" },
-    { "value": "09:30-12:00", "label": "09:30 - 12:00", "turno": "Matutino" },
-    { "value": "13:00-15:10", "label": "13:00 - 15:10", "turno": "Vespertino" },
-    { "value": "15:30-18:00", "label": "15:30 - 18:00", "turno": "Vespertino" },
-    { "value": "18:30-20:10", "label": "18:30 - 20:10", "turno": "Noturno" },
-    { "value": "20:30-22:00", "label": "20:30 - 22:00", "turno": "Noturno" },
-];
+import { BLOCOS_HORARIO } from './constants/horarios';
 
 const TIPOS_REVISAO = [
     { value: 'revisao_conteudo',  label: 'Revisão de Conteúdo',  icon: '📖' },
