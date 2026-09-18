@@ -13,17 +13,7 @@ import dayjs from 'dayjs';
 import { LISTA_CURSOS } from './constants/cursos';
 import { LISTA_LABORATORIOS } from './constants/laboratorios';
 import { CURSO_COLORS } from './constants/cursoColors';
-
-// É uma boa prática ter as constantes em um só lugar.
-// Se você não tiver este arquivo, pode copiar o array para cá.
-const BLOCOS_HORARIO = [
-    {"value": "07:00-09:10", "label": "07:00 - 09:10", "turno": "Matutino"},
-    {"value": "09:30-12:00", "label": "09:30 - 12:00", "turno": "Matutino"},
-    {"value": "13:00-15:10", "label": "13:00 - 15:10", "turno": "Vespertino"},
-    {"value": "15:30-18:00", "label": "15:30 - 18:00", "turno": "Vespertino"},
-    {"value": "18:30-20:10", "label": "18:30 - 20:10", "turno": "Noturno"},
-    {"value": "20:30-22:00", "label": "20:30 - 22:00", "turno": "Noturno"},
-];
+import { BLOCOS_HORARIO } from './constants/horarios';
 
 function AulaCard({ aula, onOpenMenu, onSave, isCoordenador }) {
     const [isEditing, setIsEditing] = useState(false);

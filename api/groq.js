@@ -1,3 +1,22 @@
+const requestCounts = new Map();
+
+function isRateLimited(ip) {
+  const now = Date.now();
+  const windowMs = 60 * 1000;
+  const maxRequests = 20;
+
+  const userRequests = requestCounts.get(ip) || [];
+  const validRequests = userRequests.filter(timestamp => now - timestamp < windowMs);
+
+  if (validRequests.length >= maxRequests) {
+    return true;
+  }
+
+  validRequests.push(now);
+  requestCounts.set(ip, validRequests);
+  return false;
+}
+
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
@@ -5,6 +24,11 @@ export default async function handler(req, res) {
 
   if (req.method === 'OPTIONS') {
     return res.status(200).end();
+  }
+
+  const clientIp = req.headers['x-forwarded-for'] || req.socket?.remoteAddress || 'unknown';
+  if (isRateLimited(clientIp)) {
+    return res.status(429).json({ error: 'Limite de requisições excedido. Por favor, aguarde um minuto.' });
   }
 
   const groqApiKey = process.env.GROQ_API_KEY || process.env.VITE_GROQ_API_KEY;

@@ -16,23 +16,17 @@ import dayjs from 'dayjs';
 import 'dayjs/locale/pt-br';
 import EmptyState from './components/EmptyState';
 import { LISTA_LABORATORIOS, TIPOS_LABORATORIO } from './constants/laboratorios';
+import { BLOCOS_HORARIO } from './constants/horarios';
 import { CalendarOff } from 'lucide-react';
 import DialogConfirmacao from './components/DialogConfirmacao';
+import { useAuth } from './AuthContext';
 
 dayjs.locale('pt-br');
 
 const EVENT_TYPES = ['Manutenção', 'Feriado', 'Evento', 'Giro', 'Outro'];
 
-const BLOCOS_HORARIO = [
-    { "value": "07:00-09:10", "label": "07:00 - 09:10", "turno": "Matutino" },
-    { "value": "09:30-12:00", "label": "09:30 - 12:00", "turno": "Matutino" },
-    { "value": "13:00-15:10", "label": "13:00 - 15:10", "turno": "Vespertino" },
-    { "value": "15:30-18:00", "label": "15:30 - 18:00", "turno": "Vespertino" },
-    { "value": "18:30-20:10", "label": "18:30 - 20:10", "turno": "Noturno" },
-    { "value": "20:30-22:00", "label": "20:30 - 22:00", "turno": "Noturno" },
-];
-
 function EventosManutencao() {
+  const { currentUser, userProfile } = useAuth();
   const [eventos, setEventos] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -179,8 +173,8 @@ function EventosManutencao() {
           horario_slot: slot,
           data_inicio: finalStart.toISOString(),
           data_fim: finalEnd.toISOString(),
-          criado_por_uid: currentUser?.uid || 'desconhecido',
-          criado_por_nome: currentUser?.displayName || currentUser?.email || 'Técnico',
+          criado_por_uid: currentUser?.uid || userProfile?.uid || 'desconhecido',
+          criado_por_nome: userProfile?.name || currentUser?.displayName || currentUser?.email || 'Técnico',
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString()
         };

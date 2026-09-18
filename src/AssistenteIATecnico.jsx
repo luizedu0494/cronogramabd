@@ -9,18 +9,11 @@ import dayjs from 'dayjs';
 import 'dayjs/locale/pt-br';
 import { LISTA_LABORATORIOS } from './constants/laboratorios';
 import { LISTA_CURSOS } from './constants/cursos';
+import { BLOCOS_HORARIO } from './constants/horarios';
 import { useNavigate } from 'react-router-dom';
+import { aulaService } from './services/aulaService';
 
 dayjs.locale('pt-br');
-
-const BLOCOS_HORARIO = [
-    { "value": "07:00-09:10", "label": "07:00 - 09:10", "turno": "Matutino" },
-    { "value": "09:30-12:00", "label": "09:30 - 12:00", "turno": "Matutino" },
-    { "value": "13:00-15:10", "label": "13:00 - 15:10", "turno": "Vespertino" },
-    { "value": "15:30-18:00", "label": "15:30 - 18:00", "turno": "Vespertino" },
-    { "value": "18:30-20:10", "label": "18:30 - 20:10", "turno": "Noturno" },
-    { "value": "20:30-22:00", "label": "20:30 - 22:00", "turno": "Noturno" },
-];
 
 const GROQ_API_KEY = import.meta.env.VITE_GROQ_API_KEY;
 const GROQ_MODEL = 'llama-3.1-8b-instant';
@@ -151,13 +144,6 @@ function AssistenteIATecnico({ userInfo, currentUser, mode }) {
 
             const jsonMatch = resposta.match(/\{[\s\S]*\}/);
             return jsonMatch ? JSON.parse(jsonMatch[0]) : { acao: 'consultar', resposta };
-            
-            const jsonMatch = resposta.match(/\{[\s\S]*\}/);
-            if (jsonMatch) {
-                return JSON.parse(jsonMatch[0]);
-            }
-            
-            return { acao: 'consultar', resposta: resposta };
         } catch (error) {
             console.error('Erro ao chamar Groq API:', error);
             throw error;
@@ -166,24 +152,20 @@ function AssistenteIATecnico({ userInfo, currentUser, mode }) {
 
     const handleConfirmarProposta = async (proposta) => {
         try {
-            const dataObj = dayjs(proposta.data || dayjs(), 'DD/MM/YYYY');
-            const novaProposta = {
+            const dataObj = dayjs(proposta.data, 'DD/MM/YYYY');
+            const dataInicioIso = dataObj.isValid() ? dataObj.toISOString() : new Date().toISOString();
+            const cursosList = Array.isArray(proposta.cursos) ? proposta.cursos : (proposta.cursos ? [proposta.cursos] : ['Medicina']);
+
+            await aulaService.proporAula({
                 assunto: proposta.assunto || 'Proposta via IA',
-                laboratorioSelecionado: proposta.laboratorio || 'Anatomia 1',
+                laboratorio: proposta.laboratorio || 'Anatomia 1',
                 horarioSlotString: proposta.horario || '07:00-09:10',
-                cursos: proposta.cursos || ['Medicina'],
-                dataInicio: Timestamp.fromDate(dataObj.toDate()),
+                dataInicio: dataInicioIso,
                 observacoes: proposta.observacoes || 'Proposta criada via Assistente IA do Técnico',
-                status: 'pendente',
-                propostoPorUid: currentUser?.uid || 'tecnico',
-                propostoPorNome: userInfo?.nome || currentUser?.displayName || 'Técnico',
-                origem: 'ia',
-                createdAt: serverTimestamp()
-            };
-
-            await addDoc(collection(db, 'aulas'), novaProposta);
-
-
+                propostoPorUid: userInfo?.uid || 'tecnico',
+                propostoPorNome: userInfo?.nome || 'Técnico',
+                origem: 'ia'
+            }, cursosList);
 
             setSnackbarMessage('✅ Proposta enviada com sucesso para a fila de aprovação!');
             setSnackbarSeverity('success');
@@ -191,7 +173,7 @@ function AssistenteIATecnico({ userInfo, currentUser, mode }) {
             adicionarMensagem('✅ Proposta registrada com sucesso na fila do coordenador!', 'ia');
         } catch (err) {
             console.error('Erro ao enviar proposta:', err);
-            setSnackbarMessage('Erro ao enviar proposta.');
+            setSnackbarMessage('Erro ao enviar proposta: ' + (err.message || ''));
             setSnackbarSeverity('error');
             setOpenSnackbar(true);
         }

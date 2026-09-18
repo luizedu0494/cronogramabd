@@ -31,6 +31,7 @@ import {
 import { LISTA_CURSOS } from '../../constants/cursos';
 import { LISTA_LABORATORIOS } from '../../constants/laboratorios';
 import { CURSO_COLORS } from '../../constants/cursoColors';
+import HeatmapOcupacao from '../../components/HeatmapOcupacao';
 import dayjs from 'dayjs';
 import 'dayjs/locale/pt-br';
 
@@ -447,7 +448,9 @@ function AnaliseAulas() {
                 );
             })()}
 
-            <Paper elevation={2} sx={{ p: 2, mb: 4 }}>
+            <HeatmapOcupacao aulas={aulas} />
+
+            <Paper elevation={2} sx={{ p: 2, mb: 4, mt: 3 }}>
                 <Typography variant="h6" gutterBottom>Filtros</Typography>
                 <Grid container spacing={2}>
                     <Grid item xs={12} sm={4} sx={{ width: '100%' }}>

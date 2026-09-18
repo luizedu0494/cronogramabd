@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { supabase } from './supabaseConfig';
 import EmptyState from './components/EmptyState';
+import TableSkeleton from './components/TableSkeleton';
 import DialogConfirmacao from './components/DialogConfirmacao';
 import {
     Button, Container, Paper, Typography, Box, CircularProgress, Alert, Snackbar, FormControl, InputLabel, Select, MenuItem, TextField, Grid, OutlinedInput, Chip, Checkbox, ListItem, ListItemText, List, Tooltip, IconButton,
@@ -14,15 +15,9 @@ import DeleteIcon from '@mui/icons-material/Delete';
 import EditIcon from '@mui/icons-material/Edit';
 import ClearIcon from '@mui/icons-material/Clear';
 import { LISTA_LABORATORIOS } from './constants/laboratorios';
+import { BLOCOS_HORARIO } from './constants/horarios';
 import { registrarLogExclusao } from './services/loggerService';
 
-const BLOCOS_HORARIO = [
-    { value: "07:00-09:10", label: "07:00 - 09:10" },
-    { value: "09:30-12:00", label: "09:30 - 12:00" },
-    { value: "13:00-15:10", label: "13:00 - 15:10" },
-    { value: "15:30-18:00", label: "15:30 - 18:00" },
-    { value: "18:30-22:00", label: "18:30 - 22:00" },
-];
 const STATUS_AULA = ['pendente', 'aprovada', 'rejeitada'];
 
 const ResultadosBusca = ({ aulas, selectedAulas, onToggleSelectAll, onToggleSelectAula }) => (
@@ -98,6 +93,9 @@ function GerenciarAulasAvancado({ userInfo }) {
             if (filtros.status) query = query.eq('status', filtros.status);
             if (filtros.laboratorio.length > 0) query = query.in('laboratorio', filtros.laboratorio);
             if (filtros.horario.length > 0) query = query.in('horario_slot', filtros.horario);
+            if (filtros.assunto) query = query.ilike('assunto', `%${filtros.assunto}%`);
+            if (filtros.liga) query = query.eq('liga', filtros.liga);
+            if (filtros.cursos && filtros.cursos.length > 0) query = query.overlaps('cursos', filtros.cursos);
 
             const offset = (pageTarget - 1) * AULAS_POR_PAGINA;
             query = query.range(offset, offset + AULAS_POR_PAGINA - 1);
@@ -113,11 +111,6 @@ function GerenciarAulasAvancado({ userInfo }) {
                 propostoPorNome: aula.proposto_por_nome,
             }));
 
-            // Filtros locais (assunto, liga e cursos)
-            if (filtros.assunto) aulasList = aulasList.filter(aula => aula.assunto?.toLowerCase().includes(filtros.assunto.toLowerCase()));
-            if (filtros.liga) aulasList = aulasList.filter(aula => aula.liga === filtros.liga);
-            if (filtros.cursos.length > 0) aulasList = aulasList.filter(a => a.cursos?.some(c => filtros.cursos.includes(c)));
-
             setAulas(aulasList);
             setTotalContagem(count || 0);
             setPagina(pageTarget);
@@ -130,7 +123,7 @@ function GerenciarAulasAvancado({ userInfo }) {
         }
     }, [filtros]);
 
-    useEffect(() => { handleSearch(1); }, []);
+    useEffect(() => { handleSearch(1); }, [handleSearch]);
 
     const handleFiltroChange = (field) => (event) => setFiltros(prev => ({ ...prev, [field]: event.target.value }));
     const handleDateChange = (field) => (date) => setFiltros(prev => ({ ...prev, [field]: date }));
@@ -282,7 +275,7 @@ function GerenciarAulasAvancado({ userInfo }) {
                 <Paper elevation={3} sx={{ p: { xs: 2, md: 3 } }}>
                     {memoizedActions}
                     {loading ? (
-                        <Box sx={{ display: 'flex', justifyContent: 'center', my: 4 }}><CircularProgress /></Box>
+                        <TableSkeleton rows={5} />
                     ) : error ? (
                         <Alert severity="error">{error}</Alert>
                     ) : aulas.length === 0 ? (

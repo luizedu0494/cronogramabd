@@ -360,7 +360,6 @@ function identificarCandidatosDeAula(linhas) {
 async function verificarConflitos(candidatos) {
   if (candidatos.length === 0) return candidatos;
 
-  // Encontra range de datas para fazer UMA única query
   const datas = candidatos
     .map((c) => {
       const dt = dayjs(c.data, 'DD/MM/YYYY', true);
@@ -370,20 +369,22 @@ async function verificarConflitos(candidatos) {
 
   if (datas.length === 0) return candidatos;
 
-  const dataMin = datas.reduce((a, b) => (a.isBefore(b) ? a : b));
-  const dataMax = datas.reduce((a, b) => (a.isAfter(b) ? a : b));
+  const dataMin = datas.reduce((a, b) => (a.isBefore(b) ? a : b)).startOf('day').toISOString();
+  const dataMax = datas.reduce((a, b) => (a.isAfter(b) ? a : b)).endOf('day').toISOString();
 
-  // 1 única query - busca todas as aulas no período
-  const q = query(
-    collection(db, 'aulas'),
-    where('dataInicio', '>=', Timestamp.fromDate(dataMin.startOf('day').toDate())),
-    where('dataInicio', '<=', Timestamp.fromDate(dataMax.endOf('day').toDate()))
-  );
+  const { data: existentes, error } = await supabase
+    .from('aulas')
+    .select('*')
+    .gte('data_inicio', dataMin)
+    .lte('data_inicio', dataMax);
 
-  const snapshot = await getDocs(q);
-  const aulasExistentes = snapshot.docs.map((d) => ({ id: d.id, ...d.data() }));
+  if (error) {
+    console.error('Erro ao verificar conflitos:', error);
+    return candidatos;
+  }
 
-  // Verifica conflito para cada candidato
+  const aulasExistentes = existentes || [];
+
   return candidatos.map((candidato) => {
     if (!candidato.data || !candidato.horaInicio || !candidato.horaFim || !candidato.laboratorio) {
       return { ...candidato, conflito: null };
@@ -395,9 +396,10 @@ async function verificarConflitos(candidatos) {
     if (!dtInicio.isValid() || !dtFim.isValid()) return { ...candidato, conflito: null };
 
     const aulaConflito = aulasExistentes.find((aula) => {
-      if (aula.laboratorioSelecionado !== candidato.laboratorio) return false;
-      const aulaInicio = dayjs(aula.dataInicio.toDate());
-      const aulaFim = dayjs(aula.dataFim.toDate());
+      const eLab = aula.laboratorio || aula.laboratorioSelecionado;
+      if (eLab !== candidato.laboratorio) return false;
+      const aulaInicio = dayjs(aula.data_inicio || aula.dataInicio);
+      const aulaFim = dayjs(aula.data_fim || aula.dataFim || aulaInicio.add(2, 'hour'));
       return dtInicio.isBefore(aulaFim) && dtFim.isAfter(aulaInicio);
     });
 
@@ -407,7 +409,7 @@ async function verificarConflitos(candidatos) {
         ? {
             id: aulaConflito.id,
             assunto: aulaConflito.assunto,
-            horario: `${dayjs(aulaConflito.dataInicio.toDate()).format('HH:mm')} - ${dayjs(aulaConflito.dataFim.toDate()).format('HH:mm')}`,
+            horario: `${dayjs(aulaConflito.data_inicio || aulaConflito.dataInicio).format('HH:mm')} - ${dayjs(aulaConflito.data_fim || aulaConflito.dataFim).format('HH:mm')}`,
           }
         : null,
     };

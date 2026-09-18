@@ -25,6 +25,14 @@ export default async function handler(req, res) {
 
   if (req.method === 'POST') {
     try {
+      const webhookSecret = process.env.TELEGRAM_WEBHOOK_SECRET;
+      if (webhookSecret) {
+        const incomingSecret = req.headers['x-telegram-bot-api-secret-token'] || req.headers['authorization'];
+        if (incomingSecret !== webhookSecret && incomingSecret !== `Bearer ${webhookSecret}`) {
+          return res.status(401).json({ error: 'Acesso não autorizado ao webhook' });
+        }
+      }
+
       const { mensagem, tipo, dados } = req.body || {};
 
       if (!mensagem) {

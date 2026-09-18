@@ -25,6 +25,7 @@ import PromptInstalacaoPWA from './componentes/comuns/PromptInstalacaoPWA';
 import SmartAppBanner from './components/SmartAppBanner';
 import { useNotificacoes } from './hooks/useNotificacoes';
 import CentroNotificacoesDrawer from './components/CentroNotificacoesDrawer';
+import CommandPalette from './components/CommandPalette';
 
 // --- LAZY LOADING DE PÁGINAS COM TRATAMENTO DE RE-DEPLOY ---
 const lazyWithRetry = (componentImport) =>
@@ -1047,6 +1048,7 @@ function App() {
                             onClose={() => setDrawerNotificacoesAberto(false)}
                         />
                     )}
+                    <CommandPalette />
                     <Suspense fallback={<LoadingFallback />}>
                         <Routes>
                              {!user ? (

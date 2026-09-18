@@ -7,6 +7,7 @@ export interface EmptyStateProps {
   icon?: OverridableComponent<SvgIconTypeMap<{}, 'svg'>>;
   title?: string;
   message?: string;
+  description?: string;
   action?: {
     label: string;
     onClick: () => void;
@@ -14,8 +15,9 @@ export interface EmptyStateProps {
   };
 }
 
-const EmptyState: React.FC<EmptyStateProps> = ({ icon, title, message, action }) => {
+const EmptyState: React.FC<EmptyStateProps> = ({ icon, title, message, description, action }) => {
   const IconComponent = icon || SearchOffIcon;
+  const textoMensagem = message || description || 'Tente ajustar seus filtros ou realizar uma nova busca.';
 
   return (
     <Paper
@@ -36,7 +38,7 @@ const EmptyState: React.FC<EmptyStateProps> = ({ icon, title, message, action })
         {title || 'Nenhum resultado encontrado'}
       </Typography>
       <Typography color="text.secondary" variant="body2" sx={{ maxWidth: 450, mx: 'auto', mb: action ? 2.5 : 0 }}>
-        {message || 'Tente ajustar seus filtros ou realizar uma nova busca.'}
+        {textoMensagem}
       </Typography>
       {action && (
         <Button

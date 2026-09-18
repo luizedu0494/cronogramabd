@@ -15,7 +15,10 @@ import EditIcon from '@mui/icons-material/Edit';
 import ClearIcon from '@mui/icons-material/Clear';
 import AddIcon from '@mui/icons-material/Add';
 import CalendarTodayIcon from '@mui/icons-material/CalendarToday';
+import EmptyState from './components/EmptyState';
+import TableSkeleton from './components/TableSkeleton';
 import { LISTA_LABORATORIOS, TIPOS_LABORATORIO } from './constants/laboratorios';
+import { BLOCOS_HORARIO } from './constants/horarios';
 import { registrarLogEvento } from './services/loggerService';
 
 
@@ -23,14 +26,6 @@ dayjs.locale('pt-br');
 
 const EVENT_TYPES = ['Manutenção', 'Feriado', 'Evento', 'Giro', 'Outro'];
 const STATUS_EVENTO = ['aprovado', 'pendente', 'cancelado'];
-
-const EmptyState = ({ title, description }) => (
-  <Paper sx={{ p: 4, textAlign: 'center', bgcolor: 'background.default', borderRadius: 2 }}>
-    <CalendarTodayIcon sx={{ fontSize: 48, color: 'text.secondary', mb: 1, opacity: 0.6 }} />
-    <Typography variant="h6" color="text.secondary" gutterBottom>{title}</Typography>
-    {description && <Typography variant="body2" color="text.secondary">{description}</Typography>}
-  </Paper>
-);
 
 const DialogConfirmacao = ({ open, title, message, onConfirm, onCancel, loading }) => (
   <Dialog open={open} onClose={onCancel}>
@@ -46,15 +41,6 @@ const DialogConfirmacao = ({ open, title, message, onConfirm, onCancel, loading 
     </DialogActions>
   </Dialog>
 );
-
-const BLOCOS_HORARIO = [
-  { value: "07:00-09:10", label: "07:00 - 09:10", turno: "Matutino" },
-  { value: "09:30-12:00", label: "09:30 - 12:00", turno: "Matutino" },
-  { value: "13:00-15:10", label: "13:00 - 15:10", turno: "Vespertino" },
-  { value: "15:30-18:00", label: "15:30 - 18:00", turno: "Vespertino" },
-  { value: "18:30-20:10", label: "18:30 - 20:10", turno: "Noturno" },
-  { value: "20:30-22:00", label: "20:30 - 22:00", turno: "Noturno" },
-];
 
 const ResultadosBuscaEventos = ({ eventos, selectedEventos, onToggleSelectAll, onToggleSelectEvento, onEditEvento }) => (
   <List>
@@ -337,21 +323,20 @@ export default function GerenciarEventosAvancado({ userInfo }) {
     setActionLoading(true);
     try {
       const idsParaEditar = eventoParaEditar ? [eventoParaEditar.id] : selectedEventos;
-      const batch = writeBatch(db);
 
       const updateData = {};
       if (editFields.titulo.trim()) updateData.titulo = editFields.titulo.trim();
       if (editFields.tipo) updateData.tipo = editFields.tipo;
       if (editFields.status) updateData.status = editFields.status;
       if (editFields.laboratorio) updateData.laboratorio = editFields.laboratorio;
-      updateData.atualizadoEm = serverTimestamp();
+      updateData.updated_at = new Date().toISOString();
 
-      for (const id of idsParaEditar) {
-        const ref = doc(db, 'eventosManutencao', id);
-        batch.update(ref, updateData);
-      }
+      const { error } = await supabase
+        .from('eventos_manutencao')
+        .update(updateData)
+        .in('id', idsParaEditar);
 
-      await batch.commit();
+      if (error) throw error;
 
       for (const id of idsParaEditar) {
         const evOriginal = eventos.find(e => e.id === id);
@@ -364,7 +349,7 @@ export default function GerenciarEventosAvancado({ userInfo }) {
       handleSearch('start');
     } catch (err) {
       console.error("Erro ao editar evento(s):", err);
-      setFeedback({ open: true, message: 'Erro ao atualizar evento(s).', severity: 'error' });
+      setFeedback({ open: true, message: 'Erro ao atualizar evento(s): ' + (err.message || ''), severity: 'error' });
     } finally {
       setActionLoading(false);
     }
@@ -374,13 +359,12 @@ export default function GerenciarEventosAvancado({ userInfo }) {
   const handleDeleteSubmit = async () => {
     setActionLoading(true);
     try {
-      const batch = writeBatch(db);
-      for (const id of selectedEventos) {
-        const ref = doc(db, 'eventosManutencao', id);
-        batch.delete(ref);
-      }
+      const { error } = await supabase
+        .from('eventos_manutencao')
+        .delete()
+        .in('id', selectedEventos);
 
-      await batch.commit();
+      if (error) throw error;
 
       for (const id of selectedEventos) {
         const evOriginal = eventos.find(e => e.id === id);
@@ -395,7 +379,7 @@ export default function GerenciarEventosAvancado({ userInfo }) {
       handleSearch('start');
     } catch (err) {
       console.error("Erro ao excluir eventos:", err);
-      setFeedback({ open: true, message: 'Erro ao excluir eventos selecionados.', severity: 'error' });
+      setFeedback({ open: true, message: 'Erro ao excluir eventos selecionados: ' + (err.message || ''), severity: 'error' });
     } finally {
       setActionLoading(false);
     }
@@ -544,9 +528,7 @@ export default function GerenciarEventosAvancado({ userInfo }) {
           {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
 
           {loading ? (
-            <Box display="flex" justifyContent="center" my={4}>
-              <CircularProgress />
-            </Box>
+            <TableSkeleton rows={5} />
           ) : eventos.length === 0 ? (
             <EmptyState title="Nenhum evento encontrado" description="Tente ajustar os filtros acima para encontrar eventos ou agende um novo." />
           ) : (

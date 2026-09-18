@@ -29,20 +29,11 @@ import * as XLSX from 'xlsx';
 import { supabase } from './supabaseConfig';
 import { LISTA_LABORATORIOS, TIPOS_LABORATORIO } from './constants/laboratorios';
 import { LISTA_CURSOS } from './constants/cursos';
+import { BLOCOS_HORARIO } from './constants/horarios';
 import PropTypes from 'prop-types';
 
 dayjs.extend(isBetween);
 dayjs.locale('pt-br');
-
-// ─── Blocos de horário padrão ──────────────────────────────────────────────────
-const BLOCOS_HORARIO = [
-    { value: '07:00-09:10', label: '07:00–09:10', turno: 'Matutino',   startMin: 7*60      },
-    { value: '09:30-12:00', label: '09:30–12:00', turno: 'Matutino',   startMin: 9*60+30   },
-    { value: '13:00-15:10', label: '13:00–15:10', turno: 'Vespertino', startMin: 13*60     },
-    { value: '15:30-18:00', label: '15:30–18:00', turno: 'Vespertino', startMin: 15*60+30  },
-    { value: '18:30-20:10', label: '18:30–20:10', turno: 'Noturno',    startMin: 18*60+30  },
-    { value: '20:30-22:00', label: '20:30–22:00', turno: 'Noturno',    startMin: 20*60+30  },
-];
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -297,35 +288,39 @@ REGRAS:
     }));
 }
 
-// ─── Verificação de conflitos — 1 query no Firestore ──────────────────────────
+// ─── Verificação de conflitos — Supabase ──────────────────────────────────────
 
 async function verificarConflitos(aulas) {
     const aulasComData = aulas.filter(a => a.dataAgendamento && dayjs(a.dataAgendamento).isValid());
     if (aulasComData.length === 0) return aulas;
 
     const datas = aulasComData.map(a => dayjs(a.dataAgendamento));
-    const dataMin = datas.reduce((a, b) => (a.isBefore(b) ? a : b));
-    const dataMax = datas.reduce((a, b) => (a.isAfter(b) ? a : b));
+    const dataMin = datas.reduce((a, b) => (a.isBefore(b) ? a : b)).startOf('day').toISOString();
+    const dataMax = datas.reduce((a, b) => (a.isAfter(b) ? a : b)).endOf('day').toISOString();
 
-    // Uma única query para todo o período
-    const snap = await getDocs(query(
-        collection(db, 'aulas'),
-        where('dataInicio', '>=', Timestamp.fromDate(dataMin.startOf('day').toDate())),
-        where('dataInicio', '<=', Timestamp.fromDate(dataMax.endOf('day').toDate())),
-        where('status', '==', 'aprovada')
-    ));
-    const existentes = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    const { data: existentes, error } = await supabase
+        .from('aulas')
+        .select('*')
+        .gte('data_inicio', dataMin)
+        .lte('data_inicio', dataMax)
+        .eq('status', 'aprovada');
+
+    if (error) {
+        console.error('Erro ao verificar conflitos:', error);
+        return aulas;
+    }
 
     return aulas.map(aula => {
         if (!aula.dataAgendamento || !aula.laboratorio || aula.horarios.length === 0) {
             return { ...aula, conflito: null };
         }
-        const conflitante = existentes.find(e => {
-            if (e.laboratorioSelecionado !== aula.laboratorio) return false;
-            const eData = dayjs(e.dataInicio?.toDate?.() || e.dataInicio);
+        const conflitante = (existentes || []).find(e => {
+            const eLab = e.laboratorio || e.laboratorioSelecionado;
+            if (eLab !== aula.laboratorio) return false;
+            const eData = dayjs(e.data_inicio || e.dataInicio);
             const aulaData = dayjs(aula.dataAgendamento);
             if (!eData.isSame(aulaData, 'day')) return false;
-            const eHorarios = Array.isArray(e.horarioSlotString) ? e.horarioSlotString : [e.horarioSlotString];
+            const eHorarios = Array.isArray(e.horario_slot) ? e.horario_slot : [e.horario_slot || e.horarioSlotString];
             return eHorarios.some(h => aula.horarios.includes(h));
         });
         return {
@@ -333,7 +328,7 @@ async function verificarConflitos(aulas) {
             conflito: conflitante ? {
                 id: conflitante.id,
                 assunto: conflitante.assunto,
-                lab: labIdParaNome(conflitante.laboratorioSelecionado),
+                lab: labIdParaNome(conflitante.laboratorio || conflitante.laboratorioSelecionado),
             } : null,
         };
     });

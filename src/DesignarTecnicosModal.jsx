@@ -11,6 +11,8 @@ import { supabase } from './supabaseConfig';
 import PropTypes from 'prop-types';
 
 function DesignarTecnicosModal({ open, onClose, aula, setSnackBar }) {
+    const [loading, setLoading] = useState(false);
+    const [error, setError] = useState('');
     const [tecnicosDisponiveis, setTecnicosDisponiveis] = useState([]);
     const [selectedTecnicos, setSelectedTecnicos] = useState([]);
     const [grupos, setGrupos] = useState([]);
@@ -114,7 +116,6 @@ function DesignarTecnicosModal({ open, onClose, aula, setSnackBar }) {
                     corpo: `${aula.title || aula.assunto || 'Aula'} em ${aula.laboratorioSelecionado || aula.laboratorio || 'Laboratório'}`,
                     aula_id: aula.id
                 }));
-                const { supabase } = await import('./supabaseConfig');
                 await supabase.from('notificacoes').insert(registrosNotificacao);
             }
 
