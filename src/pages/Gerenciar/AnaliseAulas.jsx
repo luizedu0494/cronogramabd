@@ -220,7 +220,8 @@ function AnaliseAulas() {
 
             aulas.forEach(aula => {
                 const cursosDaAula = aula.cursos || [];
-                const dataInicio = aula.dataInicio?.toDate ? dayjs(aula.dataInicio.toDate()) : null;
+                const rawDate = aula.dataInicio || aula.data_inicio;
+                const dataInicio = rawDate?.toDate ? dayjs(rawDate.toDate()) : (rawDate ? dayjs(rawDate) : null);
 
                 // --- LÓGICA UNIFICADA PARA O GRÁFICO PRINCIPAL ---
                 if (cursosDaAula.length === 1) {
@@ -236,12 +237,13 @@ function AnaliseAulas() {
                 const tipo = aula.tipoAtividade || 'Não especificado';
                 counts.tipoAtividade[tipo] = (counts.tipoAtividade[tipo] || 0) + 1;
 
-                const lab = aula.laboratorioSelecionado || 'Não especificado';
+                const lab = aula.laboratorioSelecionado || aula.laboratorio || 'Não especificado';
                 counts.porLaboratorio[lab] = (counts.porLaboratorio[lab] || 0) + 1;
 
-                if (dataInicio) {
-                    const diaSemana = dataInicio.format('dddd').replace('-feira', '');
-                    const diaCapitalizado = diaSemana.charAt(0).toUpperCase() + diaSemana.slice(1);
+                if (dataInicio && dataInicio.isValid()) {
+                    const diaIndex = dataInicio.day();
+                    const diasMap = ['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado'];
+                    const diaCapitalizado = diasMap[diaIndex];
                     if (counts.porDiaSemana.hasOwnProperty(diaCapitalizado)) {
                         counts.porDiaSemana[diaCapitalizado]++;
                     }
@@ -252,7 +254,7 @@ function AnaliseAulas() {
                     else if (hora >= 18 && hora < 23) counts.porTurno['Noturno']++;
                     else counts.porTurno['Outro']++;
 
-                    const mes = dataInicio.format('MMMM'); // Nome do mês
+                    const mes = dataInicio.format('MMMM').toLowerCase();
                     counts.porMes[mes] = (counts.porMes[mes] || 0) + 1;
                 }
             });
@@ -339,7 +341,8 @@ function AnaliseAulas() {
             const porLab   = {};
 
             provas.forEach(prova => {
-                const dataProva = prova.dataInicio?.toDate ? dayjs(prova.dataInicio.toDate()) : null;
+                const rawDate = prova.dataInicio || prova.data_inicio;
+                const dataProva = rawDate?.toDate ? dayjs(rawDate.toDate()) : (rawDate ? dayjs(rawDate) : null);
                 const cursosDaProva = prova.cursos || [];
 
                 // por curso
@@ -352,13 +355,13 @@ function AnaliseAulas() {
                 }
 
                 // por mês
-                if (dataProva) {
-                    const mes = dataProva.format('MMMM');
+                if (dataProva && dataProva.isValid()) {
+                    const mes = dataProva.format('MMMM').toLowerCase();
                     porMes[mes] = (porMes[mes] || 0) + 1;
                 }
 
                 // por laboratório
-                const lab = prova.laboratorioSelecionado || 'N/A';
+                const lab = prova.laboratorioSelecionado || prova.laboratorio || 'N/A';
                 porLab[lab] = (porLab[lab] || 0) + 1;
             });
 
