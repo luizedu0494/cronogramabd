@@ -599,8 +599,7 @@ function App() {
         <Divider key="div-guest" sx={{ my: 0.5 }} />,
         <MenuItem key="sair-guest" onClick={handleLogout} sx={{ color: 'error.main' }}><ListItemIcon><LogOut size={18} color="red" /></ListItemIcon><ListItemText primary="Sair do Modo Visitante" primaryTypographyProps={{ noWrap: true }} /></MenuItem>
     ] : [
-        <MenuItem key="painel" component={Link} to="/" onClick={handleMenuClose}><ListItemIcon><LayoutDashboard size={18} /></ListItemIcon><ListItemText primary="Painel Inicial" primaryTypographyProps={{ noWrap: true }} /></MenuItem>,
-        <MenuItem key="dashboard-kpi" component={Link} to="/dashboard" onClick={handleMenuClose}><ListItemIcon><BarChart size={18} /></ListItemIcon><ListItemText primary="Dashboard KPIs" primaryTypographyProps={{ noWrap: true }} /></MenuItem>,
+        <MenuItem key="painel" component={Link} to="/" onClick={handleMenuClose}><ListItemIcon><LayoutDashboard size={18} /></ListItemIcon><ListItemText primary="Painel" primaryTypographyProps={{ noWrap: true }} /></MenuItem>,
         <MenuItem key="cal" component={Link} to="/calendario" onClick={handleMenuClose}><ListItemIcon><Calendar size={18} /></ListItemIcon><ListItemText primary="Calendário" primaryTypographyProps={{ noWrap: true }} /></MenuItem>,
         !approvalPending ? <MenuItem key="historico" component={Link} to="/historico-aulas" onClick={handleMenuClose}><ListItemIcon><History size={18} /></ListItemIcon><ListItemText primary="Histórico" primaryTypographyProps={{ noWrap: true }} /></MenuItem> : null,
         !approvalPending ? <MenuItem key="avisos" component={Link} to="/avisos" onClick={handleMenuClose}><ListItemIcon><Bell size={18} /></ListItemIcon><ListItemText primary="Avisos" primaryTypographyProps={{ noWrap: true }} /></MenuItem> : null,
@@ -1116,7 +1115,7 @@ function App() {
                              ) : (
                                 <Route element={<MainLayout />}>
                                     <Route path="/" element={role === 'visualizador' ? <Navigate to="/calendario" replace /> : <PaginaInicial userInfo={userProfileData}/>} />
-                                    <Route path="/dashboard" element={<DashboardKPI userInfo={userProfileData} />} />
+                                    <Route path="/dashboard" element={<Navigate to="/" replace />} />
                                     <Route path="/calendario" element={<CalendarioCronograma userInfo={userProfileData} />} />
                                     <Route path="/historico-aulas" element={role === 'visualizador' ? <Navigate to="/calendario" replace /> : <HistoricoAulas />} />
                                     <Route path="/propor-aula" element={<ProporAulaForm userInfo={userProfileData} currentUser={user} />} />
