@@ -174,18 +174,27 @@ const PaginaInicial = ({ userInfo }) => {
                 .gte('data_fim', todayYMD);
             setPeriodosBloqueadosHoje(resPerHoje || []);
 
-            const isProvaCheck = (a) => Boolean(
-                a.is_prova === true || a.is_prova === 'true' || a.is_prova === 1 ||
-                a.isProva === true || a.isProva === 'true' ||
-                a.tipo_atividade === 'prova' || a.tipo === 'prova'
-            );
+            const isProvaCheck = (a) => {
+                if (!a) return false;
+                if (a.is_prova === true || a.is_prova === 'true' || a.is_prova === 1 || a.isProva === true || a.isProva === 'true') return true;
+                const tAtividade = String(a.tipo_atividade || '').toLowerCase();
+                const tTipo = String(a.tipo || '').toLowerCase();
+                const tAssunto = String(a.assunto || '').toLowerCase();
+                return tAtividade.includes('prova') || tAtividade.includes('avaliac') || tAtividade.includes('avaliaç') ||
+                       tTipo.includes('prova') || tTipo.includes('avaliac') || tTipo.includes('avaliaç') ||
+                       tAssunto.includes('prova') || tAssunto.includes('avaliac') || tAssunto.includes('avaliaç');
+            };
 
-            const isRevisaoCheck = (a) => Boolean(
-                a.is_revisao === true || a.is_revisao === 'true' || a.is_revisao === 1 ||
-                a.isRevisao === true || a.isRevisao === 'true' ||
-                a.tipo_atividade === 'revisao' || a.tipo === 'revisao' ||
-                (typeof a.tipo_atividade === 'string' && a.tipo_atividade.startsWith('revisao'))
-            );
+            const isRevisaoCheck = (a) => {
+                if (!a) return false;
+                if (a.is_revisao === true || a.is_revisao === 'true' || a.is_revisao === 1 || a.isRevisao === true || a.isRevisao === 'true') return true;
+                const tAtividade = String(a.tipo_atividade || '').toLowerCase();
+                const tTipo = String(a.tipo || '').toLowerCase();
+                const tAssunto = String(a.assunto || '').toLowerCase();
+                return tAtividade.includes('revis') || tAtividade.includes('reforco') || tAtividade.includes('monitoria') ||
+                       tTipo.includes('revis') || tTipo.includes('reforco') || tTipo.includes('monitoria') ||
+                       tAssunto.includes('revisão') || tAssunto.includes('revisao');
+            };
 
             // Aulas do ano (carregado para todos os usuários)
             const { data: resAno } = await supabase
