@@ -129,8 +129,11 @@ Gestão ágil de aprovações e agendamentos na palma da mão:
   - **Aula Normal**: Identificação em azul institucional.
   - **Revisão / Reforço**: Identificação em roxo.
   - **Prova / Avaliação**: Identificação em vermelho de alto contraste.
+- **Command Palette (`Ctrl + K` / `Cmd + K`)**: Navegação global e busca instantânea de páginas, ações e laboratórios via atalho de teclado.
+- **Heatmap de Ocupação & Análise Preditiva de Demanda**: Matriz interativa de ocupação (*Laboratório × Bloco de Horário*) com cálculo preditivo de risco de saturação (*Crítico*, *Moderado*, *Baixo*).
 - **Modo Visitante Seguro**: Permite consulta de horários sem permissão de edição ou exclusão de dados.
-- **Notificações Nativas do Navegador**: Alertas instantâneos no computador e celular imunes a adblockers.
+- **Notificações Nativas do Navegador & Telegram**: Alertas instantâneos no computador e celular via Web Push VAPID e Telegram Bot.
+- **Carregamento Suave (Skeletons)**: Shimmer loaders em listagens e tabelas substituindo spinners em tela cheia.
 - **Importação & Exportação**:
   - Importação de cronogramas em planilhas Excel (`.xlsx`) e documentos Word (`.docx`).
   - Exportação em **PDF**, **Excel** e arquivos de calendário **iCal (.ics)**.
@@ -139,9 +142,11 @@ Gestão ágil de aprovações e agendamentos na palma da mão:
 
 ## <a id="tecnologias-usadas"></a><img src="https://api.iconify.design/lucide:cpu.svg?color=%231E7EC8" width="22" height="22" style="vertical-align: sub;" /> Tecnologias Usadas
 
-- **Frontend**: [React 19](https://react.dev/), [Vite 7](https://vitejs.dev/), [Material-UI (MUI v7)](https://mui.com/), [Dayjs](https://day.js.org/)
-- **Backend & Banco de Dados**: [Supabase](https://supabase.com/) (PostgreSQL + Auth PKCE Flow + Realtime Subscriptions + Storage)
-- **Hospedagem & CDN**: [Vercel](https://vercel.com/)
+- **Frontend**: [React 19](https://react.dev/), [Vite 7](https://vitejs.dev/), [Material-UI (MUI v7)](https://mui.com/), [Zustand](https://zustand-demo.pmnd.rs/), [Sonner](https://sonner.emilkowal.ski/), [Dayjs](https://day.js.org/)
+- **Backend & Banco de Dados**: [Supabase](https://supabase.com/) (PostgreSQL Nativo + Auth PKCE Flow + Realtime Subscriptions + Storage + RLS)
+- **IA & Análise Preditiva**: Groq API (Proxy Serverless em `/api/groq` com Rate Limiting), Brain.js / PredictionService
+- **Hospedagem & Serverless**: [Vercel](https://vercel.com/) (Vercel Functions + Rewrites SPA)
+- **Testes & Qualidade**: [Vitest](https://vitest.dev/), Testing Library
 - **Documentos & Dados**: ExcelJS, SheetJS (`xlsx`), jsPDF, Tesseract.js (OCR)
 
 ---
@@ -174,6 +179,16 @@ VITE_SUPABASE_ANON_KEY=sua_chave_anonima_supabase
 npm run dev
 ```
 O projeto estará disponível no endereço `http://localhost:5173`.
+
+### 5. Executar Suíte de Testes Unitários
+```bash
+npx vitest run
+```
+
+### 6. Gerar Build de Produção
+```bash
+npm run build
+```
 
 ---
 
