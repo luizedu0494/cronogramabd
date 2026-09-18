@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { useLocation } from 'react-router-dom';
 import { supabase } from '../../supabaseConfig';
 
 import {
@@ -60,10 +61,20 @@ function AnaliseAulas() {
     const [chartDataProvasPorLab, setChartDataProvasPorLab] = useState(null);
     const [totalProvas, setTotalProvas] = useState(0);
 
+    const location = useLocation();
     const [cursosFiltro, setCursosFiltro] = useState([]);
     const [laboratoriosFiltro, setLaboratoriosFiltro] = useState([]);
     const [anoFiltro, setAnoFiltro] = useState(dayjs().year());
     const [anosDisponiveis, setAnosDisponiveis] = useState([]);
+
+    useEffect(() => {
+        if (location.state?.scrollTo === 'provas') {
+            setTimeout(() => {
+                const el = document.getElementById('secao-provas');
+                if (el) el.scrollIntoView({ behavior: 'smooth' });
+            }, 500);
+        }
+    }, [location.state]);
 
     const chartRefs = {
         aulasPorEntidade: useRef(null),
@@ -97,14 +108,27 @@ function AnaliseAulas() {
             const { data, error } = await queryRef;
             if (error) throw error;
 
+            const isProvaCheck = (a) => Boolean(
+                a.is_prova === true || a.is_prova === 'true' || a.is_prova === 1 ||
+                a.isProva === true || a.isProva === 'true' ||
+                a.tipo_atividade === 'prova' || a.tipo === 'prova'
+            );
+
+            const isRevisaoCheck = (a) => Boolean(
+                a.is_revisao === true || a.is_revisao === 'true' || a.is_revisao === 1 ||
+                a.isRevisao === true || a.isRevisao === 'true' ||
+                a.tipo_atividade === 'revisao' || a.tipo === 'revisao' ||
+                (typeof a.tipo_atividade === 'string' && a.tipo_atividade.startsWith('revisao'))
+            );
+
             let listaCompleta = (data || []).map(a => ({
                 id: a.id,
                 ...a,
                 laboratorioSelecionado: a.laboratorio,
                 horarioSlotString: a.horario_slot,
                 dataInicio: a.data_inicio,
-                isProva: a.is_prova,
-                isRevisao: a.is_revisao
+                isProva: isProvaCheck(a),
+                isRevisao: isRevisaoCheck(a)
             }));
 
             if (cursosFiltro.length > 0) {
@@ -599,7 +623,7 @@ function AnaliseAulas() {
 
                     {/* ── Seção de Provas ── */}
                     <Grid item xs={12}>
-                        <Paper elevation={2} sx={{ p: 2, mt: 2, borderLeft: '5px solid #f44336' }}>
+                        <Paper id="secao-provas" elevation={2} sx={{ p: 2, mt: 2, borderLeft: '5px solid #f44336' }}>
                             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 1 }}>
                                 <Typography variant="h6" fontWeight="bold">📝 Análise de Provas</Typography>
                                 <Chip label={`${totalProvas} prova${totalProvas !== 1 ? 's' : ''} no período`}

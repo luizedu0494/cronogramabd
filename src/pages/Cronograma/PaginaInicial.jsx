@@ -174,51 +174,62 @@ const PaginaInicial = ({ userInfo }) => {
                 .gte('data_fim', todayYMD);
             setPeriodosBloqueadosHoje(resPerHoje || []);
 
-            if (userInfo?.role === 'coordenador') {
-                // Aulas do ano
-                const { data: resAno } = await supabase
-                    .from('aulas')
-                    .select('*')
-                    .gte('data_inicio', startOfYearStr)
-                    .lte('data_inicio', endOfYearStr);
+            const isProvaCheck = (a) => Boolean(
+                a.is_prova === true || a.is_prova === 'true' || a.is_prova === 1 ||
+                a.isProva === true || a.isProva === 'true' ||
+                a.tipo_atividade === 'prova' || a.tipo === 'prova'
+            );
 
-                const todasAno = resAno || [];
-                setTotalAulasNoCronograma(todasAno.filter(a => !a.is_revisao).length);
-                setTotalRevisoesNoCronograma(todasAno.filter(a => a.is_revisao === true).length);
-                setTotalProvasNoAno(todasAno.filter(a => a.is_prova === true).length);
+            const isRevisaoCheck = (a) => Boolean(
+                a.is_revisao === true || a.is_revisao === 'true' || a.is_revisao === 1 ||
+                a.isRevisao === true || a.isRevisao === 'true' ||
+                a.tipo_atividade === 'revisao' || a.tipo === 'revisao' ||
+                (typeof a.tipo_atividade === 'string' && a.tipo_atividade.startsWith('revisao'))
+            );
 
-                // Pendentes
-                const { count: countPendentes } = await supabase
-                    .from('aulas')
-                    .select('*', { count: 'exact', head: true })
-                    .eq('status', 'pendente');
-                setPropostasPendentes(countPendentes || 0);
+            // Aulas do ano (carregado para todos os usuários)
+            const { data: resAno } = await supabase
+                .from('aulas')
+                .select('*')
+                .gte('data_inicio', startOfYearStr)
+                .lte('data_inicio', endOfYearStr);
 
-                // Eventos do ano
-                const { data: resEventosAno } = await supabase
-                    .from('eventos_manutencao')
-                    .select('*')
-                    .gte('data_inicio', startOfYearStr)
-                    .lte('data_inicio', endOfYearStr);
-                setTotalEventosNoCronograma((resEventosAno || []).length);
+            const todasAno = resAno || [];
+            setTotalProvasNoAno(todasAno.filter(a => isProvaCheck(a)).length);
+            setTotalRevisoesNoCronograma(todasAno.filter(a => isRevisaoCheck(a)).length);
+            setTotalAulasNoCronograma(todasAno.filter(a => !isRevisaoCheck(a) && !isProvaCheck(a)).length);
 
-                // Últimos eventos
-                const { data: resUltimosEventos } = await supabase
-                    .from('eventos_manutencao')
-                    .select('*')
-                    .order('created_at', { ascending: false })
-                    .limit(5);
-                setUltimosEventos(resUltimosEventos || []);
+            // Pendentes
+            const { count: countPendentes } = await supabase
+                .from('aulas')
+                .select('*', { count: 'exact', head: true })
+                .eq('status', 'pendente');
+            setPropostasPendentes(countPendentes || 0);
 
-                // Logs de exclusão
-                const { data: resLogs } = await supabase
-                    .from('logs')
-                    .select('*')
-                    .eq('type', 'DELETE')
-                    .order('created_at', { ascending: false })
-                    .limit(5);
-                setUltimosEventosExcluidos(resLogs || []);
-            }
+            // Eventos do ano
+            const { data: resEventosAno } = await supabase
+                .from('eventos_manutencao')
+                .select('*')
+                .gte('data_inicio', startOfYearStr)
+                .lte('data_inicio', endOfYearStr);
+            setTotalEventosNoCronograma((resEventosAno || []).length);
+
+            // Últimos eventos
+            const { data: resUltimosEventos } = await supabase
+                .from('eventos_manutencao')
+                .select('*')
+                .order('created_at', { ascending: false })
+                .limit(5);
+            setUltimosEventos(resUltimosEventos || []);
+
+            // Logs de exclusão
+            const { data: resLogs } = await supabase
+                .from('logs')
+                .select('*')
+                .eq('type', 'DELETE')
+                .order('created_at', { ascending: false })
+                .limit(5);
+            setUltimosEventosExcluidos(resLogs || []);
 
             if (userInfo?.role === 'tecnico') {
                 const targetUid = userInfo?.uid || userInfo?.email;
@@ -596,7 +607,7 @@ const PaginaInicial = ({ userInfo }) => {
                         </Grid>
                         <Grid item xs={12} sm={6} md={3}>
                             <MiniStatCard icon={<ClipboardList size={22} />} value={totalProvasNoAno} label={`📝 Provas ${currentYear}`} color="#f44336"
-                                onClick={() => navigate('/analise-aulas')} />
+                                onClick={() => navigate('/analise-aulas', { state: { scrollTo: 'provas' } })} />
                         </Grid>
                         <Grid item xs={12} sm={6} md={3}>
                             <MiniStatCard icon={<FileText size={22} />} value={propostasPendentes} label="Pendentes" color={theme.palette.error.main}
