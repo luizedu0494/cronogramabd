@@ -24,8 +24,15 @@ import { DesktopDatePicker } from '@mui/x-date-pickers/DesktopDatePicker';
 import { getHolidays } from '../../utils/holiday-api';
 import { HolidayIcon } from '../../utils/custom-icons';
 import { LISTA_LABORATORIOS } from '../../constants/laboratorios';
+import { useTheme, alpha } from '@mui/material/styles';
+import 'dayjs/locale/pt-br';
+
+dayjs.locale('pt-br');
 
 function GerenciarPeriodos() {
+    const theme = useTheme();
+    const isDarkMode = theme.palette.mode === 'dark';
+
     const [periodos, setPeriodos] = useState([]);
     const [loading, setLoading] = useState(true);
     const [newPeriodoDesc, setNewPeriodoDesc] = useState('');
@@ -164,12 +171,18 @@ function GerenciarPeriodos() {
                 const is100Livre = !periodoExistente && itensConflitantes.length === 0;
                 const isParcialLivre = !periodoExistente && !is100Livre && totalTurnosLivres > 0;
 
+                const diaSemanaNome = diaAtual.locale('pt-br').format('dddd');
+                const diaSemanaCap = diaSemanaNome.charAt(0).toUpperCase() + diaSemanaNome.slice(1);
+                const diaSemanaAbrev = diaAtual.locale('pt-br').format('ddd').replace('.', '').toUpperCase();
+
                 diasAnalisados.push({
                     data: diaAtual,
                     dataIso: diaIso,
                     diaIso,
-                    diaSemana: diaAtual.format('dddd'),
+                    diaSemana: diaSemanaCap,
+                    diaSemanaAbrev: diaSemanaAbrev,
                     dataFormatada: diaAtual.format('DD/MM/YYYY'),
+                    dataCurta: diaAtual.format('DD/MM'),
                     periodoExistente,
                     totalItens: itensConflitantes.length,
                     is100Livre,
@@ -343,7 +356,7 @@ function GerenciarPeriodos() {
     }, [resultadosBusca]);
 
     return (
-        <LocalizationProvider dateAdapter={AdapterDayjs}>
+        <LocalizationProvider dateAdapter={AdapterDayjs} adapterLocale="pt-br">
             <Container maxWidth="md" sx={{ mt: 4, mb: 6 }}>
                 <Typography variant="h5" component="h1" gutterBottom align="center" fontWeight={700}>
                     Gerenciar Períodos Inativos & Manutenções
@@ -354,13 +367,16 @@ function GerenciarPeriodos() {
 
                 {/* ── CARD 1: LOCALIZADOR DE DATAS LIVRES PARA MANUTENÇÃO / PERÍODOS ── */}
                 <Paper 
-                    elevation={4} 
+                    elevation={isDarkMode ? 2 : 3} 
                     sx={{ 
                         p: { xs: 2.5, md: 3.5 }, 
                         mb: 4, 
                         borderRadius: 3, 
-                        border: '2px solid #1976d2',
-                        background: 'linear-gradient(180deg, rgba(25, 118, 210, 0.03) 0%, rgba(255, 255, 255, 1) 100%)'
+                        border: `1px solid ${isDarkMode ? alpha(theme.palette.primary.main, 0.35) : alpha(theme.palette.primary.main, 0.4)}`,
+                        bgcolor: isDarkMode ? alpha(theme.palette.primary.main, 0.05) : '#ffffff',
+                        backgroundImage: isDarkMode 
+                            ? `linear-gradient(180deg, ${alpha(theme.palette.primary.main, 0.1)} 0%, ${alpha(theme.palette.background.paper, 0.95)} 100%)` 
+                            : 'linear-gradient(180deg, rgba(25, 118, 210, 0.03) 0%, rgba(255, 255, 255, 1) 100%)'
                     }}
                 >
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 1 }}>
@@ -385,6 +401,7 @@ function GerenciarPeriodos() {
                                 label="Data Inicial de Busca"
                                 value={buscaDataInicio}
                                 onChange={setBuscaDataInicio}
+                                format="DD/MM/YYYY"
                                 slotProps={{ textField: { fullWidth: true, size: 'small' } }}
                             />
                         </Grid>
@@ -455,7 +472,7 @@ function GerenciarPeriodos() {
 
                     {/* Exibição dos Resultados da Busca */}
                     {resultadosBusca && (
-                        <Box sx={{ mt: 3, pt: 2, borderTop: '1px solid rgba(0,0,0,0.08)' }}>
+                        <Box sx={{ mt: 3, pt: 2, borderTop: `1px solid ${theme.palette.divider}` }}>
                             {/* Barra de estatísticas e filtros rápidos */}
                             <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 1.5, mb: 2 }}>
                                 <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
@@ -492,7 +509,7 @@ function GerenciarPeriodos() {
                                     Nenhum dia encontrado com os critérios selecionados neste período. Tente ampliar o intervalo de busca.
                                 </Alert>
                             ) : (
-                                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.2, maxHeight: 380, overflowY: 'auto', pr: 0.5 }}>
+                                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.2, maxHeight: 420, overflowY: 'auto', pr: 0.5 }}>
                                     {listaResultadosFiltrada.map((item) => {
                                         return (
                                             <Paper
@@ -507,32 +524,39 @@ function GerenciarPeriodos() {
                                                     flexWrap: 'wrap',
                                                     gap: 1.5,
                                                     bgcolor: item.periodoExistente 
-                                                        ? 'rgba(0,0,0,0.03)' 
+                                                        ? (isDarkMode ? alpha(theme.palette.text.primary, 0.05) : 'rgba(0,0,0,0.03)')
                                                         : item.is100Livre 
-                                                            ? 'rgba(76, 175, 80, 0.08)' 
+                                                            ? (isDarkMode ? alpha(theme.palette.success.main, 0.15) : alpha(theme.palette.success.main, 0.08))
                                                             : item.isParcialLivre 
-                                                                ? 'rgba(255, 152, 0, 0.08)' 
-                                                                : 'background.paper',
+                                                                ? (isDarkMode ? alpha(theme.palette.warning.main, 0.15) : alpha(theme.palette.warning.main, 0.08))
+                                                                : (isDarkMode ? theme.palette.background.paper : '#ffffff'),
                                                     borderColor: item.is100Livre 
-                                                        ? 'success.light' 
+                                                        ? (isDarkMode ? alpha(theme.palette.success.main, 0.45) : theme.palette.success.light)
                                                         : item.isParcialLivre 
-                                                            ? 'warning.light' 
-                                                            : 'divider'
+                                                            ? (isDarkMode ? alpha(theme.palette.warning.main, 0.45) : theme.palette.warning.light)
+                                                            : theme.palette.divider
                                                 }}
                                             >
                                                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-                                                    <Box sx={{ textAlign: 'center', minWidth: 80, bgcolor: 'background.paper', p: 0.5, borderRadius: 1.5, border: '1px solid divider' }}>
-                                                        <Typography variant="caption" color="text.secondary" display="block" sx={{ textTransform: 'capitalize', fontWeight: 600 }}>
-                                                            {item.diaSemana.slice(0, 3)}
+                                                    <Box sx={{ 
+                                                        textAlign: 'center', 
+                                                        minWidth: 70, 
+                                                        bgcolor: isDarkMode ? alpha(theme.palette.common.white, 0.06) : theme.palette.background.paper, 
+                                                        p: 0.6, 
+                                                        borderRadius: 1.5, 
+                                                        border: `1px solid ${theme.palette.divider}` 
+                                                    }}>
+                                                        <Typography variant="caption" color="text.secondary" display="block" sx={{ textTransform: 'uppercase', fontWeight: 700, fontSize: '0.68rem', letterSpacing: '0.04em' }}>
+                                                            {item.diaSemanaAbrev}
                                                         </Typography>
-                                                        <Typography variant="subtitle2" fontWeight={700}>
-                                                            {item.dataFormatada.slice(0, 5)}
+                                                        <Typography variant="subtitle2" fontWeight={800} color="text.primary">
+                                                            {item.dataCurta}
                                                         </Typography>
                                                     </Box>
 
                                                     <Box>
                                                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap' }}>
-                                                            <Typography variant="body2" fontWeight={700}>
+                                                            <Typography variant="body2" fontWeight={700} color="text.primary">
                                                                 {item.dataFormatada} — {item.diaSemana}
                                                             </Typography>
                                                             {item.periodoExistente ? (
@@ -540,47 +564,47 @@ function GerenciarPeriodos() {
                                                                     label={`Já bloqueado: ${item.periodoExistente.descricao}`} 
                                                                     size="small" 
                                                                     color="default" 
-                                                                    sx={{ height: 20, fontSize: '0.68rem', fontWeight: 600 }}
+                                                                    sx={{ height: 22, fontSize: '0.7rem', fontWeight: 600 }}
                                                                 />
                                                             ) : item.is100Livre ? (
                                                                 <Chip 
                                                                     label="🌟 100% Livre (Sem Aulas)" 
                                                                     size="small" 
                                                                     color="success" 
-                                                                    sx={{ height: 20, fontSize: '0.68rem', fontWeight: 700 }}
+                                                                    sx={{ height: 22, fontSize: '0.7rem', fontWeight: 700 }}
                                                                 />
                                                             ) : (
                                                                 <Chip 
                                                                     label={`${item.totalItens} aula(s) agendada(s)`} 
                                                                     size="small" 
                                                                     color="warning" 
-                                                                    sx={{ height: 20, fontSize: '0.68rem' }}
+                                                                    sx={{ height: 22, fontSize: '0.7rem', fontWeight: 600 }}
                                                                 />
                                                             )}
                                                         </Box>
 
                                                         {/* Status dos Turnos */}
-                                                        <Box sx={{ display: 'flex', gap: 0.6, mt: 0.5 }}>
+                                                        <Box sx={{ display: 'flex', gap: 0.6, mt: 0.6 }}>
                                                             <Chip 
                                                                 label={item.manhaLivre ? "Manhã: Livre" : "Manhã: Ocupada"} 
                                                                 size="small" 
                                                                 color={item.manhaLivre ? "success" : "default"} 
                                                                 variant={item.manhaLivre ? "filled" : "outlined"}
-                                                                sx={{ height: 18, fontSize: '0.62rem' }}
+                                                                sx={{ height: 20, fontSize: '0.65rem', fontWeight: 600 }}
                                                             />
                                                             <Chip 
                                                                 label={item.tardeLivre ? "Tarde: Livre" : "Tarde: Ocupada"} 
                                                                 size="small" 
                                                                 color={item.tardeLivre ? "success" : "default"} 
                                                                 variant={item.tardeLivre ? "filled" : "outlined"}
-                                                                sx={{ height: 18, fontSize: '0.62rem' }}
+                                                                sx={{ height: 20, fontSize: '0.65rem', fontWeight: 600 }}
                                                             />
                                                             <Chip 
                                                                 label={item.noiteLivre ? "Noite: Livre" : "Noite: Ocupada"} 
                                                                 size="small" 
                                                                 color={item.noiteLivre ? "success" : "default"} 
                                                                 variant={item.noiteLivre ? "filled" : "outlined"}
-                                                                sx={{ height: 18, fontSize: '0.62rem' }}
+                                                                sx={{ height: 20, fontSize: '0.65rem', fontWeight: 600 }}
                                                             />
                                                         </Box>
                                                     </Box>
@@ -593,7 +617,7 @@ function GerenciarPeriodos() {
                                                         color={item.is100Livre ? "primary" : "inherit"}
                                                         startIcon={<BuildIcon sx={{ fontSize: '0.9rem !important' }} />}
                                                         onClick={() => handleAplicarDataNoFormulario(item)}
-                                                        sx={{ textTransform: 'none', fontWeight: 600, fontSize: '0.75rem', borderRadius: 1.5 }}
+                                                        sx={{ textTransform: 'none', fontWeight: 700, fontSize: '0.75rem', borderRadius: 2 }}
                                                     >
                                                         Preencher no Formulário
                                                     </Button>
@@ -611,8 +635,14 @@ function GerenciarPeriodos() {
                 <Paper 
                     ref={formManualRef} 
                     id="form-adicionar-periodo" 
-                    elevation={3} 
-                    sx={{ p: { xs: 2, md: 4 }, mt: 3, borderLeft: '5px solid #2196f3', borderRadius: 2 }}
+                    elevation={isDarkMode ? 2 : 3} 
+                    sx={{ 
+                        p: { xs: 2, md: 4 }, 
+                        mt: 3, 
+                        borderLeft: `5px solid ${theme.palette.primary.main}`, 
+                        borderRadius: 2,
+                        bgcolor: 'background.paper'
+                    }}
                 >
                     <Typography variant="h6" gutterBottom fontWeight={700}>Adicionar Período Manualmente</Typography>
                     <Typography variant="caption" color="text.secondary" display="block" sx={{ mb: 2 }}>
@@ -632,6 +662,7 @@ function GerenciarPeriodos() {
                                 label="Data Início" 
                                 value={newPeriodoStart} 
                                 onChange={setNewPeriodoStart} 
+                                format="DD/MM/YYYY"
                                 slotProps={{ textField: { fullWidth: true } }} 
                             />
                         </Grid>
@@ -640,6 +671,7 @@ function GerenciarPeriodos() {
                                 label="Data Fim" 
                                 value={newPeriodoEnd} 
                                 onChange={setNewPeriodoEnd} 
+                                format="DD/MM/YYYY"
                                 slotProps={{ textField: { fullWidth: true } }} 
                             />
                         </Grid>
@@ -658,7 +690,16 @@ function GerenciarPeriodos() {
                 </Paper>
 
                 {/* ── CARD 3: IMPORTAR FERIADOS ── */}
-                <Paper elevation={3} sx={{ p: { xs: 2, md: 4 }, mt: 3, borderLeft: '5px solid #d32f2f', borderRadius: 2 }}>
+                <Paper 
+                    elevation={isDarkMode ? 2 : 3} 
+                    sx={{ 
+                        p: { xs: 2, md: 4 }, 
+                        mt: 3, 
+                        borderLeft: `5px solid ${theme.palette.error.main}`, 
+                        borderRadius: 2,
+                        bgcolor: 'background.paper'
+                    }}
+                >
                     <Typography variant="h6" gutterBottom fontWeight={700}>Importar Feriados Automáticos</Typography>
                     <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
                         Importa a lista oficial de feriados nacionais e municipais de Maceió/AL para o ano corrente.
@@ -676,7 +717,15 @@ function GerenciarPeriodos() {
                 </Paper>
 
                 {/* ── CARD 4: LISTA DE PERÍODOS EXISTENTES ── */}
-                <Paper elevation={3} sx={{ p: { xs: 2, md: 4 }, mt: 3, borderRadius: 2 }}>
+                <Paper 
+                    elevation={isDarkMode ? 2 : 3} 
+                    sx={{ 
+                        p: { xs: 2, md: 4 }, 
+                        mt: 3, 
+                        borderRadius: 2,
+                        bgcolor: 'background.paper'
+                    }}
+                >
                     <Typography variant="h6" gutterBottom fontWeight={700}>Períodos Inativos Existentes</Typography>
                     {loading ? (
                         <Box sx={{ display: 'flex', justifyContent: 'center', mt: 2 }}><CircularProgress /></Box>
@@ -690,7 +739,7 @@ function GerenciarPeriodos() {
                                 <ListItem key={p.id} sx={{ pr: 12 }}>
                                     <ListItemText
                                         primary={p.descricao}
-                                        secondary={`${dayjs(p.dataInicio.toDate()).format('DD/MM/YYYY')} a ${dayjs(p.dataFim.toDate()).format('DD/MM/YYYY')}`}
+                                        secondary={`${dayjs(p.dataInicio).format('DD/MM/YYYY')} a ${dayjs(p.dataFim).format('DD/MM/YYYY')}`}
                                     />
                                     <Chip label={p.tipo || 'Manual'} size="small" icon={<HolidayIcon type={p.tipo} />} sx={{ position: 'absolute', right: 50 }} />
                                     <ListItemSecondaryAction>
