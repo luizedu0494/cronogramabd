@@ -20,7 +20,7 @@ import TableSkeleton from './components/TableSkeleton';
 import { LISTA_LABORATORIOS, TIPOS_LABORATORIO } from './constants/laboratorios';
 import { BLOCOS_HORARIO } from './constants/horarios';
 import { registrarLogEvento } from './services/loggerService';
-
+import { userService } from './services/userService';
 
 dayjs.locale('pt-br');
 
@@ -262,6 +262,7 @@ export default function GerenciarEventosAvancado({ userInfo }) {
     setActionLoading(true);
 
     try {
+      const verifiedUid = await userService.resolveValidUserUid(userInfo?.uid);
       const novosEventosLog = [];
 
       for (const lab of formData.laboratorios) {
@@ -279,7 +280,7 @@ export default function GerenciarEventosAvancado({ userInfo }) {
             horario_slot: slot,
             data_inicio: finalStart.toISOString(),
             data_fim: finalEnd.toISOString(),
-            criado_por_uid: getValidUid(userInfo?.uid),
+            criado_por_uid: verifiedUid,
             criado_por_nome: userInfo?.name || userInfo?.displayName || userInfo?.email || 'Usuário',
             created_at: new Date().toISOString(),
             updated_at: new Date().toISOString(),

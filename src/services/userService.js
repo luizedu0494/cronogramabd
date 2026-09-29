@@ -21,6 +21,27 @@ export const userService = {
   },
 
   /**
+   * Valida se um UID realmente existe na tabela `users` do Supabase para evitar erros de integridade/FK
+   */
+  async resolveValidUserUid(rawUid) {
+    if (!rawUid || typeof rawUid !== 'string') return null;
+    const trimmed = rawUid.trim();
+    if (!trimmed || ['user', 'desconhecido', 'sys', 'null', 'undefined', 'usr_coordenador'].includes(trimmed.toLowerCase())) {
+      return null;
+    }
+    try {
+      const { data } = await supabase
+        .from('users')
+        .select('uid')
+        .eq('uid', trimmed)
+        .maybeSingle();
+      return data?.uid || null;
+    } catch {
+      return null;
+    }
+  },
+
+  /**
    * Registrar ou garantir que o usuário existe na tabela `users` do Supabase
    */
   async upsertUser(user) {

@@ -22,6 +22,7 @@ import DialogConfirmacao from './components/DialogConfirmacao';
 import GradeDisponibilidade from './components/GradeDisponibilidade';
 import { useDisponibilidade } from './hooks/useDisponibilidade';
 import { autoRejeitarPendentesConflitantes } from './utils/conflitoUtils';
+import { userService } from './services/userService';
 
 dayjs.locale('pt-br');
 dayjs.extend(isBetween);
@@ -462,6 +463,9 @@ function ProporEventoForm({ userInfo, currentUser, initialDate, onSuccess, onCan
                 if (updateErr) throw updateErr;
                 finalizadas.push({ ...ev, id: eventoId });
             } else {
+                const candidateUid = currentUser?.uid || currentUser?.id || userInfo?.uid;
+                const verifiedUid = await userService.resolveValidUserUid(candidateUid);
+
                 for (const ev of eventosParaConfirmar) {
                     const finalData = {
                         titulo: ev.titulo,
@@ -471,7 +475,7 @@ function ProporEventoForm({ userInfo, currentUser, initialDate, onSuccess, onCan
                         data_inicio: ev.dataInicio.toISOString(),
                         data_fim: ev.dataFim.toISOString(),
                         horario_slot: ev.horarioSlotString,
-                        criado_por_uid: getValidUid(ev.criadoPorUid || currentUser?.uid || userInfo?.uid),
+                        criado_por_uid: verifiedUid,
                         criado_por_nome: ev.criadoPorNome || 'Usuário',
                         created_at: new Date().toISOString(),
                         updated_at: new Date().toISOString()
