@@ -166,7 +166,8 @@ function GerenciarPeriodos() {
 
                 diasAnalisados.push({
                     data: diaAtual,
-                    dataIso,
+                    dataIso: diaIso,
+                    diaIso,
                     diaSemana: diaAtual.format('dddd'),
                     dataFormatada: diaAtual.format('DD/MM/YYYY'),
                     periodoExistente,
