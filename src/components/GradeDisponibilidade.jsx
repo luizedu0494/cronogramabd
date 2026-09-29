@@ -37,6 +37,7 @@ export default function GradeDisponibilidade({
   perspectivaFiltro = 'todos',
   onCelulaClick,
   horariosDestacados = [],
+  labsDestacados = [],
   isCoordenador = false,
   onEditAula,
   onDeleteAula,
@@ -73,6 +74,40 @@ export default function GradeDisponibilidade({
     };
     fetchPeriodos();
   }, [periodosBloqueio]);
+
+  // Normalização de horários e labs selecionados no formulário
+  const horariosArray = useMemo(() => {
+    if (!horariosDestacados) return [];
+    const arr = Array.isArray(horariosDestacados) ? horariosDestacados : [horariosDestacados];
+    return arr.filter(Boolean);
+  }, [horariosDestacados]);
+
+  const labsArray = useMemo(() => {
+    if (!labsDestacados) return [];
+    const arr = Array.isArray(labsDestacados) ? labsDestacados : [labsDestacados];
+    return arr.map(l => (typeof l === 'string' ? l.trim() : (l?.name || l?.id || ''))).filter(Boolean);
+  }, [labsDestacados]);
+
+  // Checa se a data visualizada na grade é a mesma do formulário
+  const isMesmaDataForm = useMemo(() => {
+    if (!dataFoco || !dataSelecionada) return true;
+    return dayjs(dataSelecionada).isSame(dayjs(dataFoco), 'day');
+  }, [dataFoco, dataSelecionada]);
+
+  // Função para verificar se a célula específica está selecionada no formulário
+  const isCelulaSelecionada = (lab, horarioValor) => {
+    if (!isMesmaDataForm || horariosArray.length === 0) return false;
+    const horarioMatch = horariosArray.includes(horarioValor);
+    if (!horarioMatch) return false;
+
+    if (labsArray.length > 0) {
+      return labsArray.some(l => 
+        l.toLowerCase() === (lab.id || '').toLowerCase() || 
+        l.toLowerCase() === (lab.name || '').toLowerCase()
+      );
+    }
+    return true;
+  };
 
   // Verificar se a data selecionada está dentro de um período inativo / feriado
   const periodoInativoAtual = useMemo(() => {
@@ -258,8 +293,8 @@ export default function GradeDisponibilidade({
           <Typography variant="caption" color="text.secondary">Ocupado (Aula/Evento)</Typography>
         </Box>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-          <Box sx={{ width: 14, height: 14, borderRadius: 0.5, border: '2px solid #1976d2' }} />
-          <Typography variant="caption" color="text.secondary">Selecionado no Form</Typography>
+          <Box sx={{ width: 14, height: 14, borderRadius: 0.5, border: '2px solid #1976d2', bgcolor: 'rgba(25, 118, 210, 0.15)' }} />
+          <Typography variant="caption" color="text.secondary" fontWeight={600}>Selecionado no Form</Typography>
         </Box>
       </Box>
 
@@ -357,7 +392,7 @@ export default function GradeDisponibilidade({
                       const st = getStatusCelula(lab, b.value);
                       const ocupado = st === 'ocupado';
                       const pendente = st === 'pendente';
-                      const destacado = horariosDestacados.includes(b.value);
+                      const selecionadoNoForm = isCelulaSelecionada(lab, b.value);
                       const ocultarPorPerspectiva = (perspectivaFiltro === 'livres' && ocupado) || (perspectivaFiltro === 'ocupados' && !ocupado) || (apenasComVaga && ocupado);
                       if (ocultarPorPerspectiva) return null;
                       return (
@@ -365,21 +400,48 @@ export default function GradeDisponibilidade({
                           key={b.value}
                           variant="outlined"
                           onClick={() => handleCellClick(lab, b)}
+                          role="button"
+                          aria-selected={selecionadoNoForm}
                           sx={{
                             p: 1,
                             textAlign: 'center',
                             cursor: 'pointer',
-                            bgcolor: ocupado ? 'rgba(239, 83, 80, 0.08)' : pendente ? 'rgba(255, 152, 0, 0.12)' : 'rgba(76, 175, 80, 0.08)',
-                            borderColor: ocupado ? 'error.light' : pendente ? '#ed6c02' : 'success.light',
-                            borderStyle: pendente ? 'dashed' : 'solid',
-                            outline: destacado ? '2px solid #1976d2' : 'none',
-                            outlineOffset: '-2px',
-                            '&:hover': { bgcolor: ocupado ? 'rgba(239, 83, 80, 0.16)' : pendente ? 'rgba(255, 152, 0, 0.22)' : 'rgba(76, 175, 80, 0.16)' }
+                            bgcolor: selecionadoNoForm
+                              ? 'rgba(25, 118, 210, 0.14)'
+                              : ocupado 
+                                ? 'rgba(239, 83, 80, 0.08)' 
+                                : pendente 
+                                  ? 'rgba(255, 152, 0, 0.12)' 
+                                  : 'rgba(76, 175, 80, 0.08)',
+                            borderColor: selecionadoNoForm
+                              ? '#1976d2'
+                              : ocupado 
+                                ? 'error.light' 
+                                : pendente 
+                                  ? '#ed6c02' 
+                                  : 'success.light',
+                            borderWidth: selecionadoNoForm ? 2 : 1,
+                            borderStyle: pendente && !selecionadoNoForm ? 'dashed' : 'solid',
+                            boxShadow: selecionadoNoForm ? '0 0 0 2px rgba(25, 118, 210, 0.35)' : 'none',
+                            '&:hover': { 
+                              bgcolor: selecionadoNoForm 
+                                ? 'rgba(25, 118, 210, 0.22)' 
+                                : ocupado 
+                                  ? 'rgba(239, 83, 80, 0.16)' 
+                                  : pendente 
+                                    ? 'rgba(255, 152, 0, 0.22)' 
+                                    : 'rgba(76, 175, 80, 0.16)' 
+                            }
                           }}
                         >
-                          <Typography variant="caption" display="block" fontWeight={600}>
-                            {b.label}
-                          </Typography>
+                          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 0.5 }}>
+                            {selecionadoNoForm && (
+                              <Box sx={{ width: 6, height: 6, borderRadius: '50%', bgcolor: '#1976d2', flexShrink: 0 }} />
+                            )}
+                            <Typography variant="caption" display="block" fontWeight={700} color={selecionadoNoForm ? 'primary.main' : 'text.primary'}>
+                              {b.label}
+                            </Typography>
+                          </Box>
                           <Typography variant="caption" color="text.secondary" display="block" sx={{ fontSize: '0.68rem', mb: 0.5 }}>
                             {b.value}
                           </Typography>
@@ -387,7 +449,7 @@ export default function GradeDisponibilidade({
                             label={ocupado ? 'Ocupado' : pendente ? 'Pendente' : 'Livre'}
                             color={ocupado ? 'error' : pendente ? 'warning' : 'success'}
                             size="small"
-                            sx={{ height: 18, fontSize: '0.65rem', fontWeight: pendente ? 'bold' : 'normal' }}
+                            sx={{ height: 18, fontSize: '0.65rem', fontWeight: (pendente || selecionadoNoForm) ? 'bold' : 'normal' }}
                           />
                         </Paper>
                       );
@@ -432,7 +494,7 @@ export default function GradeDisponibilidade({
                       const st = getStatusCelula(lab, b.value);
                       const ocupado = st === 'ocupado';
                       const pendente = st === 'pendente';
-                      const destacado = horariosDestacados.includes(b.value);
+                      const selecionadoNoForm = isCelulaSelecionada(lab, b.value);
                       const ocultarPorPerspectiva = (perspectivaFiltro === 'livres' && ocupado) || (perspectivaFiltro === 'ocupados' && !ocupado) || (apenasComVaga && ocupado);
                       const cor = ocupado ? 'error' : pendente ? 'warning' : 'success';
                       const labelText = ocupado ? 'Ocupado' : pendente ? 'Pendente' : 'Livre';
@@ -447,22 +509,54 @@ export default function GradeDisponibilidade({
 
                       return (
                         <TableCell key={b.value} align="center" sx={{ p: 0.5 }}>
-                          <Tooltip title={`${lab.name} - ${b.label} (${b.value}): ${labelText}`}>
+                          <Tooltip 
+                            title={`${lab.name} - ${b.label} (${b.value}): ${labelText}${selecionadoNoForm ? ' • [Selecionado no formulário]' : ''}`}
+                            arrow
+                          >
                             <Chip
-                              label={labelText}
+                              label={
+                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                                  {selecionadoNoForm && (
+                                    <Box 
+                                      component="span" 
+                                      sx={{ 
+                                        width: 6, 
+                                        height: 6, 
+                                        borderRadius: '50%', 
+                                        bgcolor: '#1976d2',
+                                        display: 'inline-block' 
+                                      }} 
+                                    />
+                                  )}
+                                  <span>{labelText}</span>
+                                </Box>
+                              }
                               color={cor}
                               size="small"
                               variant={ocupado ? 'outlined' : pendente ? 'outlined' : 'filled'}
                               clickable
                               onClick={() => handleCellClick(lab, b)}
+                              role="button"
+                              aria-selected={selecionadoNoForm}
                               sx={{
                                 fontSize: '0.65rem',
                                 minWidth: 58,
                                 cursor: 'pointer',
-                                fontWeight: 600,
-                                border: pendente ? '1px dashed #ed6c02' : undefined,
-                                outline: destacado ? '2px solid #1976d2' : 'none',
-                                outlineOffset: '1px'
+                                fontWeight: (selecionadoNoForm || pendente) ? 700 : 600,
+                                border: selecionadoNoForm 
+                                  ? '2px solid #1976d2 !important' 
+                                  : pendente 
+                                    ? '1px dashed #ed6c02' 
+                                    : undefined,
+                                boxShadow: selecionadoNoForm 
+                                  ? '0 0 0 2px rgba(25, 118, 210, 0.4), inset 0 0 4px rgba(25, 118, 210, 0.2)' 
+                                  : 'none',
+                                bgcolor: (selecionadoNoForm && cor === 'success') ? '#e3f2fd' : undefined,
+                                color: (selecionadoNoForm && cor === 'success') ? '#0d47a1' : undefined,
+                                transition: 'all 0.15s ease-in-out',
+                                '&:hover': {
+                                  transform: 'scale(1.05)'
+                                }
                               }}
                             />
                           </Tooltip>

@@ -730,7 +730,12 @@ function App() {
                                             }}
                                         >
                                             {(userProfileData?.photo_url || userProfileData?.photoURL) ? (
-                                                <Avatar src={userProfileData.photo_url || userProfileData.photoURL} alt={userProfileData.name || "Foto de perfil"} sx={{ width: 30, height: 30 }} />
+                                                <Avatar 
+                                                    src={userProfileData.photo_url || userProfileData.photoURL} 
+                                                    alt={userProfileData.name || "Foto de perfil"} 
+                                                    imgProps={{ referrerPolicy: 'no-referrer', crossOrigin: 'anonymous' }}
+                                                    sx={{ width: 30, height: 30 }} 
+                                                />
                                             ) : (
                                                 <AccountCircle sx={{ fontSize: 30 }} />
                                             )}
@@ -781,6 +786,7 @@ function App() {
                             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
                                 <Avatar 
                                     src={userProfileData?.photo_url || userProfileData?.photoURL} 
+                                    imgProps={{ referrerPolicy: 'no-referrer', crossOrigin: 'anonymous' }}
                                     sx={{ width: 42, height: 42, border: '2px solid #1E7EC8' }}
                                 />
                                 <Box>

@@ -5,7 +5,7 @@ import {
     List, ListItem, ListItemText, FormHelperText, Dialog, DialogTitle, DialogContent, DialogActions,
     Accordion, AccordionSummary, AccordionDetails
 } from '@mui/material';
-import { ArrowBack, Delete as DeleteIcon, Add as AddIcon, Lock as LockIcon, ExpandMore as ExpandMoreIcon } from '@mui/icons-material';
+import { ArrowBack, Delete as DeleteIcon, Add as AddIcon, Lock as LockIcon, ExpandMore as ExpandMoreIcon, Build as BuildIcon, ArrowForward as ArrowForwardIcon } from '@mui/icons-material';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import { LocalizationProvider } from '@mui/x-date-pickers';
 import { DatePicker } from '@mui/x-date-pickers';
@@ -462,7 +462,7 @@ function ProporEventoForm({ userInfo, currentUser, initialDate, onSuccess, onCan
                         data_inicio: ev.dataInicio.toISOString(),
                         data_fim: ev.dataFim.toISOString(),
                         horario_slot: ev.horarioSlotString,
-                        criado_por_uid: ev.criadoPorUid || 'desconhecido',
+                        criado_por_uid: ev.criadoPorUid || null,
                         criado_por_nome: ev.criadoPorNome || 'Usuário',
                         created_at: new Date().toISOString(),
                         updated_at: new Date().toISOString()
@@ -472,7 +472,7 @@ function ProporEventoForm({ userInfo, currentUser, initialDate, onSuccess, onCan
                         .insert([finalData]);
 
                     if (insertErr) {
-                        if (insertErr.code === '23505' || insertErr.message?.includes('duplicate key') || insertErr.message?.includes('409')) {
+                        if (insertErr.code === '23505' || insertErr.code === '409' || insertErr.status === 409 || insertErr.message?.includes('duplicate key') || insertErr.message?.includes('409')) {
                             setSnackbarMessage('⚠️ Conflito de Manutenção: Já existe um evento registrado para este mesmo laboratório, data e horário.');
                             setSnackbarSeverity('warning');
                             setOpenSnackbar(true);
@@ -516,8 +516,10 @@ function ProporEventoForm({ userInfo, currentUser, initialDate, onSuccess, onCan
             if (onSuccess) onSuccess();
             else if (!isEditMode) setOpenKeepDataDialog(true);
         } catch (error) {
-            setSnackbarMessage('Erro ao salvar.');
-            setSnackbarSeverity('error');
+            console.error('Erro ao salvar evento:', error);
+            const isConflict = error?.code === '23505' || error?.code === '409' || error?.status === 409 || error?.message?.includes('duplicate key');
+            setSnackbarMessage(isConflict ? '⚠️ Conflito: Já existe um evento registrado para este mesmo laboratório e horário.' : 'Erro ao salvar.');
+            setSnackbarSeverity(isConflict ? 'warning' : 'error');
             setOpenSnackbar(true);
         } finally {
             setLoadingSubmit(false);
@@ -540,9 +542,33 @@ function ProporEventoForm({ userInfo, currentUser, initialDate, onSuccess, onCan
     return (
         <LocalizationProvider dateAdapter={AdapterDayjs} adapterLocale="pt-br">
             <Container maxWidth="md">
-                <Typography variant="h4" component="h1" gutterBottom align="center" sx={{ mb: 4, color: '#3f51b5', fontWeight: 'bold', mt: isModal ? 0 : 4 }}>
+                <Typography variant="h4" component="h1" gutterBottom align="center" sx={{ mb: 3, color: '#3f51b5', fontWeight: 'bold', mt: isModal ? 0 : 4 }}>
                     {formTitle || (isEditMode ? "Editar Evento" : "Propor Novo Evento")}
                 </Typography>
+
+                {/* Banner de Atalho para o Localizador de Períodos Inativos / Manutenção Geral */}
+                {!isEditMode && (
+                    <Alert 
+                        severity="info" 
+                        icon={<BuildIcon />}
+                        action={
+                            <Button 
+                                color="primary" 
+                                size="small" 
+                                variant="outlined" 
+                                endIcon={<ArrowForwardIcon />}
+                                onClick={() => navigate('/gerenciar-periodos')}
+                                sx={{ fontWeight: 700, textTransform: 'none', bgcolor: 'background.paper', ml: 1, whiteSpace: 'nowrap' }}
+                            >
+                                Localizador de Datas
+                            </Button>
+                        }
+                        sx={{ mb: 3, borderRadius: 2, border: '1px solid #90caf9', alignItems: 'center' }}
+                    >
+                        <strong>Deseja encontrar datas 100% livres em todos os laboratórios?</strong> Use o Localizador de Janelas Livres para programar manutenções em lote sem conflitos com aulas.
+                    </Alert>
+                )}
+
                 <form onSubmit={(e) => { e.preventDefault(); prepareAndConfirm(); }}>
                     <Grid container spacing={3} justifyContent="center">
                         {/* ── SEÇÃO 1: Detalhes do Evento ── */}
@@ -710,18 +736,7 @@ function ProporEventoForm({ userInfo, currentUser, initialDate, onSuccess, onCan
                                                     dataFoco={formData.dataInicio?.format('YYYY-MM-DD')}
                                                     tiposLab={formData.dynamicLabs.map(l => l.tipo).filter(Boolean)}
                                                     horariosDestacados={formData.horarioSlotString}
-                                                    onCelulaClick={({ horario, ocupado }) => {
-                                                        if (ocupado) return;
-                                                        setFormData(prev => {
-                                                            const jaTem = prev.horarioSlotString.includes(horario);
-                                                            return {
-                                                                ...prev,
-                                                                horarioSlotString: jaTem
-                                                                    ? prev.horarioSlotString.filter(h => h !== horario)
-                                                                    : [...prev.horarioSlotString, horario],
-                                                            };
-                                                        });
-                                                    }}
+                                                    labsDestacados={formData.dynamicLabs.flatMap(l => l.laboratorios).filter(Boolean)}
                                                 />
                                             )}
                                         </AccordionDetails>

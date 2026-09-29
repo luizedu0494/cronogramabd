@@ -270,7 +270,7 @@ export default function GerenciarEventosAvancado({ userInfo }) {
             horario_slot: slot,
             data_inicio: finalStart.toISOString(),
             data_fim: finalEnd.toISOString(),
-            criado_por_uid: userInfo?.uid || 'desconhecido',
+            criado_por_uid: userInfo?.uid || null,
             criado_por_nome: userInfo?.name || userInfo?.displayName || userInfo?.email || 'Usuário',
             created_at: new Date().toISOString(),
             updated_at: new Date().toISOString(),
@@ -281,7 +281,7 @@ export default function GerenciarEventosAvancado({ userInfo }) {
             .insert([payload]);
 
           if (insertErr) {
-            if (insertErr.code === '23505' || insertErr.message?.includes('duplicate key')) {
+            if (insertErr.code === '23505' || insertErr.code === '409' || insertErr.status === 409 || insertErr.message?.includes('duplicate key')) {
               console.warn('Conflito de manutenção ignorado para horário duplicado:', slot);
               continue;
             }

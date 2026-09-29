@@ -173,7 +173,11 @@ function ConfiguracoesPerfil() {
                 <Typography variant="h5" gutterBottom align="center" sx={{ mb: 3 }}>Configurações do Perfil</Typography>
                 
                 <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', mb: 3, gap: 2 }}>
-                    <Avatar src={photoURL} sx={{ width: 100, height: 100 }} />
+                    <Avatar 
+                        src={photoURL} 
+                        imgProps={{ referrerPolicy: 'no-referrer', crossOrigin: 'anonymous' }} 
+                        sx={{ width: 100, height: 100 }} 
+                    />
                     <UploadImagem
                         onUploadSucesso={handleUploadFotoSucesso}
                         pasta="cronolab/avatars"

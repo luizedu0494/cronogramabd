@@ -713,7 +713,7 @@ function ProporAulaForm({ userInfo, currentUser, initialDate, onSuccess, onCance
                     data_inicio: dtInicioIso,
                     data_fim: dtFimIso,
                     status: aula.status || 'aprovada',
-                    proposto_por_uid: aula.propostoPorUid || currentUser?.uid || '',
+                    proposto_por_uid: aula.propostoPorUid || currentUser?.uid || null,
                     proposto_por_nome: aula.propostoPorNome || userInfo?.nome || currentUser?.displayName || '',
                     tipo_revisao_label: finalTipoAtividade === 'revisao' ? aula.tipoRevisaoLabel : null,
                     liga: aula.liga || null,
@@ -762,7 +762,7 @@ function ProporAulaForm({ userInfo, currentUser, initialDate, onSuccess, onCance
                         data_inicio: dtInicioIso,
                         data_fim: dtFimIso,
                         status: aula.status,
-                        proposto_por_uid: aula.propostoPorUid || currentUser?.uid || '',
+                        proposto_por_uid: aula.propostoPorUid || currentUser?.uid || null,
                         proposto_por_nome: aula.propostoPorNome || userInfo?.nome || currentUser?.displayName || '',
                         tipo_revisao_label: finalTipoAtividade === 'revisao' ? aula.tipoRevisaoLabel : null,
                         liga: aula.liga || null,
@@ -1309,6 +1309,8 @@ function ProporAulaForm({ userInfo, currentUser, initialDate, onSuccess, onCance
                                                 eventos={eventosDoMesState}
                                                 dataFoco={dayjs(formData.dataInicio).format('YYYY-MM-DD')}
                                                 tiposLab={formData.dynamicLabs.map(l => l.tipo).filter(Boolean)}
+                                                horariosDestacados={Array.isArray(formData.horarioSlotString) ? formData.horarioSlotString : [formData.horarioSlotString].filter(Boolean)}
+                                                labsDestacados={formData.dynamicLabs.flatMap(l => l.laboratorios).filter(Boolean)}
                                             />
                                         </AccordionDetails>
                                     </Accordion>

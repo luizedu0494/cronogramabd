@@ -9,6 +9,8 @@ import {
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
 import AddIcon from '@mui/icons-material/Add';
+import SearchIcon from '@mui/icons-material/Search';
+import { useNavigate } from 'react-router-dom';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { LocalizationProvider } from '@mui/x-date-pickers';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
@@ -26,6 +28,7 @@ dayjs.locale('pt-br');
 const EVENT_TYPES = ['Manutenção', 'Feriado', 'Evento', 'Giro', 'Outro'];
 
 function EventosManutencao() {
+  const navigate = useNavigate();
   const { currentUser, userProfile } = useAuth();
   const [eventos, setEventos] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -173,7 +176,7 @@ function EventosManutencao() {
           horario_slot: slot,
           data_inicio: finalStart.toISOString(),
           data_fim: finalEnd.toISOString(),
-          criado_por_uid: currentUser?.uid || userProfile?.uid || 'desconhecido',
+          criado_por_uid: currentUser?.uid || userProfile?.uid || null,
           criado_por_nome: userProfile?.name || currentUser?.displayName || currentUser?.email || 'Técnico',
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString()
@@ -191,7 +194,17 @@ function EventosManutencao() {
             .from('eventos_manutencao')
             .insert([eventoData]);
 
-          if (insertErr) throw insertErr;
+          if (insertErr) {
+            if (insertErr.code === '23505' || insertErr.code === '409' || insertErr.status === 409 || insertErr.message?.includes('duplicate key')) {
+              setFeedback({
+                open: true,
+                message: '⚠️ Conflito: Já existe um evento registrado para este mesmo laboratório e horário.',
+                severity: 'warning'
+              });
+              return;
+            }
+            throw insertErr;
+          }
         }
       }
 
@@ -265,14 +278,25 @@ function EventosManutencao() {
                 Gerencie bloqueios de laboratórios por manutenção, feriados ou eventos especiais.
               </Typography>
             </Box>
-            <Button
-              variant="contained"
-              color="primary"
-              startIcon={<AddIcon />}
-              onClick={() => handleOpenDialog()}
-            >
-              Novo Evento
-            </Button>
+            <Box sx={{ display: 'flex', gap: 1.5, flexWrap: 'wrap' }}>
+              <Button
+                variant="outlined"
+                color="primary"
+                startIcon={<SearchIcon />}
+                onClick={() => navigate('/gerenciar-periodos')}
+                sx={{ textTransform: 'none', fontWeight: 600 }}
+              >
+                Localizar Datas Livres
+              </Button>
+              <Button
+                variant="contained"
+                color="primary"
+                startIcon={<AddIcon />}
+                onClick={() => handleOpenDialog()}
+              >
+                Novo Evento
+              </Button>
+            </Box>
           </Box>
 
           {loading ? (
