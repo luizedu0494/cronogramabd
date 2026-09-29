@@ -27,6 +27,15 @@ dayjs.locale('pt-br');
 const EVENT_TYPES = ['Manutenção', 'Feriado', 'Evento', 'Giro', 'Outro'];
 const STATUS_EVENTO = ['aprovado', 'pendente', 'cancelado'];
 
+const getValidUid = (rawUid) => {
+  if (!rawUid || typeof rawUid !== 'string') return null;
+  const trimmed = rawUid.trim();
+  if (!trimmed || ['user', 'desconhecido', 'sys', 'null', 'undefined', 'usr_coordenador'].includes(trimmed.toLowerCase())) {
+    return null;
+  }
+  return trimmed;
+};
+
 const DialogConfirmacao = ({ open, title, message, onConfirm, onCancel, loading }) => (
   <Dialog open={open} onClose={onCancel}>
     <DialogTitle>{title}</DialogTitle>
@@ -270,7 +279,7 @@ export default function GerenciarEventosAvancado({ userInfo }) {
             horario_slot: slot,
             data_inicio: finalStart.toISOString(),
             data_fim: finalEnd.toISOString(),
-            criado_por_uid: userInfo?.uid || null,
+            criado_por_uid: getValidUid(userInfo?.uid),
             criado_por_nome: userInfo?.name || userInfo?.displayName || userInfo?.email || 'Usuário',
             created_at: new Date().toISOString(),
             updated_at: new Date().toISOString(),
@@ -283,6 +292,15 @@ export default function GerenciarEventosAvancado({ userInfo }) {
           if (insertErr) {
             if (insertErr.code === '23505' || insertErr.code === '409' || insertErr.status === 409 || insertErr.message?.includes('duplicate key')) {
               console.warn('Conflito de manutenção ignorado para horário duplicado:', slot);
+              continue;
+            }
+            if (insertErr.code === '23503' || insertErr.message?.includes('violates foreign key constraint')) {
+              console.warn('Violação de FK em criado_por_uid, salvando com criado_por_uid=null...');
+              const { error: retryErr } = await supabase
+                .from('eventos_manutencao')
+                .insert([{ ...payload, criado_por_uid: null }]);
+              if (retryErr) throw retryErr;
+              novosEventosLog.push({ ...payload, criado_por_uid: null });
               continue;
             }
             throw insertErr;

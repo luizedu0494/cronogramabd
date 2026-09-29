@@ -38,6 +38,15 @@ const TIPOS_REVISAO = [
     { value: 'outro',             label: 'Outro',                icon: '📌' },
 ];
 
+const getValidUid = (rawUid) => {
+    if (!rawUid || typeof rawUid !== 'string') return null;
+    const trimmed = rawUid.trim();
+    if (!trimmed || ['user', 'desconhecido', 'sys', 'null', 'undefined', 'usr_coordenador'].includes(trimmed.toLowerCase())) {
+        return null;
+    }
+    return trimmed;
+};
+
 function ProporAulaForm({ userInfo, currentUser, initialDate, onSuccess, onCancel, isModal, formTitle, aulaId: propAulaId }) {
     const theme = useTheme();
     const isDarkMode = theme.palette.mode === 'dark';
@@ -713,7 +722,7 @@ function ProporAulaForm({ userInfo, currentUser, initialDate, onSuccess, onCance
                     data_inicio: dtInicioIso,
                     data_fim: dtFimIso,
                     status: aula.status || 'aprovada',
-                    proposto_por_uid: aula.propostoPorUid || currentUser?.uid || null,
+                    proposto_por_uid: getValidUid(aula.propostoPorUid || currentUser?.uid || userInfo?.uid),
                     proposto_por_nome: aula.propostoPorNome || userInfo?.nome || currentUser?.displayName || '',
                     tipo_revisao_label: finalTipoAtividade === 'revisao' ? aula.tipoRevisaoLabel : null,
                     liga: aula.liga || null,
@@ -728,7 +737,12 @@ function ProporAulaForm({ userInfo, currentUser, initialDate, onSuccess, onCance
                         setOpenSnackbar(true);
                         return;
                     }
-                    throw error;
+                    if (error.code === '23503' || error.message?.includes('violates foreign key constraint')) {
+                        const { error: retryErr } = await supabase.from('aulas').update({ ...finalData, proposto_por_uid: null }).eq('id', aulaId);
+                        if (retryErr) throw retryErr;
+                    } else {
+                        throw error;
+                    }
                 }
 
                 await registrarLogEdicao({ ...aula, title: aula.assunto }, userInfo || { uid: currentUser?.uid }, 'aulas');
@@ -762,13 +776,13 @@ function ProporAulaForm({ userInfo, currentUser, initialDate, onSuccess, onCance
                         data_inicio: dtInicioIso,
                         data_fim: dtFimIso,
                         status: aula.status,
-                        proposto_por_uid: aula.propostoPorUid || currentUser?.uid || null,
+                        proposto_por_uid: getValidUid(aula.propostoPorUid || currentUser?.uid || userInfo?.uid),
                         proposto_por_nome: aula.propostoPorNome || userInfo?.nome || currentUser?.displayName || '',
                         tipo_revisao_label: finalTipoAtividade === 'revisao' ? aula.tipoRevisaoLabel : null,
                         liga: aula.liga || null,
                         observacoes: aula.observacoes || null,
                     };
-                    const { data: novaAula, error } = await supabase.from('aulas').insert([finalData]).select().single();
+                    let { data: novaAula, error } = await supabase.from('aulas').insert([finalData]).select().single();
                     if (error) {
                         if (error.code === '23505' || error.message?.includes('duplicate key')) {
                             setSnackbarMessage('⚠️ Conflito: Já existe um agendamento (aprovado ou pendente) registrado para este laboratório, data e horário.');
@@ -776,7 +790,13 @@ function ProporAulaForm({ userInfo, currentUser, initialDate, onSuccess, onCance
                             setOpenSnackbar(true);
                             return;
                         }
-                        throw error;
+                        if (error.code === '23503' || error.message?.includes('violates foreign key constraint')) {
+                            const { data: retryAula, error: retryErr } = await supabase.from('aulas').insert([{ ...finalData, proposto_por_uid: null }]).select().single();
+                            if (retryErr) throw retryErr;
+                            novaAula = retryAula;
+                        } else {
+                            throw error;
+                        }
                     }
 
                     if (aula.cursos && aula.cursos.length > 0) {

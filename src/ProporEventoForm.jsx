@@ -45,6 +45,15 @@ const safeDayjs = (val) => {
     return parsed.isValid() ? parsed : null;
 };
 
+const getValidUid = (rawUid) => {
+    if (!rawUid || typeof rawUid !== 'string') return null;
+    const trimmed = rawUid.trim();
+    if (!trimmed || ['user', 'desconhecido', 'sys', 'null', 'undefined', 'usr_coordenador'].includes(trimmed.toLowerCase())) {
+        return null;
+    }
+    return trimmed;
+};
+
 function ProporEventoForm({ userInfo, currentUser, initialDate, onSuccess, onCancel, isModal, formTitle, eventoId: propEventoId }) {
     const [formData, setFormData] = useState({
         titulo: '', descricao: '', tipo: EVENT_TYPES[0],
@@ -371,7 +380,7 @@ function ProporEventoForm({ userInfo, currentUser, initialDate, onSuccess, onCan
                             dataInicio: dataHoraInicio,
                             dataFim: dataHoraFim,
                             horarioSlotString: slot,
-                            criadoPorUid: currentUser?.uid || currentUser?.id || userInfo?.uid || null,
+                            criadoPorUid: getValidUid(currentUser?.uid || currentUser?.id || userInfo?.uid),
                             criadoPorNome: userInfo?.name || currentUser?.displayName || currentUser?.email || "Usuário"
                         });
                     }
@@ -462,7 +471,7 @@ function ProporEventoForm({ userInfo, currentUser, initialDate, onSuccess, onCan
                         data_inicio: ev.dataInicio.toISOString(),
                         data_fim: ev.dataFim.toISOString(),
                         horario_slot: ev.horarioSlotString,
-                        criado_por_uid: ev.criadoPorUid || null,
+                        criado_por_uid: getValidUid(ev.criadoPorUid || currentUser?.uid || userInfo?.uid),
                         criado_por_nome: ev.criadoPorNome || 'Usuário',
                         created_at: new Date().toISOString(),
                         updated_at: new Date().toISOString()
@@ -477,6 +486,15 @@ function ProporEventoForm({ userInfo, currentUser, initialDate, onSuccess, onCan
                             setSnackbarSeverity('warning');
                             setOpenSnackbar(true);
                             return;
+                        }
+                        if (insertErr.code === '23503' || insertErr.message?.includes('violates foreign key constraint')) {
+                            console.warn('Violação de FK em criado_por_uid, salvando com criado_por_uid=null...');
+                            const { error: retryErr } = await supabase
+                                .from('eventos_manutencao')
+                                .insert([{ ...finalData, criado_por_uid: null }]);
+                            if (retryErr) throw retryErr;
+                            finalizadas.push({ ...ev });
+                            continue;
                         }
                         throw insertErr;
                     }

@@ -1286,7 +1286,7 @@ function CalendarioCronograma({ userInfo }) {
                         <IconButton onClick={() => setIsAddModalOpen(false)} sx={{ position: 'absolute', right: 8, top: 8, color: 'white' }}><CloseIcon /></IconButton>
                     </DialogTitle>
                     <DialogContent sx={{ mt: 2 }}>
-                        <ProporAulaForm userInfo={userInfo} currentUser={{uid: userInfo?.uid || 'user'}} initialDate={aulaParaAcao?.dataInicio} onCancel={() => setIsAddModalOpen(false)} onSuccess={() => { setIsAddModalOpen(false); fetchDados(); }} />
+                        <ProporAulaForm userInfo={userInfo} currentUser={userInfo?.uid ? { uid: userInfo.uid } : null} initialDate={aulaParaAcao?.dataInicio} onCancel={() => setIsAddModalOpen(false)} onSuccess={() => { setIsAddModalOpen(false); fetchDados(); }} />
                     </DialogContent>
                 </Dialog>
 
@@ -1296,7 +1296,7 @@ function CalendarioCronograma({ userInfo }) {
                         <IconButton onClick={() => setIsEventModalOpen(false)} sx={{ position: 'absolute', right: 8, top: 8, color: 'white' }}><CloseIcon /></IconButton>
                     </DialogTitle>
                     <DialogContent sx={{ mt: 2 }}>
-                        <ProporEventoForm userInfo={userInfo} currentUser={{uid: userInfo?.uid || 'user'}} eventoId={eventoParaAcao?.id} initialDate={eventoParaAcao?.dataInicio} onCancel={() => setIsEventModalOpen(false)} onSuccess={() => { setIsEventModalOpen(false); fetchDados(); }} />
+                        <ProporEventoForm userInfo={userInfo} currentUser={userInfo?.uid ? { uid: userInfo.uid } : null} eventoId={eventoParaAcao?.id} initialDate={eventoParaAcao?.dataInicio} onCancel={() => setIsEventModalOpen(false)} onSuccess={() => { setIsEventModalOpen(false); fetchDados(); }} />
                     </DialogContent>
                 </Dialog>
 
@@ -1306,7 +1306,7 @@ function CalendarioCronograma({ userInfo }) {
                         <IconButton onClick={() => setIsEditModalOpen(false)} sx={{ position: 'absolute', right: 8, top: 8, color: 'white' }}><CloseIcon /></IconButton>
                     </DialogTitle>
                     <DialogContent sx={{ mt: 2 }}>
-                        <ProporAulaForm userInfo={userInfo} currentUser={{uid: userInfo?.uid || 'user'}} aulaId={aulaParaAcao?.id} onCancel={() => setIsEditModalOpen(false)} onSuccess={() => { setIsEditModalOpen(false); fetchDados(); }} />
+                        <ProporAulaForm userInfo={userInfo} currentUser={userInfo?.uid ? { uid: userInfo.uid } : null} aulaId={aulaParaAcao?.id} onCancel={() => setIsEditModalOpen(false)} onSuccess={() => { setIsEditModalOpen(false); fetchDados(); }} />
                     </DialogContent>
                 </Dialog>
 
